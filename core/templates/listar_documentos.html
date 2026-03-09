@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Documentos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: #f5f7fa;
+            color: #222;
+        }
+        h2 {
+            color: #1f3c88;
+        }
+        .topbar {
+            margin-bottom: 20px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 16px;
+            margin-right: 10px;
+            background: #1f3c88;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+        }
+        .btn.logout {
+            background: #b02a37;
+        }
+        .card {
+            background: white;
+            padding: 14px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+    </style>
+</head>
+<body>
+    <h2>Documentos</h2>
+<div class="topbar">
+    <a class="btn" href="/subir/">Subir nuevo documento</a>
+    <a class="btn" href="/admin/">Administración</a>
+
+    <form action="/accounts/logout/" method="post" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn logout" style="border:none; cursor:pointer;">Salir</button>
+    </form>
+
+    <form method="get" style="margin-top:20px;">
+        <input type="text" name="q" placeholder="Buscar por título..." value="{{ request.GET.q }}" style="padding:8px; width:220px;">
+
+        <select name="tipo" style="padding:8px;">
+            <option value="">-- Tipo de documento --</option>
+            {% for tipo in tipos %}
+                <option value="{{ tipo.id }}" {% if request.GET.tipo == tipo.id|stringformat:"s" %}selected{% endif %}>
+                    {{ tipo.nombre }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <select name="departamento" style="padding:8px;">
+            <option value="">-- Departamento --</option>
+            {% for depto in departamentos %}
+                <option value="{{ depto.id }}" {% if request.GET.departamento == depto.id|stringformat:"s" %}selected{% endif %}>
+                    {{ depto.nombre }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" class="btn">Filtrar</button>
+    </form>
+</div>
+    {% for doc in docs %}
+        <div class="card">
+            <strong>{{ doc.titulo }}</strong><br>
+            Tipo: {{ doc.tipo_documento }}<br>
+            Departamento: {{ doc.departamento }}<br>
+            <a href="{{ doc.archivo_actual.url }}">Descargar</a><br>
+            <a href="/version/{{ doc.id }}/">Subir nueva versión</a><br>
+            <a href="/historial/{{ doc.id }}/">Ver historial</a>
+        </div>
+    {% empty %}
+        <div class="card">
+            No hay documentos cargados todavía.
+        </div>
+    {% endfor %}
+</body>
+</html>

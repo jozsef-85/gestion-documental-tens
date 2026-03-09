@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Nueva versión</title>
+    <style>
+        body { font-family: Arial; margin: 40px; background:#f5f7fa; }
+        .box {
+            background:white;
+            padding:20px;
+            border-radius:8px;
+            max-width:600px;
+        }
+        button {
+            padding:10px 16px;
+            background:#1f3c88;
+            color:white;
+            border:none;
+            border-radius:6px;
+            cursor:pointer;
+        }
+        a { text-decoration:none; color:#1f3c88; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>Nueva versión para:</h2>
+        <strong>{{ documento.titulo }}</strong>
+        <p>Versión actual: {{ documento.version_actual }}</p>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Guardar versión</button>
+        </form>
+
+        <br>
+        <a href="/">← Volver</a>
+    </div>
+</body>
+</html>

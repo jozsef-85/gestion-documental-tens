@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Historial de versiones</title>
+    <style>
+        body { font-family: Arial; margin: 40px; background:#f5f7fa; }
+        .box {
+            background:white;
+            padding:20px;
+            border-radius:8px;
+        }
+        .item {
+            padding:10px;
+            border-bottom:1px solid #ddd;
+        }
+        a { text-decoration:none; color:#1f3c88; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>Historial de versiones</h2>
+        <strong>{{ documento.titulo }}</strong>
+        <p>Versión actual: {{ documento.version_actual }}</p>
+
+        {% for v in versiones %}
+            <div class="item">
+                <strong>Versión {{ v.numero_version }}</strong><br>
+                Subido por: {{ v.subido_por }}<br>
+                Fecha: {{ v.fecha_subida }}<br>
+                {% if v.comentario %}
+                    Comentario: {{ v.comentario }}<br>
+                {% endif %}
+                <a href="{{ v.archivo.url }}">Descargar versión</a>
+            </div>
+        {% empty %}
+            <p>No hay versiones registradas.</p>
+        {% endfor %}
+
+        <br>
+        <a href="/">← Volver</a>
+    </div>
+</body>
+</html>
