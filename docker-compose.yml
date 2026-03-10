@@ -1,0 +1,7 @@
+services:
+  gestion_documental:
+    build: .
+    container_name: gestion_documental_app
+    restart: unless-stopped
+    ports:
+      - "8001:8000"

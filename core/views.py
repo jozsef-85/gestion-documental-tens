@@ -1,8 +1,21 @@
 from .models import TipoDocumento, Departamento
 from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from .forms import DocumentoForm, VersionDocumentoForm
-from .models import Documento, VersionDocumento
+from .models import Documento, VersionDocumento, Auditoria
+
+
+@login_required
+def registrar_auditoria(request, accion, entidad, entidad_id=None, detalle=""):
+    Auditoria.objects.create(
+        usuario=request.user,
+        accion=accion,
+        entidad=entidad,
+        entidad_id=entidad_id,
+        detalle=detalle,
+        ip=request.META.get('REMOTE_ADDR')
+    )
+
 
 @login_required
 def listar_documentos(request):
@@ -22,11 +35,13 @@ def listar_documentos(request):
         docs = docs.filter(departamento_id=departamento)
 
     return render(request, 'listar_documentos.html', {
-    'docs': docs,
-    'tipos': TipoDocumento.objects.all(),
-    'departamentos': Departamento.objects.all(),
-})
+        'docs': docs,
+        'tipos': TipoDocumento.objects.all(),
+        'departamentos': Departamento.objects.all(),
+    })
+
 @login_required
+@permission_required('core.add_documento', raise_exception=True)
 def subir_documento(request):
     if request.method == 'POST':
         form = DocumentoForm(request.POST, request.FILES)
@@ -34,11 +49,26 @@ def subir_documento(request):
             doc = form.save(commit=False)
             doc.creado_por = request.user
             doc.save()
+
+            # Auditoría
+            Auditoria.objects.create(
+                usuario=request.user,
+                accion="Creación de documento",
+                entidad="Documento",
+                entidad_id=doc.id,
+                detalle=f"Documento creado: {doc.titulo}",
+                ip=request.META.get('REMOTE_ADDR')
+            )
+
             return redirect('listar_documentos')
     else:
         form = DocumentoForm()
+
     return render(request, 'subir_documento.html', {'form': form})
+
+
 @login_required
+@permission_required('core.add_versiondocumento', raise_exception=True)
 def subir_version(request, documento_id):
     documento = Documento.objects.get(id=documento_id)
 
@@ -57,6 +87,16 @@ def subir_version(request, documento_id):
             documento.version_actual = form.cleaned_data['numero_version']
             documento.save()
 
+            # Auditoría
+            Auditoria.objects.create(
+                usuario=request.user,
+                accion="Nueva versión",
+                entidad="Documento",
+                entidad_id=documento.id,
+                detalle=f"Nueva versión {form.cleaned_data['numero_version']} del documento {documento.titulo}",
+                ip=request.META.get('REMOTE_ADDR')
+            )
+
             return redirect('listar_documentos')
     else:
         form = VersionDocumentoForm()
@@ -65,6 +105,8 @@ def subir_version(request, documento_id):
         'form': form,
         'documento': documento
     })
+
+
 @login_required
 def historial_versiones(request, documento_id):
     documento = Documento.objects.get(id=documento_id)
