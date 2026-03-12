@@ -39,10 +39,27 @@
 </head>
 <body>
     <h2>Documentos</h2>
-<div class="topbar">
-    <a class="btn" href="/subir/">Subir nuevo documento</a>
-    <a class="btn" href="/admin/">Administración</a>
-
+    <div class="topbar">
+        <a class="btn" href="/subir/">Subir nuevo documento</a>
+        <a class="btn" href="/admin/">Administración</a>
+    <div style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom:20px;">
+        <div class="card" style="min-width:180px;">
+            <strong>Total documentos</strong><br>
+            {{ total_documentos }}
+        </div>
+        <div class="card" style="min-width:180px;">
+            <strong>Departamentos</strong><br>
+            {{ total_departamentos }}
+        </div>
+        <div class="card" style="min-width:180px;">
+            <strong>Tipos de documento</strong><br>
+            {{ total_tipos }}
+        </div>
+        <div class="card" style="min-width:180px;">
+            <strong>Versiones registradas</strong><br>
+            {{ total_versiones }}
+        </div>
+    </div>
     <form action="/accounts/logout/" method="post" style="display:inline;">
         {% csrf_token %}
         <button type="submit" class="btn logout" style="border:none; cursor:pointer;">Salir</button>

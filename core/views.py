@@ -1,11 +1,31 @@
-from .models import TipoDocumento, Departamento
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required, permission_required
+from django.utils.timezone import localtime
 from .forms import DocumentoForm, VersionDocumentoForm
-from .models import Documento, VersionDocumento, Auditoria
+from .models import Documento, VersionDocumento, Auditoria, TipoDocumento, Departamento
+from urllib.request import urlopen
+import json
 
 
-@login_required
+def obtener_indicadores():
+    datos = {
+        "uf": "N/D",
+        "dolar": "N/D",
+        "utm": "N/D",
+    }
+
+    try:
+        with urlopen("https://mindicador.cl/api", timeout=5) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+            datos["uf"] = payload.get("uf", {}).get("valor", "N/D")
+            datos["dolar"] = payload.get("dolar", {}).get("valor", "N/D")
+            datos["utm"] = payload.get("utm", {}).get("valor", "N/D")
+    except Exception:
+        pass
+
+    return datos
+
+
 def registrar_auditoria(request, accion, entidad, entidad_id=None, detalle=""):
     Auditoria.objects.create(
         usuario=request.user,
@@ -15,6 +35,26 @@ def registrar_auditoria(request, accion, entidad, entidad_id=None, detalle=""):
         detalle=detalle,
         ip=request.META.get('REMOTE_ADDR')
     )
+
+
+@login_required
+def dashboard(request):
+    indicadores = obtener_indicadores()
+    ahora = localtime()
+
+    return render(request, 'dashboard.html', {
+        'total_documentos': Documento.objects.count(),
+        'total_departamentos': Departamento.objects.count(),
+        'total_tipos': TipoDocumento.objects.count(),
+        'total_versiones': VersionDocumento.objects.count(),
+        'fecha_actual': ahora,
+        'uf': indicadores["uf"],
+        'dolar': indicadores["dolar"],
+        'utm': indicadores["utm"],
+        'es_admin': request.user.is_superuser or request.user.groups.filter(name="Administradores").exists(),
+        'es_editor': request.user.groups.filter(name="Editores").exists(),
+        'es_lector': request.user.groups.filter(name="Lectores").exists(),
+    })
 
 
 @login_required
@@ -38,7 +78,12 @@ def listar_documentos(request):
         'docs': docs,
         'tipos': TipoDocumento.objects.all(),
         'departamentos': Departamento.objects.all(),
+        'total_documentos': Documento.objects.count(),
+        'total_departamentos': Departamento.objects.count(),
+        'total_tipos': TipoDocumento.objects.count(),
+        'total_versiones': VersionDocumento.objects.count(),
     })
+
 
 @login_required
 @permission_required('core.add_documento', raise_exception=True)
@@ -50,14 +95,12 @@ def subir_documento(request):
             doc.creado_por = request.user
             doc.save()
 
-            # Auditoría
-            Auditoria.objects.create(
-                usuario=request.user,
+            registrar_auditoria(
+                request,
                 accion="Creación de documento",
                 entidad="Documento",
                 entidad_id=doc.id,
-                detalle=f"Documento creado: {doc.titulo}",
-                ip=request.META.get('REMOTE_ADDR')
+                detalle=f"Documento creado: {doc.titulo}"
             )
 
             return redirect('listar_documentos')
@@ -87,14 +130,12 @@ def subir_version(request, documento_id):
             documento.version_actual = form.cleaned_data['numero_version']
             documento.save()
 
-            # Auditoría
-            Auditoria.objects.create(
-                usuario=request.user,
+            registrar_auditoria(
+                request,
                 accion="Nueva versión",
                 entidad="Documento",
                 entidad_id=documento.id,
-                detalle=f"Nueva versión {form.cleaned_data['numero_version']} del documento {documento.titulo}",
-                ip=request.META.get('REMOTE_ADDR')
+                detalle=f"Nueva versión {form.cleaned_data['numero_version']} del documento {documento.titulo}"
             )
 
             return redirect('listar_documentos')
