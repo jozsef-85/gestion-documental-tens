@@ -26,6 +26,14 @@ python manage.py makemigrations core --name estado_manual_labels
 python manage.py makemigrations core --name add_documento_indices
 ```
 
+Atajo recomendado en este proyecto:
+
+```bash
+./scripts/makemigration.sh presupuestos_base
+./scripts/makemigration.sh estado_manual_labels
+./scripts/makemigration.sh add_documento_indices core
+```
+
 Ejemplos a evitar:
 
 ```bash
