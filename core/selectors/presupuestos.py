@@ -36,6 +36,18 @@ def q_estado_presupuesto(estado):
     return Q()
 
 
+def q_aceptado_efectivo():
+    return (
+        q_estado_presupuesto('en_proceso')
+        | q_estado_presupuesto('facturado')
+        | q_estado_presupuesto('pagado')
+    )
+
+
+def q_pendiente_por_cobrar():
+    return q_estado_presupuesto('en_proceso') | q_estado_presupuesto('facturado')
+
+
 def inventario_presupuestos_queryset():
     ultimo_registro = RegistroPresupuesto.objects.filter(
         presupuesto=OuterRef('presupuesto')
@@ -72,17 +84,16 @@ def resumir_flujo(queryset):
 
 
 def aggregate_presupuesto_metrics(queryset):
-    accepted_unpaid = q_aceptado() & ~q_pagado()
     return queryset.aggregate(
         total_items=Count('id'),
         total_pendientes_aprobacion=Count('id', filter=q_estado_presupuesto('pendiente')),
-        total_aceptados=Count('id', filter=q_aceptado()),
-        total_pendientes_por_cobrar=Count('id', filter=accepted_unpaid),
+        total_aceptados=Count('id', filter=q_aceptado_efectivo()),
+        total_pendientes_por_cobrar=Count('id', filter=q_pendiente_por_cobrar()),
         total_en_proceso=Count('id', filter=q_estado_presupuesto('en_proceso')),
         total_facturados=Count('id', filter=q_estado_presupuesto('facturado')),
         total_pagados=Count('id', filter=q_estado_presupuesto('pagado')),
         total_activo=Count('id', filter=~q_estado_presupuesto('pagado')),
-        monto_por_cobrar=Sum('valor', filter=accepted_unpaid),
+        monto_por_cobrar=Sum('valor', filter=q_pendiente_por_cobrar()),
     )
 
 

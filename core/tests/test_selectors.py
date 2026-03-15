@@ -71,3 +71,29 @@ class PresupuestoSelectorsTests(TestCase):
         self.assertEqual(resumen['total_pendientes_por_cobrar'], 1)
         self.assertEqual(resumen['total_pagados'], 1)
         self.assertEqual(resumen['monto_por_cobrar'], 500000)
+
+    def test_aggregate_presupuesto_metrics_respeta_estado_manual(self):
+        RegistroPresupuesto.objects.create(
+            carga=self.carga,
+            fila_origen=1,
+            presupuesto='PRES-MANUAL-PEND',
+            nota_pedido='OC-777',
+            estado_manual='pendiente',
+            valor='300000',
+        )
+        RegistroPresupuesto.objects.create(
+            carga=self.carga,
+            fila_origen=2,
+            presupuesto='PRES-MANUAL-FACT',
+            nota_pedido='OC-778',
+            estado_manual='facturado',
+            valor='400000',
+        )
+
+        resumen = aggregate_presupuesto_metrics(inventario_presupuestos_queryset())
+
+        self.assertEqual(resumen['total_pendientes_aprobacion'], 1)
+        self.assertEqual(resumen['total_aceptados'], 1)
+        self.assertEqual(resumen['total_facturados'], 1)
+        self.assertEqual(resumen['total_pendientes_por_cobrar'], 1)
+        self.assertEqual(resumen['monto_por_cobrar'], 400000)

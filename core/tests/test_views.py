@@ -141,7 +141,7 @@ class DashboardViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Pendientes por cobrar')
-        self.assertContains(response, 'Trabajos aceptados con nota de pedido que aún no pasan a estado pagado.')
+        self.assertContains(response, 'Trabajos aceptados o realizados que aún no pasan a estado pagado.')
         self.assertNotContains(response, 'Pendientes de aprobación')
 
     def test_dashboard_requiere_permiso_de_acceso(self):
@@ -153,6 +153,32 @@ class DashboardViewTests(TestCase):
 
         self.assertEqual(response.status_code, 403)
         self.assertContains(response, 'No tienes acceso a esta operación', status_code=403)
+
+    @patch('core.views_dashboard.obtener_indicadores', return_value={'uf': 'N/D', 'dolar': 'N/D', 'utm': 'N/D'})
+    def test_dashboard_respeta_estado_manual_en_totales(self, _mock_indicadores):
+        RegistroPresupuesto.objects.create(
+            carga=self.carga,
+            fila_origen=3,
+            presupuesto='MANUAL-PEND',
+            nota_pedido='OC-125',
+            estado_manual='pendiente',
+            valor='500000',
+        )
+        RegistroPresupuesto.objects.create(
+            carga=self.carga,
+            fila_origen=4,
+            presupuesto='MANUAL-FACT',
+            nota_pedido='OC-126',
+            estado_manual='facturado',
+            valor='900000',
+        )
+
+        response = self.client.get(reverse('dashboard'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['total_con_nota_pedido'], 3)
+        self.assertEqual(response.context['total_pendientes_por_cobrar'], 2)
+        self.assertEqual(response.context['total_monto_por_cobrar'], 1150000)
 
 
 class ListadoClientesAccessTests(TestCase):
@@ -265,7 +291,7 @@ class TemplateSmokeTests(TestCase):
     def setUp(self):
         self.usuario = User.objects.create_user(username='smoke', password='secreta123')
         permisos = Permission.objects.filter(
-            codename__in=['view_cliente', 'view_personaltrabajo', 'view_registropresupuesto']
+            codename__in=['view_cliente', 'view_personaltrabajo', 'view_registropresupuesto', 'view_documento']
         )
         self.usuario.user_permissions.add(*permisos)
         self.client.force_login(self.usuario)
@@ -283,6 +309,15 @@ class TemplateSmokeTests(TestCase):
             descripcion='Smoke',
             valor='1000',
         )
+        departamento = Departamento.objects.create(nombre='Calidad smoke')
+        tipo = TipoDocumento.objects.create(nombre='Procedimiento smoke')
+        Documento.objects.create(
+            titulo='Documento smoke',
+            tipo_documento=tipo,
+            departamento=departamento,
+            archivo_actual='documentos/smoke.pdf',
+            creado_por=self.usuario,
+        )
 
     def test_rutas_principales_con_plantillas_nuevas_renderizan(self):
         rutas = [
@@ -291,6 +326,7 @@ class TemplateSmokeTests(TestCase):
             reverse('listar_presupuestos_gestion'),
             reverse('listar_presupuestos'),
             reverse('historial_presupuesto', args=[self.registro.id]),
+            reverse('listar_documentos'),
         ]
 
         for ruta in rutas:

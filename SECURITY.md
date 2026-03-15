@@ -23,7 +23,7 @@ Escala usada:
 | Inyección SQL | Cumple | Uso de ORM de Django | Evitar consultas SQL raw sin parametrización. |
 | Autenticación resistente a abuso | Parcial | Login con rate limiting por IP/usuario en la vista de acceso | Evaluar bloqueo más avanzado, observabilidad y posible MFA según criticidad. |
 | Subida segura de archivos | Parcial | `core/forms.py` valida extensión, tamaño y tipo informado para documentos y planillas | Falta validación más profunda de contenido y política final de formatos permitidos por negocio. |
-| Logging y auditoría | Parcial | Auditoría de negocio con degradación segura, logger `security` y registro de bloqueos, permisos denegados y rechazos de archivos | Consolidar alertas operativas y correlación con monitoreo externo. |
+| Logging y auditoría | Parcial | Auditoría de negocio con degradación segura, logger `security`, alerta crítica ante falla sostenida y registro de bloqueos, permisos denegados y rechazos de archivos | Conectar `security.log` a monitoreo externo y revisar eventos sin persistencia. |
 | Manejo de errores de seguridad | Parcial | Respuesta 403 personalizada y vista de fallo CSRF con logging | Revisar experiencia final en producción y cobertura adicional para otros errores sensibles. |
 | Encabezados HTTP de seguridad | Parcial | `settings_prod.py` cubre HSTS, cookies seguras, `X-Frame-Options`, `Referrer-Policy` | Evaluar CSP y revisar configuración efectiva en producción. |
 | Dependencias y despliegue | Parcial | `Dockerfile` usa usuario no root y `HEALTHCHECK` | Incorporar revisión de dependencias y checklist de despliegue seguro. |

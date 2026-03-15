@@ -1,107 +1,146 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Documentos</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-            background: #f5f7fa;
-            color: #222;
-        }
-        h2 {
-            color: #1f3c88;
-        }
-        .topbar {
-            margin-bottom: 20px;
-        }
-        .btn {
-            display: inline-block;
-            padding: 10px 16px;
-            margin-right: 10px;
-            background: #1f3c88;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-        }
-        .btn.logout {
-            background: #b02a37;
-        }
-        .card {
-            background: white;
-            padding: 14px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-        }
-    </style>
-</head>
-<body>
-    <h2>Documentos</h2>
-    <div class="topbar">
-        <a class="btn" href="/subir/">Subir nuevo documento</a>
-        <a class="btn" href="/admin/">Administración</a>
-    <div style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom:20px;">
-        <div class="card" style="min-width:180px;">
-            <strong>Total documentos</strong><br>
-            {{ total_documentos }}
-        </div>
-        <div class="card" style="min-width:180px;">
-            <strong>Departamentos</strong><br>
-            {{ total_departamentos }}
-        </div>
-        <div class="card" style="min-width:180px;">
-            <strong>Tipos de documento</strong><br>
-            {{ total_tipos }}
-        </div>
-        <div class="card" style="min-width:180px;">
-            <strong>Versiones registradas</strong><br>
-            {{ total_versiones }}
+{% extends "base.html" %}
+
+{% block title %}Documentos | Gestión Documental{% endblock %}
+
+{% block content %}
+<section class="hero-panel p-4 p-lg-5 mb-4">
+    <span class="eyebrow mb-3">Repositorio central</span>
+    <h1 class="page-title mb-2">Documentos</h1>
+    <p class="mb-0 text-white-50">Controla versiones, accesos y vínculo con presupuestos desde una sola vista.</p>
+</section>
+
+<section class="row g-3 mb-4">
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="data-stat p-4 h-100">
+            <div class="muted-label">Total documentos</div>
+            <div class="value">{{ total_documentos }}</div>
         </div>
     </div>
-    <form action="/accounts/logout/" method="post" style="display:inline;">
-        {% csrf_token %}
-        <button type="submit" class="btn logout" style="border:none; cursor:pointer;">Salir</button>
-    </form>
-
-    <form method="get" style="margin-top:20px;">
-        <input type="text" name="q" placeholder="Buscar por título..." value="{{ request.GET.q }}" style="padding:8px; width:220px;">
-
-        <select name="tipo" style="padding:8px;">
-            <option value="">-- Tipo de documento --</option>
-            {% for tipo in tipos %}
-                <option value="{{ tipo.id }}" {% if request.GET.tipo == tipo.id|stringformat:"s" %}selected{% endif %}>
-                    {{ tipo.nombre }}
-                </option>
-            {% endfor %}
-        </select>
-
-        <select name="departamento" style="padding:8px;">
-            <option value="">-- Departamento --</option>
-            {% for depto in departamentos %}
-                <option value="{{ depto.id }}" {% if request.GET.departamento == depto.id|stringformat:"s" %}selected{% endif %}>
-                    {{ depto.nombre }}
-                </option>
-            {% endfor %}
-        </select>
-
-        <button type="submit" class="btn">Filtrar</button>
-    </form>
-</div>
-    {% for doc in docs %}
-        <div class="card">
-            <strong>{{ doc.titulo }}</strong><br>
-            Tipo: {{ doc.tipo_documento }}<br>
-            Departamento: {{ doc.departamento }}<br>
-            <a href="{{ doc.archivo_actual.url }}">Descargar</a><br>
-            <a href="/version/{{ doc.id }}/">Subir nueva versión</a><br>
-            <a href="/historial/{{ doc.id }}/">Ver historial</a>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="data-stat p-4 h-100">
+            <div class="muted-label">Departamentos</div>
+            <div class="value">{{ total_departamentos }}</div>
         </div>
-    {% empty %}
-        <div class="card">
-            No hay documentos cargados todavía.
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="data-stat p-4 h-100">
+            <div class="muted-label">Tipos de documento</div>
+            <div class="value">{{ total_tipos }}</div>
         </div>
-    {% endfor %}
-</body>
-</html>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="data-stat p-4 h-100">
+            <div class="muted-label">Versiones registradas</div>
+            <div class="value">{{ total_versiones }}</div>
+        </div>
+    </div>
+</section>
+
+<section class="surface-card p-4 p-lg-5 mb-4">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+        <div>
+            <p class="section-title mb-1">Búsqueda y filtros</p>
+            <div class="footer-note">Filtra por título, tipo documental o área responsable.</div>
+        </div>
+        {% if perms.core.add_documento %}
+            <a href="{% url 'subir_documento' %}" class="btn btn-brand rounded-pill px-4">Subir documento</a>
+        {% endif %}
+    </div>
+
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-12 col-lg-6">
+            <label class="form-label" for="q">Buscar</label>
+            <input class="form-control" id="q" type="text" name="q" value="{{ request.GET.q }}" placeholder="Título del documento">
+        </div>
+        <div class="col-12 col-md-6 col-lg-3">
+            <label class="form-label" for="tipo">Tipo</label>
+            <select class="form-select" id="tipo" name="tipo">
+                <option value="">Todos</option>
+                {% for tipo in tipos %}
+                    <option value="{{ tipo.id }}" {% if request.GET.tipo == tipo.id|stringformat:"s" %}selected{% endif %}>
+                        {{ tipo.nombre }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-12 col-md-6 col-lg-3">
+            <label class="form-label" for="departamento">Departamento</label>
+            <select class="form-select" id="departamento" name="departamento">
+                <option value="">Todos</option>
+                {% for departamento in departamentos %}
+                    <option value="{{ departamento.id }}" {% if request.GET.departamento == departamento.id|stringformat:"s" %}selected{% endif %}>
+                        {{ departamento.nombre }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-12 d-flex flex-column flex-md-row gap-2">
+            <button type="submit" class="btn btn-brand rounded-pill px-4">Aplicar filtros</button>
+            <a href="{% url 'listar_documentos' %}" class="btn btn-soft rounded-pill px-4">Limpiar</a>
+        </div>
+    </form>
+</section>
+
+<section class="surface-card p-4 p-lg-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <p class="section-title mb-1">Repositorio activo</p>
+            <div class="footer-note">{{ docs|length }} documento(s) visibles con su versión actual.</div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        {% for doc in docs %}
+            <div class="col-12 col-xl-6">
+                <article class="document-card p-4 h-100">
+                    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3">
+                        <div>
+                            <h2 class="h5 mb-1">{{ doc.titulo }}</h2>
+                            <div class="muted-label">{{ doc.tipo_documento }} · {{ doc.departamento }}</div>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 align-self-start">
+                            <span class="badge badge-soft rounded-pill">v{{ doc.version_actual }}</span>
+                            <span class="badge badge-confidencialidad-{{ doc.nivel_confidencialidad }} rounded-pill">
+                                Confidencialidad {{ doc.get_nivel_confidencialidad_display|lower }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <p class="mb-3">{{ doc.descripcion|default:"Sin descripción registrada." }}</p>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-sm-6">
+                            <div class="muted-label">Presupuestos vinculados</div>
+                            <div class="fw-semibold">{{ doc.presupuestos.count }}</div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="muted-label">Estado</div>
+                            <div class="fw-semibold">{{ doc.get_estado_display }}</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{{ doc.archivo_actual.url }}" class="btn btn-brand btn-sm rounded-pill" download>Descargar</a>
+                        {% if perms.core.add_versiondocumento %}
+                            <a href="{% url 'subir_version' doc.id %}" class="btn btn-soft btn-sm rounded-pill">Nueva versión</a>
+                        {% endif %}
+                        <a href="{% url 'historial_versiones' doc.id %}" class="btn btn-soft btn-sm rounded-pill">Historial</a>
+                        {% if perms.core.change_documento %}
+                            <a href="{% url 'editar_documento' doc.id %}" class="btn btn-soft btn-sm rounded-pill">Editar</a>
+                        {% endif %}
+                        {% if perms.core.delete_documento %}
+                            <a href="{% url 'eliminar_documento' doc.id %}" class="btn btn-outline-danger btn-sm rounded-pill">Eliminar</a>
+                        {% endif %}
+                    </div>
+                </article>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="document-card p-4 text-center muted-label">
+                    No hay documentos cargados todavía.
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

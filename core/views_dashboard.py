@@ -8,7 +8,7 @@ from .models import CargaPresupuesto, RegistroPresupuesto
 from .selectors.presupuestos import (
     aggregate_presupuesto_metrics,
     inventario_presupuestos_queryset,
-    q_aceptado,
+    q_aceptado_efectivo,
 )
 from .services.access import model_access_required
 from .services.indicators import obtener_indicadores
@@ -17,7 +17,7 @@ from .services.indicators import obtener_indicadores
 @login_required
 @model_access_required('core', 'registropresupuesto')
 def dashboard(request):
-    indicadores = obtener_indicadores()
+    indicadores = obtener_indicadores(solo_cache=True)
     ahora = localtime()
     inventario_actual = inventario_presupuestos_queryset().prefetch_related('documentos')
     resumen = aggregate_presupuesto_metrics(inventario_actual)
@@ -25,7 +25,7 @@ def dashboard(request):
         inventario_actual.select_related('carga', 'actualizado_por').annotate(
             fecha_gestion=Coalesce('fecha_actualizacion', 'carga__fecha_carga'),
             orden_nota=Case(
-                When(q_aceptado(), then=Value(1)),
+                When(q_aceptado_efectivo(), then=Value(1)),
                 default=Value(0),
             ),
         ).order_by('-orden_nota', '-fecha_gestion', 'presupuesto')[:12]
@@ -37,7 +37,7 @@ def dashboard(request):
         {
             'cantidad': resumen['total_pendientes_por_cobrar'],
             'titulo': 'Pendientes por cobrar',
-            'detalle': 'Trabajos aceptados con nota de pedido que aún no pasan a estado pagado.',
+            'detalle': 'Trabajos aceptados o realizados que aún no pasan a estado pagado.',
         },
         {
             'titulo': 'Trabajos pagados',

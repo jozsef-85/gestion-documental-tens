@@ -166,7 +166,7 @@
                     <p class="section-kicker mb-2">Resumen ejecutivo</p>
                     <h2 class="section-title">ACTIVIDAD DE TRABAJOS ACEPTADOS</h2>
                 </div>
-                <p class="footer-note mb-0">El control parte desde trabajos aceptados con nota de pedido / O.C.</p>
+                <p class="footer-note mb-0">El control consolida estados efectivos, incluyendo ajustes manuales cuando existen.</p>
             </div>
 
             <div class="row g-3">
@@ -174,7 +174,7 @@
                     <div class="data-stat counter-card p-4 h-100">
                         <div class="d-flex align-items-center gap-2 mb-2">
                             <span class="status-dot status-curso"></span>
-                            <div class="muted-label">Aceptados con O.C.</div>
+                            <div class="muted-label">Aceptados / realizados</div>
                         </div>
                         <div class="value">{{ total_con_nota_pedido }}</div>
                     </div>
@@ -219,7 +219,7 @@
                         </div>
                         <div class="status-badge">
                             <span class="status-dot status-curso"></span>
-                            Con O.C.: {{ total_con_nota_pedido }}
+                            Activos con gestión: {{ total_con_nota_pedido }}
                         </div>
                     </div>
 
@@ -249,7 +249,7 @@
                                             </span>
                                         </td>
                                         <td>
-                                            {% if registro.nota_pedido and registro.estado_seguimiento != 'Pagado' %}
+                                            {% if registro.estado_seguimiento != 'Pagado' and registro.estado_seguimiento != 'Pendiente de aprobación' %}
                                                 {{ registro.valor|clp }}
                                             {% else %}
                                                 <span class="muted-label">No aplica</span>

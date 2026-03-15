@@ -25,6 +25,12 @@ Archivos esperados:
 - `app.log`: eventos generales de Django y la aplicación
 - `security.log`: autenticación, permisos denegados, CSRF y rechazos de archivos
 
+Para recalentar la caché de indicadores sin depender del primer request del dashboard:
+
+```bash
+python manage.py refresh_indicadores
+```
+
 ## Convenciones de desarrollo
 
 ### Migraciones de Django

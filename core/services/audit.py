@@ -1,10 +1,14 @@
 import logging
 
+from django.core.cache import cache
+
 from .helpers import obtener_ip_cliente
 from ..models import Auditoria
 
 
 security_logger = logging.getLogger('security')
+ALERT_CACHE_KEY = 'core.audit.failure.alerted'
+ALERT_CACHE_TIMEOUT = 300
 
 
 def registrar_auditoria(request, accion, entidad, entidad_id=None, detalle=''):
@@ -26,3 +30,8 @@ def registrar_auditoria(request, accion, entidad, entidad_id=None, detalle=''):
             getattr(request.user, 'username', 'anonimo'),
             exc,
         )
+        if not cache.get(ALERT_CACHE_KEY):
+            security_logger.critical(
+                'La auditoría está fallando y se están perdiendo eventos. Revisar base de datos o almacenamiento de inmediato.'
+            )
+            cache.set(ALERT_CACHE_KEY, True, ALERT_CACHE_TIMEOUT)
