@@ -3,5 +3,19 @@ services:
     build: .
     container_name: gestion_documental_app
     restart: unless-stopped
+    environment:
+      DJANGO_ENV: ${DJANGO_ENV:-development}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-django-insecure-local-development-key-change-me}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-True}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:-http://localhost:8000,http://127.0.0.1:8000}
+      DJANGO_DB_ENGINE: ${DJANGO_DB_ENGINE:-postgresql}
+      DJANGO_DB_NAME: ${DJANGO_DB_NAME:-gestion_documental}
+      DJANGO_DB_USER: ${DJANGO_DB_USER:-gestdoc_user}
+      DJANGO_DB_PASSWORD: ${DJANGO_DB_PASSWORD:-gestdoc_password}
+      DJANGO_DB_HOST: ${DJANGO_DB_HOST:-localhost}
+      DJANGO_DB_PORT: ${DJANGO_DB_PORT:-5432}
+      DJANGO_STATIC_ROOT: ${DJANGO_STATIC_ROOT:-/app/static}
+      DJANGO_MEDIA_ROOT: ${DJANGO_MEDIA_ROOT:-/app/media}
     ports:
       - "8001:8000"

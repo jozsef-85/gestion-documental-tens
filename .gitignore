@@ -7,3 +7,6 @@ db.sqlite3
 *.sqlite3
 .env
 .env.*
+media/
+static/
+test-media/

@@ -9,10 +9,15 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
+RUN useradd --create-home appuser
+
 COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt gunicorn
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /app/
+RUN mkdir -p /app/static /app/media && chown -R appuser:appuser /app
+
+USER appuser
 
 EXPOSE 8000
 
