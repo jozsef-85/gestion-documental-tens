@@ -6,11 +6,16 @@
 
 {% block extra_head %}
 <style>
+    .login-page main.container {
+        display: grid;
+        min-height: calc(100vh - 76px);
+        padding-block: 1rem !important;
+    }
+
     .login-shell {
-        min-height: calc(100vh - 10rem);
+        min-height: 100%;
         display: grid;
         align-items: center;
-        padding-block: 1rem;
     }
 
     .login-layout {
@@ -25,7 +30,7 @@
     .login-aside {
         position: relative;
         min-height: 100%;
-        padding: 2rem;
+        padding: 1.75rem;
         background: linear-gradient(155deg, rgba(18, 52, 77, 0.98), rgba(31, 95, 139, 0.92));
         color: #fff;
     }
@@ -45,8 +50,12 @@
     }
 
     .login-form {
-        padding: 2rem;
+        padding: 1.75rem;
         order: 1;
+    }
+
+    .login-form .alert {
+        margin-bottom: 1rem;
     }
 
     .login-form label {
@@ -86,9 +95,13 @@
     }
 
     @media (max-width: 991.98px) {
+        .login-page main.container {
+            min-height: auto;
+            padding-block: 0.75rem !important;
+        }
+
         .login-shell {
             min-height: auto;
-            padding-block: 0;
         }
 
         .login-panel {
@@ -127,7 +140,7 @@
 
         .login-form,
         .login-aside {
-            padding: 2.5rem;
+            padding: 2rem;
         }
 
         .login-form {
