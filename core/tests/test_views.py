@@ -261,6 +261,43 @@ class ControlPresupuestosViewTests(TestCase):
         )
 
 
+class TemplateSmokeTests(TestCase):
+    def setUp(self):
+        self.usuario = User.objects.create_user(username='smoke', password='secreta123')
+        permisos = Permission.objects.filter(
+            codename__in=['view_cliente', 'view_personaltrabajo', 'view_registropresupuesto']
+        )
+        self.usuario.user_permissions.add(*permisos)
+        self.client.force_login(self.usuario)
+        self.carga = CargaPresupuesto.objects.create(
+            nombre='Carga smoke',
+            hoja='Hoja1',
+            total_registros=1,
+            creado_por=self.usuario,
+            archivo='presupuestos/smoke.xlsx',
+        )
+        self.registro = RegistroPresupuesto.objects.create(
+            carga=self.carga,
+            fila_origen=1,
+            presupuesto='PRES-SMOKE',
+            descripcion='Smoke',
+            valor='1000',
+        )
+
+    def test_rutas_principales_con_plantillas_nuevas_renderizan(self):
+        rutas = [
+            reverse('listar_clientes'),
+            reverse('listar_personal'),
+            reverse('listar_presupuestos_gestion'),
+            reverse('listar_presupuestos'),
+            reverse('historial_presupuesto', args=[self.registro.id]),
+        ]
+
+        for ruta in rutas:
+            response = self.client.get(ruta)
+            self.assertEqual(response.status_code, 200, ruta)
+
+
 @override_settings(LOGIN_RATE_LIMIT_ATTEMPTS=2, LOGIN_RATE_LIMIT_WINDOW=60)
 class LoginRateLimitTests(TestCase):
     def setUp(self):

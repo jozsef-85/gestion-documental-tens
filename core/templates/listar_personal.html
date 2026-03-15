@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Personal | Gestión Documental{% endblock %}
+
+{% block content %}
+<section class="hero-panel p-4 p-lg-5 mb-4">
+    <span class="eyebrow mb-3">RR. HH.</span>
+    <h1 class="page-title mb-2">Personal de trabajo</h1>
+    <p class="mb-0 text-white-50">Consulta el maestro de personal y mantén actualizada la estructura operativa.</p>
+</section>
+
+<section class="row g-3 mb-4">
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="data-stat p-4 h-100">
+            <div class="muted-label">Total personal</div>
+            <div class="value">{{ total_personal }}</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="data-stat p-4 h-100">
+            <div class="muted-label">Activos</div>
+            <div class="value">{{ total_activos }}</div>
+        </div>
+    </div>
+    <div class="col-12 col-xl-6">
+        <div class="surface-card p-4 h-100">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-12 col-md-7">
+                    <label class="form-label" for="q">Buscar</label>
+                    <input class="form-control" id="q" type="text" name="q" value="{{ request.GET.q }}" placeholder="Nombre, cargo, área o email">
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label" for="estado">Estado</label>
+                    <select class="form-select" id="estado" name="estado">
+                        <option value="">Todos</option>
+                        <option value="activos" {% if request.GET.estado == 'activos' %}selected{% endif %}>Activos</option>
+                        <option value="inactivos" {% if request.GET.estado == 'inactivos' %}selected{% endif %}>Inactivos</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-2 d-grid">
+                    <button type="submit" class="btn btn-brand rounded-pill">Filtrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+<section class="surface-card p-4 p-lg-5">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+        <div>
+            <p class="section-title mb-1">Listado</p>
+            <div class="footer-note">Información del equipo ordenada por nombre.</div>
+        </div>
+        {% if perms.core.add_personaltrabajo %}
+            <a href="{% url 'crear_personal' %}" class="btn btn-brand rounded-pill px-4">Nuevo registro</a>
+        {% endif %}
+    </div>
+
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Cargo</th>
+                    <th>Área</th>
+                    <th>Email</th>
+                    <th>Estado</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in personal %}
+                    <tr>
+                        <td class="fw-semibold">{{ item.nombre }}</td>
+                        <td>{{ item.cargo }}</td>
+                        <td>{{ item.area|default:"Sin área" }}</td>
+                        <td>{{ item.email|default:"Sin email" }}</td>
+                        <td>
+                            {% if item.activo %}
+                                <span class="badge badge-soft rounded-pill">Activo</span>
+                            {% else %}
+                                <span class="badge text-bg-secondary rounded-pill">Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if perms.core.change_personaltrabajo %}
+                                <a href="{% url 'editar_personal' item.id %}" class="btn btn-soft btn-sm rounded-pill">Editar</a>
+                            {% endif %}
+                            {% if perms.core.delete_personaltrabajo %}
+                                <a href="{% url 'eliminar_personal' item.id %}" class="btn btn-outline-danger btn-sm rounded-pill">Eliminar</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center muted-label py-4">No hay registros de personal para mostrar.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

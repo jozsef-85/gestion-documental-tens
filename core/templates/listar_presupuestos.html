@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% load moneda %}
+
+{% block title %}Control de presupuestos | Gestión Documental{% endblock %}
+
+{% block content %}
+<section class="hero-panel p-4 p-lg-5 mb-4">
+    <span class="eyebrow mb-3">Control operativo</span>
+    <h1 class="page-title mb-2">Seguimiento de presupuestos</h1>
+    <p class="mb-0 text-white-50">Control detallado del flujo comercial, operativo y de cobro.</p>
+</section>
+
+<section class="row g-3 mb-4">
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="data-stat p-4 h-100">
+            <div class="muted-label">Pagados</div>
+            <div class="value">{{ total_pagados }}</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="data-stat p-4 h-100">
+            <div class="muted-label">Facturados</div>
+            <div class="value">{{ total_facturados }}</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="data-stat p-4 h-100">
+            <div class="muted-label">En proceso</div>
+            <div class="value">{{ total_en_proceso }}</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="data-stat p-4 h-100">
+            <div class="muted-label">Cargas</div>
+            <div class="value">{{ total_cargas_presupuesto }}</div>
+        </div>
+    </div>
+</section>
+
+<section class="surface-card p-4 p-lg-5 mb-4">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-12 col-lg-5">
+            <label class="form-label" for="q">Buscar</label>
+            <input class="form-control" id="q" type="text" name="q" value="{{ request.GET.q }}" placeholder="Presupuesto, solicitante, O.C., factura o recepción">
+        </div>
+        <div class="col-12 col-lg-2">
+            <label class="form-label" for="estado">Estado</label>
+            <select class="form-select" id="estado" name="estado">
+                <option value="">Todos</option>
+                <option value="pendiente" {% if request.GET.estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                <option value="en_proceso" {% if request.GET.estado == 'en_proceso' %}selected{% endif %}>En proceso</option>
+                <option value="facturado" {% if request.GET.estado == 'facturado' %}selected{% endif %}>Facturado</option>
+                <option value="pagado" {% if request.GET.estado == 'pagado' %}selected{% endif %}>Pagado</option>
+            </select>
+        </div>
+        <div class="col-12 col-lg-3">
+            <label class="form-label" for="carga">Carga</label>
+            <input class="form-control" id="carga" type="text" name="carga" value="{{ request.GET.carga }}" placeholder="ID de carga">
+        </div>
+        <div class="col-12 col-lg-2 d-grid">
+            <button type="submit" class="btn btn-brand rounded-pill">Filtrar</button>
+        </div>
+    </form>
+</section>
+
+<section class="surface-card p-4 p-lg-5">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+        <div>
+            <p class="section-title mb-1">Registros</p>
+            <div class="footer-note">{{ total_filtrados }} resultado(s). {% if selected_carga %}Carga seleccionada: {{ selected_carga.nombre }}.{% endif %}</div>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            {% if perms.core.add_registropresupuesto %}
+                <a href="{% url 'crear_presupuesto' %}" class="btn btn-soft rounded-pill px-4">Nuevo registro</a>
+            {% endif %}
+            {% if perms.core.add_cargapresupuesto %}
+                <a href="{% url 'subir_presupuesto' %}" class="btn btn-brand rounded-pill px-4">Subir planilla</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Presupuesto</th>
+                    <th>Solicitante</th>
+                    <th>Estado</th>
+                    <th>Factura</th>
+                    <th>Pago</th>
+                    <th>Valor</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for registro in registros %}
+                    <tr>
+                        <td class="fw-semibold">{{ registro.presupuesto }}</td>
+                        <td>{{ registro.solicitante|default:"Sin solicitante" }}</td>
+                        <td>{{ registro.estado_seguimiento }}</td>
+                        <td>{{ registro.factura|default:"Sin factura" }}</td>
+                        <td>{{ registro.fecha_pago_texto|default:"Sin pago" }}</td>
+                        <td>{{ registro.valor|clp }}</td>
+                        <td class="text-end">
+                            <a href="{% url 'historial_presupuesto' registro.id %}" class="btn btn-soft btn-sm rounded-pill">Historial</a>
+                            {% if perms.core.change_registropresupuesto %}
+                                <a href="{% url 'editar_presupuesto' registro.id %}" class="btn btn-soft btn-sm rounded-pill">Editar</a>
+                            {% endif %}
+                            {% if perms.core.delete_registropresupuesto %}
+                                <a href="{% url 'eliminar_presupuesto' registro.id %}" class="btn btn-outline-danger btn-sm rounded-pill">Eliminar</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center muted-label py-4">No hay registros para mostrar.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
