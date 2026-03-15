@@ -1,57 +1,153 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Iniciar sesión</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f5f7fa;
-            color: #222;
-            margin: 40px;
-        }
-        .box {
-            max-width: 420px;
-            margin: 60px auto;
-            background: white;
-            padding: 24px;
-            border-radius: 8px;
-            box-shadow: 0 1px 6px rgba(0,0,0,0.08);
-        }
-        h1 {
-            margin-top: 0;
-            color: #1f3c88;
-        }
-        button {
-            padding: 10px 16px;
-            background: #1f3c88;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-        input {
-            width: 100%;
-            padding: 8px;
-            margin-top: 4px;
-            margin-bottom: 12px;
-            box-sizing: border-box;
-        }
-    </style>
-</head>
-<body>
-    <div class="box">
-        <h1>Iniciar sesión</h1>
+{% extends "base.html" %}
 
-        {% if form.errors %}
-            <p style="color:red;">Usuario o contraseña incorrectos.</p>
-        {% endif %}
+{% block title %}Iniciar sesion | Gestion Documental{% endblock %}
 
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Entrar</button>
-        </form>
+{% block body_class %}login-page{% endblock %}
+
+{% block extra_head %}
+<style>
+    .login-shell {
+        min-height: calc(100vh - 10rem);
+        display: grid;
+        align-items: center;
+    }
+
+    .login-layout {
+        display: grid;
+        gap: 1.5rem;
+    }
+
+    .login-panel {
+        overflow: hidden;
+    }
+
+    .login-aside {
+        position: relative;
+        min-height: 100%;
+        padding: 2rem;
+        background: linear-gradient(155deg, rgba(18, 52, 77, 0.98), rgba(31, 95, 139, 0.92));
+        color: #fff;
+    }
+
+    .login-aside::after {
+        content: "";
+        position: absolute;
+        inset: auto -4rem -5rem auto;
+        width: 14rem;
+        height: 14rem;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .login-note {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .login-form {
+        padding: 2rem;
+    }
+
+    .login-form label {
+        font-weight: 600;
+        margin-bottom: 0.45rem;
+    }
+
+    .login-form input {
+        width: 100%;
+        min-height: 3rem;
+        padding: 0.75rem 0.95rem;
+        border: 1px solid #c8d5e1;
+        border-radius: 0.9rem;
+        background: #fff;
+    }
+
+    .login-form input:focus {
+        outline: 0;
+        border-color: var(--brand-blue);
+        box-shadow: 0 0 0 0.25rem rgba(31, 95, 139, 0.12);
+    }
+
+    .login-form .helptext {
+        display: none;
+    }
+
+    .login-form ul.errorlist {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 0.5rem;
+        color: #b42318;
+        font-size: 0.92rem;
+    }
+
+    @media (min-width: 992px) {
+        .login-layout {
+            grid-template-columns: minmax(18rem, 24rem) minmax(20rem, 28rem);
+        }
+
+        .login-form,
+        .login-aside {
+            padding: 2.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="login-shell">
+    <div class="login-layout surface-card login-panel mx-auto w-100" style="max-width: 980px;">
+        <aside class="login-aside">
+            <span class="eyebrow mb-3">Acceso seguro</span>
+            <h1 class="page-title mb-3">Gestion documental para operacion y seguimiento</h1>
+            <p class="login-note mb-4">
+                Ingresa con tu usuario corporativo para revisar presupuestos, respaldos y actividad comercial.
+            </p>
+            <div class="d-grid gap-3">
+                <div class="surface-card p-3 bg-transparent border border-light border-opacity-25">
+                    <div class="small text-white-50 text-uppercase fw-semibold mb-1">Incluye</div>
+                    <div class="fw-semibold">Dashboard, control documental y trazabilidad</div>
+                </div>
+                <div class="surface-card p-3 bg-transparent border border-light border-opacity-25">
+                    <div class="small text-white-50 text-uppercase fw-semibold mb-1">Soporte</div>
+                    <div class="fw-semibold">Si tu acceso falla, contacta al administrador del sistema</div>
+                </div>
+            </div>
+        </aside>
+
+        <div class="login-form">
+            <div class="mb-4">
+                <span class="eyebrow text-bg-light border">Inicio de sesion</span>
+                <h2 class="section-title mt-3 mb-2" style="font-size: 1.6rem;">Bienvenido</h2>
+                <p class="muted-label mb-0">Usa tus credenciales para continuar.</p>
+            </div>
+
+            {% if form.non_field_errors or form.errors %}
+                <div class="alert alert-danger" role="alert">
+                    Usuario o contrasena incorrectos. Revisa tus credenciales e intenta nuevamente.
+                </div>
+            {% endif %}
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label for="{{ form.username.id_for_label }}">Usuario</label>
+                    {{ form.username }}
+                    {{ form.username.errors }}
+                </div>
+
+                <div class="mb-4">
+                    <label for="{{ form.password.id_for_label }}">Contrasena</label>
+                    {{ form.password }}
+                    {{ form.password.errors }}
+                </div>
+
+                {% if next %}
+                    <input type="hidden" name="next" value="{{ next }}">
+                {% endif %}
+
+                <button type="submit" class="btn btn-brand w-100 py-3 rounded-4">Entrar</button>
+            </form>
+        </div>
     </div>
-</body>
-</html>
+</section>
+{% endblock %}
