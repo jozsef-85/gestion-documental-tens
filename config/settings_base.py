@@ -13,6 +13,13 @@ DEFAULT_STORAGE_ROOT = BASE_DIR.parent if (BASE_DIR.parent / 'media').exists() o
 CURRENT_ENVIRONMENT = os.getenv('DJANGO_ENV', 'development').strip().lower() or 'development'
 IS_PRODUCTION = CURRENT_ENVIRONMENT in {'prod', 'production'}
 
+try:
+    import whitenoise  # noqa: F401
+except ModuleNotFoundError:
+    HAS_WHITENOISE = False
+else:
+    HAS_WHITENOISE = True
+
 
 SECRET_KEY = config('DJANGO_SECRET_KEY', default='django-insecure-local-development-key-change-me')
 DEBUG = config('DJANGO_DEBUG', default=False, cast=bool)
@@ -42,6 +49,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+if HAS_WHITENOISE:
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 ROOT_URLCONF = 'config.urls'
 
@@ -110,6 +120,18 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = config('DJANGO_STATIC_ROOT', default=str(DEFAULT_STORAGE_ROOT / 'static'))
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': (
+            'whitenoise.storage.CompressedManifestStaticFilesStorage'
+            if HAS_WHITENOISE
+            else 'django.contrib.staticfiles.storage.StaticFilesStorage'
+        ),
+    },
+}
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = config('DJANGO_MEDIA_ROOT', default=str(DEFAULT_STORAGE_ROOT / 'media'))

@@ -31,6 +31,43 @@ Para recalentar la caché de indicadores sin depender del primer request del das
 python manage.py refresh_indicadores
 ```
 
+## Docker
+
+El proyecto queda preparado para construir imagen y ejecutarse con `docker compose`.
+
+Preparación mínima:
+
+```bash
+cp .env.example .env
+```
+
+Ajusta en `.env` al menos:
+
+- `DJANGO_SECRET_KEY`
+- `DJANGO_ALLOWED_HOSTS`
+- `DJANGO_CSRF_TRUSTED_ORIGINS`
+- `DJANGO_DB_NAME`
+- `DJANGO_DB_USER`
+- `DJANGO_DB_PASSWORD`
+
+Primer arranque recomendado:
+
+```bash
+DJANGO_RUN_MIGRATIONS=1 docker compose up --build
+```
+
+Luego, para operación normal:
+
+```bash
+docker compose up -d
+```
+
+Notas:
+
+- La imagen excluye `.env`, `.git`, logs y archivos locales del contexto de build mediante `.dockerignore`.
+- Los estáticos se recopilan en el arranque del contenedor.
+- `docker-compose.yml` incluye PostgreSQL para facilitar despliegues autocontenidos.
+
 ## Convenciones de desarrollo
 
 ### Migraciones de Django

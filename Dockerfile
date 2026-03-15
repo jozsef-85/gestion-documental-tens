@@ -16,7 +16,9 @@ COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /app/
-RUN mkdir -p /app/static /app/media /app/logs && chown -R appuser:appuser /app
+RUN mkdir -p /app/static /app/media /app/logs \
+    && chmod +x /app/scripts/docker-entrypoint.sh \
+    && chown -R appuser:appuser /app
 
 USER appuser
 
@@ -24,4 +26,6 @@ EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 CMD curl -fsS http://localhost:8000/ || exit 1
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "config.wsgi:application"]
+ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
+
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "--access-logfile", "-", "--error-logfile", "-", "config.wsgi:application"]
