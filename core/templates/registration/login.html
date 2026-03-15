@@ -271,9 +271,15 @@
                 <p class="muted-label mb-0">Usa tus credenciales para continuar.</p>
             </div>
 
-            {% if form.non_field_errors or form.errors %}
+            {% if form.non_field_errors %}
                 <div class="alert alert-danger" role="alert">
-                    Usuario o contraseña incorrectos. Revisa tus credenciales e intenta nuevamente.
+                    {% for error in form.non_field_errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% elif form.errors %}
+                <div class="alert alert-danger" role="alert">
+                    Revisa los datos ingresados e intenta nuevamente.
                 </div>
             {% endif %}
 

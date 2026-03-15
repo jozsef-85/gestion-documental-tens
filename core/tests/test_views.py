@@ -2,6 +2,7 @@ import tempfile
 from unittest.mock import patch
 
 from django.contrib.auth.models import Permission, User
+from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -138,3 +139,37 @@ class DashboardViewTests(TestCase):
         self.assertContains(response, 'Pendientes por cobrar')
         self.assertContains(response, 'Trabajos aceptados con nota de pedido que aún no pasan a estado pagado.')
         self.assertNotContains(response, 'Pendientes de aprobación')
+
+
+@override_settings(LOGIN_RATE_LIMIT_ATTEMPTS=2, LOGIN_RATE_LIMIT_WINDOW=60)
+class LoginRateLimitTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.usuario = User.objects.create_user(username='acceso', password='clave-segura-123')
+
+    def test_bloquea_login_tras_demasiados_intentos_fallidos(self):
+        url = reverse('login')
+
+        self.client.post(url, {'username': 'acceso', 'password': 'incorrecta'}, REMOTE_ADDR='10.0.0.1')
+        response = self.client.post(url, {'username': 'acceso', 'password': 'incorrecta'}, REMOTE_ADDR='10.0.0.1')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Demasiados intentos de acceso fallidos')
+
+        response = self.client.post(url, {'username': 'acceso', 'password': 'clave-segura-123'}, REMOTE_ADDR='10.0.0.1')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Demasiados intentos de acceso fallidos')
+
+    def test_login_exitoso_limpia_contador_de_intentos(self):
+        url = reverse('login')
+
+        self.client.post(url, {'username': 'acceso', 'password': 'incorrecta'}, REMOTE_ADDR='10.0.0.2')
+        response = self.client.post(url, {'username': 'acceso', 'password': 'clave-segura-123'}, REMOTE_ADDR='10.0.0.2')
+
+        self.assertEqual(response.status_code, 302)
+
+        self.client.logout()
+        response = self.client.post(url, {'username': 'acceso', 'password': 'incorrecta'}, REMOTE_ADDR='10.0.0.2')
+
+        self.assertNotContains(response, 'Demasiados intentos de acceso fallidos')

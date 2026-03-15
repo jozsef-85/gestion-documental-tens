@@ -117,3 +117,6 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGIN_RATE_LIMIT_ATTEMPTS = config('DJANGO_LOGIN_RATE_LIMIT_ATTEMPTS', default=5, cast=int)
+LOGIN_RATE_LIMIT_WINDOW = config('DJANGO_LOGIN_RATE_LIMIT_WINDOW', default=900, cast=int)

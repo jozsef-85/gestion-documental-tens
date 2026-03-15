@@ -21,7 +21,7 @@ Escala usada:
 | Control de acceso | Parcial | Decoradores `login_required` y `permission_required` en `core/views_*.py` | Revisar si todas las vistas con solo login deben tener permisos más finos. |
 | CSRF y protección XSS por defecto | Cumple | Middleware estándar de Django y plantillas con autoescape | Mantener sin `csrf_exempt` salvo necesidad documentada. |
 | Inyección SQL | Cumple | Uso de ORM de Django | Evitar consultas SQL raw sin parametrización. |
-| Autenticación resistente a abuso | Parcial | Autenticación estándar de Django | Agregar rate limiting o bloqueo por intentos fallidos en login. |
+| Autenticación resistente a abuso | Parcial | Login con rate limiting por IP/usuario en la vista de acceso | Evaluar bloqueo más avanzado, observabilidad y posible MFA según criticidad. |
 | Subida segura de archivos | Parcial | `core/forms.py` valida extensión, tamaño y tipo informado para documentos y planillas | Falta validación más profunda de contenido y política final de formatos permitidos por negocio. |
 | Logging y auditoría | Parcial | `core/services/audit.py`, logging básico en `core/services/indicators.py` | Centralizar logs de seguridad y manejo de errores operativos. |
 | Encabezados HTTP de seguridad | Parcial | `settings_prod.py` cubre HSTS, cookies seguras, `X-Frame-Options`, `Referrer-Policy` | Evaluar CSP y revisar configuración efectiva en producción. |
@@ -39,9 +39,9 @@ python manage.py test
 
 1. Asegurar `DEBUG=False` real en producción.
 2. Reemplazar cualquier `SECRET_KEY` débil por una larga y aleatoria.
-3. Implementar rate limiting para el login.
-4. Revisar permisos finos en vistas solo protegidas por autenticación.
-5. Evaluar validación más profunda de archivos según formato y contenido real.
+3. Revisar permisos finos en vistas solo protegidas por autenticación.
+4. Evaluar validación más profunda de archivos según formato y contenido real.
+5. Mejorar observabilidad y respuesta ante abuso de autenticación.
 
 ## Criterio del proyecto
 
