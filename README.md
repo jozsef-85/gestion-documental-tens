@@ -4,6 +4,27 @@
 
 - [SECURITY.md](SECURITY.md): checklist operativa de seguridad basada en OWASP para este proyecto.
 
+## Logs en producción
+
+El proyecto soporta salida de logs a archivo rotado para operación real.
+
+Variables recomendadas:
+
+```bash
+DJANGO_LOG_TO_FILE=True
+DJANGO_LOG_TO_CONSOLE=False
+DJANGO_LOG_DIR=/opt/gestion_documental/logs
+DJANGO_APP_LOG_FILE=app.log
+DJANGO_SECURITY_LOG_FILE=security.log
+DJANGO_LOG_MAX_BYTES=10485760
+DJANGO_LOG_BACKUP_COUNT=5
+```
+
+Archivos esperados:
+
+- `app.log`: eventos generales de Django y la aplicación
+- `security.log`: autenticación, permisos denegados, CSRF y rechazos de archivos
+
 ## Convenciones de desarrollo
 
 ### Migraciones de Django
