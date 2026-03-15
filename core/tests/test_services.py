@@ -70,6 +70,32 @@ class IndicadoresServiceTests(SimpleTestCase):
         self.assertEqual(indicadores, DEFAULT_INDICADORES)
         mocked_fetch.assert_not_called()
 
+    def test_refrescar_indicadores_reutiliza_ultimo_valor_exitoso_si_falla_api(self):
+        cache.set(
+            'core.indicadores.economicos.last_success',
+            {'uf': 39400, 'dolar': 1005, 'utm': 70300},
+            86400,
+        )
+
+        with patch('core.services.indicators._fetch_payload', side_effect=OSError('sin red')):
+            indicadores = refrescar_indicadores()
+
+        self.assertEqual(indicadores['uf'], 39400)
+        self.assertEqual(indicadores['utm'], 70300)
+
+    def test_solo_cache_retorna_ultimo_valor_exitoso_si_existe(self):
+        cache.set(
+            'core.indicadores.economicos.last_success',
+            {'uf': 39500, 'dolar': 1010, 'utm': 70400},
+            86400,
+        )
+
+        with patch('core.services.indicators._fetch_payload') as mocked_fetch:
+            indicadores = obtener_indicadores(solo_cache=True)
+
+        self.assertEqual(indicadores['dolar'], 1010)
+        mocked_fetch.assert_not_called()
+
     def test_refrescar_indicadores_actualiza_cache(self):
         payload = {'uf': {'valor': 39200}, 'dolar': {'valor': 995}, 'utm': {'valor': 70100}}
 

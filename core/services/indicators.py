@@ -14,7 +14,9 @@ except ModuleNotFoundError:  # pragma: no cover - fallback until dependency is i
 logger = logging.getLogger(__name__)
 
 CACHE_KEY = 'core.indicadores.economicos'
+LAST_SUCCESS_CACHE_KEY = 'core.indicadores.economicos.last_success'
 CACHE_TIMEOUT = 900
+LAST_SUCCESS_CACHE_TIMEOUT = 86400
 REFRESH_COMMAND_NOTICE = 'Ejecuta "python manage.py refresh_indicadores" para recalentar la caché.'
 DEFAULT_INDICADORES = {
     'uf': 'N/D',
@@ -56,13 +58,14 @@ def refrescar_indicadores():
         AttributeError,
     ) as exc:
         logger.warning('No se pudieron obtener indicadores externos: %s', exc)
-        return DEFAULT_INDICADORES.copy()
+        return cache.get(LAST_SUCCESS_CACHE_KEY, DEFAULT_INDICADORES.copy())
     except Exception as exc:
         logger.warning('No se pudieron obtener indicadores externos: %s', exc)
-        return DEFAULT_INDICADORES.copy()
+        return cache.get(LAST_SUCCESS_CACHE_KEY, DEFAULT_INDICADORES.copy())
 
     datos = _build_indicadores(payload)
     cache.set(CACHE_KEY, datos, CACHE_TIMEOUT)
+    cache.set(LAST_SUCCESS_CACHE_KEY, datos, LAST_SUCCESS_CACHE_TIMEOUT)
     return datos
 
 
@@ -73,6 +76,6 @@ def obtener_indicadores(solo_cache=False):
 
     if solo_cache:
         logger.info('Indicadores no disponibles en caché. %s', REFRESH_COMMAND_NOTICE)
-        return DEFAULT_INDICADORES.copy()
+        return cache.get(LAST_SUCCESS_CACHE_KEY, DEFAULT_INDICADORES.copy())
 
     return refrescar_indicadores()

@@ -17,7 +17,7 @@ from .services.indicators import obtener_indicadores
 @login_required
 @model_access_required('core', 'registropresupuesto')
 def dashboard(request):
-    indicadores = obtener_indicadores(solo_cache=True)
+    indicadores = obtener_indicadores()
     ahora = localtime()
     inventario_actual = inventario_presupuestos_queryset().prefetch_related('documentos')
     resumen = aggregate_presupuesto_metrics(inventario_actual)
