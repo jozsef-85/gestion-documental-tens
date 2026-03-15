@@ -9,7 +9,7 @@
     .login-page main.container {
         display: grid;
         min-height: calc(100dvh - 76px);
-        padding-block: 0.5rem !important;
+        padding-block: 0.85rem !important;
     }
 
     .login-shell {
@@ -25,12 +25,14 @@
 
     .login-panel {
         overflow: hidden;
+        border-radius: 1.65rem;
+        box-shadow: 0 1.75rem 3.5rem rgba(18, 52, 77, 0.12);
     }
 
     .login-aside {
         position: relative;
         min-height: 100%;
-        padding: 1.5rem;
+        padding: 1.9rem;
         background: linear-gradient(155deg, rgba(18, 52, 77, 0.98), rgba(31, 95, 139, 0.92));
         color: #fff;
     }
@@ -50,7 +52,7 @@
     }
 
     .login-form {
-        padding: 1.5rem;
+        padding: 1.9rem;
         order: 1;
     }
 
@@ -66,7 +68,7 @@
     .login-form input {
         width: 100%;
         min-height: 2.8rem;
-        padding: 0.65rem 0.9rem;
+        padding: 0.75rem 1rem;
         border: 1px solid #c8d5e1;
         border-radius: 0.9rem;
         background: #fff;
@@ -96,13 +98,14 @@
 
     .login-feature-grid {
         display: grid;
-        gap: 0.75rem;
+        gap: 0.9rem;
     }
 
     .login-feature-box {
         border-radius: 1rem;
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.05));
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        backdrop-filter: blur(6px);
     }
 
     .login-feature-list {
@@ -123,9 +126,14 @@
         width: 0.6rem;
         height: 0.6rem;
         flex: 0 0 auto;
-        margin-top: 0.35rem;
+        margin-top: 0.45rem;
         border-radius: 50%;
         background: rgba(255, 255, 255, 0.78);
+    }
+
+    .login-support-copy {
+        color: rgba(255, 255, 255, 0.92);
+        line-height: 1.6;
     }
 
     @media (max-width: 991.98px) {
@@ -169,12 +177,12 @@
 
     @media (min-width: 992px) {
         .login-layout {
-            grid-template-columns: minmax(18rem, 24rem) minmax(20rem, 28rem);
+            grid-template-columns: minmax(24rem, 1.08fr) minmax(28rem, 1.2fr);
         }
 
         .login-form,
         .login-aside {
-            padding: 1.75rem;
+            padding: 2rem;
         }
 
         .login-form {
@@ -186,7 +194,7 @@
         }
 
         .login-feature-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns: minmax(0, 1.2fr) minmax(11rem, 0.88fr);
             align-items: stretch;
         }
     }
@@ -198,7 +206,7 @@
 
         .login-aside,
         .login-form {
-            padding: 1.35rem;
+            padding: 1.55rem;
         }
 
         .login-form .mb-4,
@@ -221,7 +229,7 @@
 
 {% block content %}
 <section class="login-shell">
-    <div class="login-layout surface-card login-panel mx-auto w-100" style="max-width: 980px;">
+    <div class="login-layout surface-card login-panel mx-auto w-100" style="max-width: 1040px;">
         <aside class="login-aside">
             <span class="eyebrow mb-2">Acceso seguro</span>
             <h1 class="page-title mb-2">Gestión documental para operación y seguimiento</h1>
@@ -244,7 +252,7 @@
                 </div>
                 <div class="login-feature-box p-3">
                     <div class="small text-white-50 text-uppercase fw-semibold mb-2">Soporte</div>
-                    <div>Si tu acceso falla, contacta al administrador del sistema.</div>
+                    <div class="login-support-copy">Contacta al administrador del sistema si tu acceso falla.</div>
                 </div>
             </div>
         </aside>
@@ -252,7 +260,7 @@
         <div class="login-form">
             <div class="mb-3">
                 <span class="eyebrow text-bg-light border">Inicio de sesión</span>
-                <h2 class="section-title mt-2 mb-1" style="font-size: 1.55rem;">Bienvenido</h2>
+                <h2 class="section-title mt-2 mb-1" style="font-size: 1.7rem;">Bienvenido</h2>
                 <p class="muted-label mb-0">Usa tus credenciales para continuar.</p>
             </div>
 
