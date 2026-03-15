@@ -21,6 +21,7 @@ def dashboard(request):
     inventario_actual = inventario_presupuestos_queryset().prefetch_related('documentos')
     total_inventario = inventario_actual.count()
     total_con_nota_pedido = inventario_actual.filter(q_aceptado()).count()
+    total_pendientes_por_cobrar = inventario_actual.filter(q_aceptado()).exclude(q_pagado()).count()
     total_en_ejecucion = inventario_actual.filter(q_estado_presupuesto('en_proceso')).count()
     total_realizados = inventario_actual.filter(q_estado_presupuesto('facturado')).count()
     total_pagados = inventario_actual.filter(q_estado_presupuesto('pagado')).count()
@@ -39,9 +40,9 @@ def dashboard(request):
     )
     alertas = [
         {
-            'cantidad': inventario_actual.filter(q_estado_presupuesto('pendiente')).count(),
-            'titulo': 'Pendientes de aprobacion',
-            'detalle': 'Trabajos solicitados que aun no registran aprobacion operativa.',
+            'cantidad': total_pendientes_por_cobrar,
+            'titulo': 'Pendientes por cobrar',
+            'detalle': 'Trabajos aceptados con nota de pedido que aun no pasan a estado pagado.',
         },
         {
             'titulo': 'Trabajos pagados',
@@ -53,6 +54,7 @@ def dashboard(request):
     return render(request, 'dashboard.html', {
         'total_inventario_presupuestos': total_inventario,
         'total_con_nota_pedido': total_con_nota_pedido,
+        'total_pendientes_por_cobrar': total_pendientes_por_cobrar,
         'total_en_ejecucion': total_en_ejecucion,
         'total_realizados_dashboard': total_realizados,
         'total_pagados_dashboard': total_pagados,
