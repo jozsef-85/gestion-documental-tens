@@ -20,6 +20,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from core.views_auth import RateLimitedLoginView
+from core.views_errors import permission_denied_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -29,3 +30,5 @@ urlpatterns = [
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+handler403 = permission_denied_view

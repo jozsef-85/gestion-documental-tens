@@ -115,8 +115,44 @@ MEDIA_ROOT = config('DJANGO_MEDIA_ROOT', default=str(DEFAULT_STORAGE_ROOT / 'med
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
+CSRF_FAILURE_VIEW = 'core.views_errors.csrf_failure'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_RATE_LIMIT_ATTEMPTS = config('DJANGO_LOGIN_RATE_LIMIT_ATTEMPTS', default=5, cast=int)
 LOGIN_RATE_LIMIT_WINDOW = config('DJANGO_LOGIN_RATE_LIMIT_WINDOW', default=900, cast=int)
+LOG_LEVEL = config('DJANGO_LOG_LEVEL', default='INFO')
+SECURITY_LOG_LEVEL = config('DJANGO_SECURITY_LOG_LEVEL', default='WARNING')
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'standard': {
+            'format': '%(asctime)s %(levelname)s [%(name)s] %(message)s',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'standard',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': LOG_LEVEL,
+            'propagate': False,
+        },
+        'core': {
+            'handlers': ['console'],
+            'level': LOG_LEVEL,
+            'propagate': False,
+        },
+        'security': {
+            'handlers': ['console'],
+            'level': SECURITY_LOG_LEVEL,
+            'propagate': False,
+        },
+    },
+}

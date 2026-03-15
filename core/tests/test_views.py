@@ -151,6 +151,7 @@ class DashboardViewTests(TestCase):
         response = self.client.get(reverse('dashboard'))
 
         self.assertEqual(response.status_code, 403)
+        self.assertContains(response, 'No tienes acceso a esta operación', status_code=403)
 
 
 class ListadoClientesAccessTests(TestCase):
@@ -158,9 +159,11 @@ class ListadoClientesAccessTests(TestCase):
         usuario = User.objects.create_user(username='sinpermiso_clientes', password='secreta123')
         self.client.force_login(usuario)
 
-        response = self.client.get(reverse('listar_clientes'))
+        with self.assertLogs('security', level='WARNING') as captured:
+            response = self.client.get(reverse('listar_clientes'))
 
         self.assertEqual(response.status_code, 403)
+        self.assertTrue(any('Permiso insuficiente' in line for line in captured.output))
 
     def test_listar_documentos_acepta_permiso_view(self):
         usuario = User.objects.create_user(username='lector_documentos', password='secreta123')
@@ -183,10 +186,12 @@ class LoginRateLimitTests(TestCase):
         url = reverse('login')
 
         self.client.post(url, {'username': 'acceso', 'password': 'incorrecta'}, REMOTE_ADDR='10.0.0.1')
-        response = self.client.post(url, {'username': 'acceso', 'password': 'incorrecta'}, REMOTE_ADDR='10.0.0.1')
+        with self.assertLogs('security', level='WARNING') as captured:
+            response = self.client.post(url, {'username': 'acceso', 'password': 'incorrecta'}, REMOTE_ADDR='10.0.0.1')
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Demasiados intentos de acceso fallidos')
+        self.assertTrue(any('Login paso a estado bloqueado' in line for line in captured.output))
 
         response = self.client.post(url, {'username': 'acceso', 'password': 'clave-segura-123'}, REMOTE_ADDR='10.0.0.1')
 

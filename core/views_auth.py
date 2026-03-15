@@ -1,8 +1,13 @@
+import logging
+
 from django.conf import settings
 from django.contrib.auth.views import LoginView
 from django.core.cache import cache
 
 from .services.helpers import obtener_ip_cliente
+
+
+security_logger = logging.getLogger('security')
 
 
 class RateLimitedLoginView(LoginView):
@@ -52,14 +57,38 @@ class RateLimitedLoginView(LoginView):
         form = self.get_form()
 
         if self.is_rate_limited(ip, username):
+            security_logger.warning(
+                'Login bloqueado por rate limit: user=%s ip=%s path=%s',
+                username or '<vacio>',
+                ip,
+                request.path,
+            )
             form.add_error(None, self.get_rate_limit_message())
             return self.render_to_response(self.get_context_data(form=form))
 
         if form.is_valid():
             self.reset_failures(ip, username)
+            security_logger.info(
+                'Login exitoso: user=%s ip=%s path=%s',
+                username or '<vacio>',
+                ip,
+                request.path,
+            )
             return self.form_valid(form)
 
         self.register_failure(ip, username)
+        security_logger.warning(
+            'Login fallido: user=%s ip=%s path=%s',
+            username or '<vacio>',
+            ip,
+            request.path,
+        )
         if self.is_rate_limited(ip, username):
+            security_logger.warning(
+                'Login paso a estado bloqueado: user=%s ip=%s path=%s',
+                username or '<vacio>',
+                ip,
+                request.path,
+            )
             form.add_error(None, self.get_rate_limit_message())
         return self.form_invalid(form)

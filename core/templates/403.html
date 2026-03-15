@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Acceso denegado | Gestión Documental{% endblock %}
+
+{% block content %}
+<section class="surface-card p-4 p-lg-5 mx-auto" style="max-width: 720px;">
+    <span class="eyebrow mb-3">Seguridad</span>
+    <h1 class="page-title mb-3">No tienes acceso a esta operación</h1>
+    {% if csrf_failure %}
+        <p class="muted-label mb-4">
+            La solicitud fue rechazada por validación de seguridad. Intenta recargar la página y enviar el formulario nuevamente.
+        </p>
+    {% else %}
+        <p class="muted-label mb-4">
+            Tu usuario no cuenta con permisos suficientes para ver este recurso o ejecutar esta acción.
+        </p>
+    {% endif %}
+    <div class="d-flex flex-column flex-sm-row gap-3">
+        <a href="{% url 'dashboard' %}" class="btn btn-brand rounded-pill px-4">Volver al dashboard</a>
+        <a href="{% url 'login' %}" class="btn btn-soft rounded-pill px-4">Iniciar sesión</a>
+    </div>
+</section>
+{% endblock %}

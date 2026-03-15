@@ -1,7 +1,11 @@
 from django import forms
+import logging
 
 from .models import Cliente, Documento, PersonalTrabajo, RegistroPresupuesto
 from .presupuestos import parsear_fecha_texto
+
+
+security_logger = logging.getLogger('security')
 
 
 MAX_DOCUMENT_UPLOAD_SIZE = 15 * 1024 * 1024
@@ -47,18 +51,37 @@ def validate_uploaded_file(archivo, *, allowed_extensions, allowed_content_types
 
     if not any(nombre.endswith(extension) for extension in allowed_extensions):
         extensiones = ', '.join(sorted(allowed_extensions))
+        security_logger.warning(
+            'Archivo rechazado por extensión: label=%s filename=%s content_type=%s',
+            label,
+            archivo.name,
+            getattr(archivo, 'content_type', ''),
+        )
         raise forms.ValidationError(
             f'El {label} debe tener uno de estos formatos permitidos: {extensiones}.'
         )
 
     if archivo.size > max_size:
         max_size_mb = max_size // (1024 * 1024)
+        security_logger.warning(
+            'Archivo rechazado por tamaño: label=%s filename=%s size=%s max_size=%s',
+            label,
+            archivo.name,
+            archivo.size,
+            max_size,
+        )
         raise forms.ValidationError(
             f'El {label} supera el tamaño máximo permitido de {max_size_mb} MB.'
         )
 
     content_type = getattr(archivo, 'content_type', '') or ''
     if content_type and content_type not in allowed_content_types:
+        security_logger.warning(
+            'Archivo rechazado por content_type: label=%s filename=%s content_type=%s',
+            label,
+            archivo.name,
+            content_type,
+        )
         raise forms.ValidationError(
             f'El tipo de archivo informado para el {label} no está permitido.'
         )

@@ -23,7 +23,8 @@ Escala usada:
 | Inyección SQL | Cumple | Uso de ORM de Django | Evitar consultas SQL raw sin parametrización. |
 | Autenticación resistente a abuso | Parcial | Login con rate limiting por IP/usuario en la vista de acceso | Evaluar bloqueo más avanzado, observabilidad y posible MFA según criticidad. |
 | Subida segura de archivos | Parcial | `core/forms.py` valida extensión, tamaño y tipo informado para documentos y planillas | Falta validación más profunda de contenido y política final de formatos permitidos por negocio. |
-| Logging y auditoría | Parcial | `core/services/audit.py`, logging básico en `core/services/indicators.py` | Centralizar logs de seguridad y manejo de errores operativos. |
+| Logging y auditoría | Parcial | Auditoría de negocio, logger `security` y registro de bloqueos, permisos denegados y rechazos de archivos | Consolidar destino de logs y alertas operativas fuera de consola. |
+| Manejo de errores de seguridad | Parcial | Respuesta 403 personalizada y vista de fallo CSRF con logging | Revisar experiencia final en producción y cobertura adicional para otros errores sensibles. |
 | Encabezados HTTP de seguridad | Parcial | `settings_prod.py` cubre HSTS, cookies seguras, `X-Frame-Options`, `Referrer-Policy` | Evaluar CSP y revisar configuración efectiva en producción. |
 | Dependencias y despliegue | Parcial | `Dockerfile` usa usuario no root | Incorporar revisión de dependencias y checklist de despliegue seguro. |
 
@@ -41,7 +42,7 @@ python manage.py test
 2. Reemplazar cualquier `SECRET_KEY` débil por una larga y aleatoria.
 3. Formalizar la matriz de roles y permisos por operación.
 4. Evaluar validación más profunda de archivos según formato y contenido real.
-5. Mejorar observabilidad y respuesta ante abuso de autenticación.
+5. Consolidar salida de logs y monitoreo operativo fuera de consola.
 
 ## Criterio del proyecto
 
