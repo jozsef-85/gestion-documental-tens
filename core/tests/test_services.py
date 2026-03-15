@@ -41,6 +41,27 @@ class IndicadoresServiceTests(SimpleTestCase):
 
         self.assertEqual(indicadores, DEFAULT_INDICADORES)
 
+    def test_prefiere_requests_si_esta_disponible(self):
+        fake_response = type(
+            'FakeResponse',
+            (),
+            {
+                'raise_for_status': lambda self: None,
+                'json': lambda self: {'uf': {'valor': 39100}, 'dolar': {'valor': 990}, 'utm': {'valor': 70000}},
+            },
+        )()
+        fake_requests = type(
+            'FakeRequests',
+            (),
+            {'get': staticmethod(lambda *args, **kwargs: fake_response)},
+        )
+
+        with patch('core.services.indicators.requests', fake_requests):
+            indicadores = obtener_indicadores()
+
+        self.assertEqual(indicadores['uf'], 39100)
+        self.assertEqual(indicadores['dolar'], 990)
+
 
 class AuditoriaServiceTests(TestCase):
     def test_prioriza_ip_forwarded_for(self):

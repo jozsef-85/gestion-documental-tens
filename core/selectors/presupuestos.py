@@ -1,4 +1,4 @@
-from django.db.models import F, OuterRef, Q, Subquery, Sum
+from django.db.models import Count, F, OuterRef, Q, Subquery, Sum
 
 from ..models import RegistroPresupuesto
 
@@ -16,12 +16,7 @@ def q_aceptado():
 
 
 def q_en_proceso():
-    return q_aceptado() & (
-        Q(recepcion__gt='')
-        | Q(guia_despacho__gt='')
-        | Q(estado_oc__gt='')
-        | Q(estado_recepcion__gt='')
-    )
+    return q_aceptado() & ~q_facturado() & ~q_pagado()
 
 
 def q_estado_manual_vacio():
@@ -35,7 +30,7 @@ def q_estado_presupuesto(estado):
     if estado == 'facturado':
         return Q(estado_manual='facturado') | (automatico & q_facturado() & ~q_pagado())
     if estado == 'en_proceso':
-        return Q(estado_manual='en_proceso') | (automatico & q_aceptado() & ~q_facturado() & ~q_pagado())
+        return Q(estado_manual='en_proceso') | (automatico & q_en_proceso())
     if estado == 'pendiente':
         return Q(estado_manual='pendiente') | (automatico & ~q_aceptado() & ~q_facturado() & ~q_pagado())
     return Q()
@@ -74,6 +69,21 @@ def resumir_flujo(queryset):
             'total_valor': subset.filter(q_aceptado()).aggregate(total=Sum('valor'))['total'] or 0,
         })
     return resumen
+
+
+def aggregate_presupuesto_metrics(queryset):
+    accepted_unpaid = q_aceptado() & ~q_pagado()
+    return queryset.aggregate(
+        total_items=Count('id'),
+        total_pendientes_aprobacion=Count('id', filter=q_estado_presupuesto('pendiente')),
+        total_aceptados=Count('id', filter=q_aceptado()),
+        total_pendientes_por_cobrar=Count('id', filter=accepted_unpaid),
+        total_en_proceso=Count('id', filter=q_estado_presupuesto('en_proceso')),
+        total_facturados=Count('id', filter=q_estado_presupuesto('facturado')),
+        total_pagados=Count('id', filter=q_estado_presupuesto('pagado')),
+        total_activo=Count('id', filter=~q_estado_presupuesto('pagado')),
+        monto_por_cobrar=Sum('valor', filter=accepted_unpaid),
+    )
 
 
 def actualizar_total_carga(carga):

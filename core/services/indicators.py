@@ -5,6 +5,11 @@ from urllib.request import urlopen
 
 from django.core.cache import cache
 
+try:
+    import requests
+except ModuleNotFoundError:  # pragma: no cover - fallback until dependency is installed
+    requests = None
+
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +20,18 @@ DEFAULT_INDICADORES = {
     'dolar': 'N/D',
     'utm': 'N/D',
 }
+API_URL = 'https://mindicador.cl/api'
+REQUEST_TIMEOUT = 3
+
+
+def _fetch_payload():
+    if requests is not None:
+        response = requests.get(API_URL, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+
+    with urlopen(API_URL, timeout=REQUEST_TIMEOUT) as response:
+        return json.loads(response.read().decode('utf-8'))
 
 
 def obtener_indicadores():
@@ -25,9 +42,18 @@ def obtener_indicadores():
     datos = DEFAULT_INDICADORES.copy()
 
     try:
-        with urlopen('https://mindicador.cl/api', timeout=5) as response:
-            payload = json.loads(response.read().decode('utf-8'))
-    except (URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as exc:
+        payload = _fetch_payload()
+    except (
+        URLError,
+        TimeoutError,
+        OSError,
+        ValueError,
+        json.JSONDecodeError,
+        AttributeError,
+    ) as exc:
+        logger.warning('No se pudieron obtener indicadores externos: %s', exc)
+        return datos
+    except Exception as exc:
         logger.warning('No se pudieron obtener indicadores externos: %s', exc)
         return datos
 

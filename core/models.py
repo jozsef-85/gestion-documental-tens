@@ -146,6 +146,14 @@ class RegistroPresupuesto(models.Model):
     class Meta:
         ordering = ['-carga__fecha_carga', 'fila_origen']
         unique_together = [('carga', 'fila_origen')]
+        indexes = [
+            models.Index(fields=['presupuesto'], name='regpre_presupuesto_idx'),
+            models.Index(fields=['nota_pedido'], name='regpre_nota_pedido_idx'),
+            models.Index(fields=['factura'], name='regpre_factura_idx'),
+            models.Index(fields=['fecha_pago'], name='regpre_fecha_pago_idx'),
+            models.Index(fields=['fecha_facturacion'], name='regpre_fecha_fact_idx'),
+            models.Index(fields=['estado_manual'], name='regpre_estado_manual_idx'),
+        ]
 
     @property
     def hitos_flujo(self):

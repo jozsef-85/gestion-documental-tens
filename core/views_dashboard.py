@@ -1,15 +1,14 @@
 from django.contrib.auth.decorators import login_required
-from django.db.models import Case, Sum, Value, When
+from django.db.models import Case, Value, When
 from django.db.models.functions import Coalesce
 from django.shortcuts import render
 from django.utils.timezone import localtime
 
 from .models import CargaPresupuesto, RegistroPresupuesto
 from .selectors.presupuestos import (
+    aggregate_presupuesto_metrics,
     inventario_presupuestos_queryset,
     q_aceptado,
-    q_estado_presupuesto,
-    q_pagado,
 )
 from .services.access import model_access_required
 from .services.indicators import obtener_indicadores
@@ -21,13 +20,7 @@ def dashboard(request):
     indicadores = obtener_indicadores()
     ahora = localtime()
     inventario_actual = inventario_presupuestos_queryset().prefetch_related('documentos')
-    total_inventario = inventario_actual.count()
-    total_con_nota_pedido = inventario_actual.filter(q_aceptado()).count()
-    total_pendientes_por_cobrar = inventario_actual.filter(q_aceptado()).exclude(q_pagado()).count()
-    total_en_ejecucion = inventario_actual.filter(q_estado_presupuesto('en_proceso')).count()
-    total_realizados = inventario_actual.filter(q_estado_presupuesto('facturado')).count()
-    total_pagados = inventario_actual.filter(q_estado_presupuesto('pagado')).count()
-    total_monto_por_cobrar = inventario_actual.filter(q_aceptado()).exclude(q_pagado()).aggregate(total=Sum('valor'))['total'] or 0
+    resumen = aggregate_presupuesto_metrics(inventario_actual)
     dashboard_registros = list(
         inventario_actual.select_related('carga', 'actualizado_por').annotate(
             fecha_gestion=Coalesce('fecha_actualizacion', 'carga__fecha_carga'),
@@ -42,26 +35,26 @@ def dashboard(request):
     )
     alertas = [
         {
-            'cantidad': total_pendientes_por_cobrar,
+            'cantidad': resumen['total_pendientes_por_cobrar'],
             'titulo': 'Pendientes por cobrar',
             'detalle': 'Trabajos aceptados con nota de pedido que aún no pasan a estado pagado.',
         },
         {
             'titulo': 'Trabajos pagados',
-            'cantidad': total_pagados,
+            'cantidad': resumen['total_pagados'],
             'detalle': 'Trabajos cerrados con pago registrado.',
         },
     ]
 
     return render(request, 'dashboard.html', {
-        'total_inventario_presupuestos': total_inventario,
-        'total_con_nota_pedido': total_con_nota_pedido,
-        'total_pendientes_por_cobrar': total_pendientes_por_cobrar,
-        'total_en_ejecucion': total_en_ejecucion,
-        'total_realizados_dashboard': total_realizados,
-        'total_pagados_dashboard': total_pagados,
-        'total_monto_por_cobrar': total_monto_por_cobrar,
-        'total_activo': inventario_actual.exclude(q_estado_presupuesto('pagado')).count(),
+        'total_inventario_presupuestos': resumen['total_items'],
+        'total_con_nota_pedido': resumen['total_aceptados'],
+        'total_pendientes_por_cobrar': resumen['total_pendientes_por_cobrar'],
+        'total_en_ejecucion': resumen['total_en_proceso'],
+        'total_realizados_dashboard': resumen['total_facturados'],
+        'total_pagados_dashboard': resumen['total_pagados'],
+        'total_monto_por_cobrar': resumen['monto_por_cobrar'] or 0,
+        'total_activo': resumen['total_activo'],
         'total_cargas_presupuesto': CargaPresupuesto.objects.count(),
         'total_registros_presupuesto': RegistroPresupuesto.objects.count(),
         'ultima_carga_presupuesto': CargaPresupuesto.objects.first(),

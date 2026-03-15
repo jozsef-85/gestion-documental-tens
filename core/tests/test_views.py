@@ -4,6 +4,7 @@ from unittest.mock import patch
 from django.contrib.auth.models import Permission, User
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.http import HttpResponse
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
@@ -174,6 +175,90 @@ class ListadoClientesAccessTests(TestCase):
         response = self.client.get(reverse('listar_documentos'))
 
         self.assertEqual(response.status_code, 200)
+
+
+class ControlPresupuestosViewTests(TestCase):
+    def setUp(self):
+        self.usuario = User.objects.create_user(username='presupuestos', password='secreta123')
+        permisos = Permission.objects.filter(
+            codename__in=['view_registropresupuesto', 'change_registropresupuesto']
+        )
+        self.usuario.user_permissions.add(*permisos)
+        self.client.force_login(self.usuario)
+        self.carga = CargaPresupuesto.objects.create(
+            nombre='Carga control',
+            hoja='Hoja1',
+            total_registros=2,
+            creado_por=self.usuario,
+            archivo='presupuestos/control.xlsx',
+        )
+        self.registro_pendiente = RegistroPresupuesto.objects.create(
+            carga=self.carga,
+            fila_origen=1,
+            presupuesto='PRES-PEND',
+            descripcion='Pendiente',
+        )
+        self.registro_en_proceso = RegistroPresupuesto.objects.create(
+            carga=self.carga,
+            fila_origen=2,
+            presupuesto='PRES-ACEP',
+            descripcion='Aceptado',
+            nota_pedido='OC-999',
+            valor='800000',
+        )
+
+    def test_listar_presupuestos_gestion_expone_resumen(self):
+        with patch('core.views_control_presupuestos.render') as mocked_render:
+            mocked_render.side_effect = lambda request, template, context: HttpResponse('ok')
+
+            response = self.client.get(reverse('listar_presupuestos_gestion'))
+
+        self.assertEqual(response.status_code, 200)
+        template_name = mocked_render.call_args.args[1]
+        context = mocked_render.call_args.args[2]
+        self.assertEqual(template_name, 'listar_presupuestos_gestion.html')
+        self.assertEqual(context['total_presupuestos'], 2)
+        self.assertEqual(context['total_pendientes_aprobacion'], 1)
+        self.assertEqual(context['total_aceptados'], 1)
+        self.assertEqual(context['monto_por_cobrar'], 800000)
+
+    def test_editar_presupuesto_actualiza_registro_y_auditoria(self):
+        response = self.client.post(
+            reverse('editar_presupuesto', args=[self.registro_pendiente.id]),
+            {
+                'presupuesto': 'PRES-PEND',
+                'descripcion': 'Pendiente actualizado',
+                'solicitante': 'Usuario Control',
+                'valor': '250000',
+                'fecha_texto': '17/01/2025',
+                'nota_pedido': 'OC-321',
+                'estado_oc': 'En proceso',
+                'observacion_oc': 'Observacion',
+                'recepcion': 'Recepción parcial',
+                'estado_recepcion': 'Parcial',
+                'guia_despacho': 'GD-55',
+                'factura': '',
+                'fecha_facturacion_texto': '',
+                'fecha_pago_texto': '',
+                'estado_manual': '',
+                'observaciones': 'Seguimiento actualizado',
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('historial_presupuesto', args=[self.registro_pendiente.id]))
+
+        self.registro_pendiente.refresh_from_db()
+        self.assertEqual(self.registro_pendiente.nota_pedido, 'OC-321')
+        self.assertEqual(self.registro_pendiente.descripcion, 'Pendiente actualizado')
+        self.assertEqual(self.registro_pendiente.estado_seguimiento, 'Aceptado / En curso')
+        self.assertTrue(
+            Auditoria.objects.filter(
+                entidad='RegistroPresupuesto',
+                entidad_id=self.registro_pendiente.id,
+                accion='Edicion de control',
+            ).exists()
+        )
 
 
 @override_settings(LOGIN_RATE_LIMIT_ATTEMPTS=2, LOGIN_RATE_LIMIT_WINDOW=60)

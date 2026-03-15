@@ -10,14 +10,11 @@ from .forms import CargaPresupuestoForm, RegistroPresupuestoForm
 from .models import Auditoria, CargaPresupuesto, RegistroPresupuesto
 from .presupuestos import parsear_planilla_presupuestos
 from .selectors.presupuestos import (
+    aggregate_presupuesto_metrics,
     actualizar_total_carga,
     filtrar_por_estado,
     inventario_presupuestos_queryset,
     q_aceptado,
-    q_en_proceso,
-    q_estado_presupuesto,
-    q_facturado,
-    q_pagado,
     resumir_flujo,
 )
 from .services.access import model_access_required
@@ -46,13 +43,14 @@ def listar_presupuestos_gestion(request):
         registros = registros.filter(q_aceptado())
 
     registros = registros.order_by('-carga__fecha_carga', 'presupuesto')
+    resumen = aggregate_presupuesto_metrics(inventario_actual)
 
     return render(request, 'listar_presupuestos_gestion.html', {
         'registros': registros[:60],
-        'total_presupuestos': inventario_actual.count(),
-        'total_pendientes_aprobacion': inventario_actual.filter(q_estado_presupuesto('pendiente')).count(),
-        'total_aceptados': inventario_actual.filter(q_aceptado()).count(),
-        'monto_por_cobrar': inventario_actual.filter(q_aceptado()).exclude(q_pagado()).aggregate(total=Sum('valor'))['total'] or 0,
+        'total_presupuestos': resumen['total_items'],
+        'total_pendientes_aprobacion': resumen['total_pendientes_aprobacion'],
+        'total_aceptados': resumen['total_aceptados'],
+        'monto_por_cobrar': resumen['monto_por_cobrar'] or 0,
         'total_filtrados': registros.count(),
     })
 
@@ -91,6 +89,7 @@ def listar_presupuestos(request):
     page_obj = paginator.get_page(request.GET.get('page'))
     inventario_actual = inventario_presupuestos_queryset()
     resumen_base = registros if selected_carga else inventario_actual
+    resumen_metricas = aggregate_presupuesto_metrics(resumen_base)
     cargas_recientes = CargaPresupuesto.objects.select_related('creado_por')[:8]
     auditorias_recientes = Auditoria.objects.filter(entidad='CargaPresupuesto').order_by('-fecha_evento')[:8]
     consolidados_solicitante = resumen_base.filter(q_aceptado()).exclude(solicitante='').values('solicitante').annotate(
@@ -104,9 +103,9 @@ def listar_presupuestos(request):
         'total_filtrados': total_filtrados,
         'total_cargas_presupuesto': CargaPresupuesto.objects.count(),
         'total_registros_presupuesto': RegistroPresupuesto.objects.count(),
-        'total_pagados': resumen_base.filter(q_pagado()).count(),
-        'total_facturados': resumen_base.filter(q_facturado()).exclude(q_pagado()).count(),
-        'total_en_proceso': resumen_base.filter(q_en_proceso()).exclude(q_pagado()).exclude(q_facturado()).count(),
+        'total_pagados': resumen_metricas['total_pagados'],
+        'total_facturados': resumen_metricas['total_facturados'],
+        'total_en_proceso': resumen_metricas['total_en_proceso'],
         'ultima_carga': CargaPresupuesto.objects.first(),
         'cargas_recientes': cargas_recientes,
         'auditorias_recientes': auditorias_recientes,
