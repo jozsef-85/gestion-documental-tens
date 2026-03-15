@@ -5,10 +5,12 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import DocumentoForm, VersionDocumentoForm
 from .models import Departamento, Documento, TipoDocumento, VersionDocumento
+from .services.access import model_access_required
 from .services.audit import registrar_auditoria
 
 
 @login_required
+@model_access_required('core', 'documento')
 def listar_documentos(request):
     docs = Documento.objects.exclude(estado='eliminado').prefetch_related('presupuestos').order_by('-fecha_creacion')
 
@@ -172,6 +174,7 @@ def subir_version(request, documento_id):
 
 
 @login_required
+@model_access_required('core', 'documento')
 def historial_versiones(request, documento_id):
     documento = get_object_or_404(Documento.objects.prefetch_related('presupuestos'), id=documento_id)
     versiones = documento.versiones.all().order_by('-fecha_subida')

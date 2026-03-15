@@ -20,10 +20,12 @@ from .selectors.presupuestos import (
     q_pagado,
     resumir_flujo,
 )
+from .services.access import model_access_required
 from .services.audit import registrar_auditoria
 
 
 @login_required
+@model_access_required('core', 'registropresupuesto')
 def listar_presupuestos_gestion(request):
     registros = inventario_presupuestos_queryset().prefetch_related('documentos')
     inventario_actual = inventario_presupuestos_queryset()
@@ -56,6 +58,7 @@ def listar_presupuestos_gestion(request):
 
 
 @login_required
+@model_access_required('core', 'registropresupuesto')
 def listar_presupuestos(request):
     registros = inventario_presupuestos_queryset().prefetch_related('documentos')
     selected_carga = None
@@ -217,6 +220,7 @@ def subir_presupuesto(request):
 
 
 @login_required
+@model_access_required('core', 'registropresupuesto')
 def historial_presupuesto(request, registro_id):
     registro = get_object_or_404(
         RegistroPresupuesto.objects.select_related('carga', 'carga__creado_por').prefetch_related('documentos'),

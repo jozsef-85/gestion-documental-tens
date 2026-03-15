@@ -49,8 +49,9 @@ class SubirVersionViewTests(TestCase):
         self.override.enable()
 
         self.usuario = User.objects.create_user(username='editor', password='secreta123')
-        permiso = Permission.objects.get(codename='add_versiondocumento')
-        self.usuario.user_permissions.add(permiso)
+        permiso_version = Permission.objects.get(codename='add_versiondocumento')
+        permiso_documento = Permission.objects.get(codename='view_documento')
+        self.usuario.user_permissions.add(permiso_version, permiso_documento)
         self.client.force_login(self.usuario)
 
         self.departamento = Departamento.objects.create(nombre='Operaciones')
@@ -105,6 +106,8 @@ class SubirVersionViewTests(TestCase):
 class DashboardViewTests(TestCase):
     def setUp(self):
         self.usuario = User.objects.create_user(username='dashboard', password='secreta123')
+        permiso = Permission.objects.get(codename='view_registropresupuesto')
+        self.usuario.user_permissions.add(permiso)
         self.client.force_login(self.usuario)
         self.carga = CargaPresupuesto.objects.create(
             nombre='Carga dashboard',
@@ -139,6 +142,35 @@ class DashboardViewTests(TestCase):
         self.assertContains(response, 'Pendientes por cobrar')
         self.assertContains(response, 'Trabajos aceptados con nota de pedido que aún no pasan a estado pagado.')
         self.assertNotContains(response, 'Pendientes de aprobación')
+
+    def test_dashboard_requiere_permiso_de_acceso(self):
+        self.client.logout()
+        usuario = User.objects.create_user(username='sinpermiso', password='secreta123')
+        self.client.force_login(usuario)
+
+        response = self.client.get(reverse('dashboard'))
+
+        self.assertEqual(response.status_code, 403)
+
+
+class ListadoClientesAccessTests(TestCase):
+    def test_listar_clientes_requiere_permiso_del_modelo(self):
+        usuario = User.objects.create_user(username='sinpermiso_clientes', password='secreta123')
+        self.client.force_login(usuario)
+
+        response = self.client.get(reverse('listar_clientes'))
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_listar_documentos_acepta_permiso_view(self):
+        usuario = User.objects.create_user(username='lector_documentos', password='secreta123')
+        permiso = Permission.objects.get(codename='view_documento')
+        usuario.user_permissions.add(permiso)
+        self.client.force_login(usuario)
+
+        response = self.client.get(reverse('listar_documentos'))
+
+        self.assertEqual(response.status_code, 200)
 
 
 @override_settings(LOGIN_RATE_LIMIT_ATTEMPTS=2, LOGIN_RATE_LIMIT_WINDOW=60)

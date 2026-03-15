@@ -11,10 +11,12 @@ from .selectors.presupuestos import (
     q_estado_presupuesto,
     q_pagado,
 )
+from .services.access import model_access_required
 from .services.indicators import obtener_indicadores
 
 
 @login_required
+@model_access_required('core', 'registropresupuesto')
 def dashboard(request):
     indicadores = obtener_indicadores()
     ahora = localtime()

@@ -5,10 +5,12 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import ClienteForm, PersonalTrabajoForm
 from .models import Cliente, PersonalTrabajo
+from .services.access import model_access_required
 from .services.audit import registrar_auditoria
 
 
 @login_required
+@model_access_required('core', 'cliente')
 def listar_clientes(request):
     clientes = Cliente.objects.order_by('nombre')
     q = request.GET.get('q', '').strip()
@@ -101,6 +103,7 @@ def eliminar_cliente(request, cliente_id):
 
 
 @login_required
+@model_access_required('core', 'personaltrabajo')
 def listar_personal(request):
     personal = PersonalTrabajo.objects.order_by('nombre')
     q = request.GET.get('q', '').strip()
