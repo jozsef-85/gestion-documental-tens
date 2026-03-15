@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Gestion Documental{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --brand-navy: #12344d;
+            --brand-blue: #1f5f8b;
+            --brand-cyan: #4fa7b5;
+            --brand-ice: #f3f7fa;
+            --brand-line: #d7e2ea;
+            --brand-text: #173042;
+            --brand-muted: #617789;
+        }
+
+        html {
+            height: 100%;
+        }
+
+        body {
+            min-height: 100%;
+            font-family: "IBM Plex Sans", sans-serif;
+            color: var(--brand-text);
+            background:
+                radial-gradient(circle at top left, rgba(79, 167, 181, 0.14), transparent 26%),
+                linear-gradient(180deg, #edf3f7 0%, #f7fafc 18%, #eef4f8 100%);
+        }
+
+        .app-navbar {
+            background: rgba(18, 52, 77, 0.94);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .brand-lockup {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.85rem;
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .brand-lockup:hover,
+        .brand-lockup:focus {
+            color: #fff;
+        }
+
+        .brand-mark {
+            width: 2.5rem;
+            height: 2.5rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.9rem;
+            background: linear-gradient(135deg, var(--brand-cyan), var(--brand-blue));
+            color: #fff;
+            font-weight: 700;
+            box-shadow: 0 0.75rem 1.5rem rgba(31, 95, 139, 0.28);
+        }
+
+        .nav-pills .nav-link {
+            color: rgba(255, 255, 255, 0.82);
+            border-radius: 999px;
+            padding-inline: 1rem;
+        }
+
+        .nav-pills .nav-link:hover,
+        .nav-pills .nav-link:focus,
+        .nav-pills .nav-link.active {
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+        }
+
+        .nav-pills .dropdown-menu {
+            margin-top: 0.65rem;
+            min-width: 15rem;
+            padding: 0.6rem;
+            border: 1px solid rgba(215, 226, 234, 0.85);
+            border-radius: 1rem;
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 1rem 2rem rgba(18, 52, 77, 0.14);
+        }
+
+        .nav-pills .dropdown-item {
+            border-radius: 0.8rem;
+            padding: 0.7rem 0.9rem;
+            color: var(--brand-text);
+            font-weight: 500;
+        }
+
+        .nav-pills .dropdown-item:hover,
+        .nav-pills .dropdown-item:focus,
+        .nav-pills .dropdown-item.active {
+            background: #edf4f8;
+            color: var(--brand-blue);
+        }
+
+        .nav-pills .dropdown-item .menu-note {
+            display: block;
+            margin-top: 0.15rem;
+            font-size: 0.78rem;
+            font-weight: 400;
+            color: var(--brand-muted);
+        }
+
+        .surface-card {
+            background: rgba(255, 255, 255, 0.94);
+            border: 1px solid rgba(215, 226, 234, 0.9);
+            border-radius: 1.4rem;
+            box-shadow: 0 1.2rem 2.4rem rgba(18, 52, 77, 0.08);
+        }
+
+        .hero-panel {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(140deg, rgba(18, 52, 77, 0.98), rgba(31, 95, 139, 0.94));
+            color: #fff;
+            border-radius: 1.6rem;
+            box-shadow: 0 1.5rem 3rem rgba(18, 52, 77, 0.16);
+        }
+
+        .hero-panel::after {
+            content: "";
+            position: absolute;
+            width: 18rem;
+            height: 18rem;
+            right: -5rem;
+            bottom: -8rem;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.45rem 0.85rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .page-title {
+            font-size: clamp(1.8rem, 2vw, 2.4rem);
+            font-weight: 700;
+        }
+
+        .section-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 0;
+        }
+
+        .data-stat {
+            border-radius: 1.25rem;
+            background: linear-gradient(180deg, #ffffff, #f7fafc);
+            border: 1px solid var(--brand-line);
+        }
+
+        .data-stat .value {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .muted-label {
+            color: var(--brand-muted);
+        }
+
+        .document-card {
+            border-radius: 1.2rem;
+            border: 1px solid var(--brand-line);
+            background: linear-gradient(180deg, #ffffff, #f8fbfd);
+        }
+
+        .badge-soft {
+            background: #eaf3f8;
+            color: var(--brand-blue);
+            border: 1px solid #d7e7f0;
+        }
+
+        .badge-confidencialidad-alta {
+            background: #fbe8e6;
+            color: #9e2f25;
+            border: 1px solid #f4c9c5;
+        }
+
+        .badge-confidencialidad-media {
+            background: #fff3dd;
+            color: #8b621c;
+            border: 1px solid #f1dfb8;
+        }
+
+        .badge-confidencialidad-baja {
+            background: #e6f5ec;
+            color: #1f6a43;
+            border: 1px solid #c8e7d5;
+        }
+
+        .form-control,
+        .form-select {
+            min-height: 3rem;
+            border-color: #c8d5e1;
+            border-radius: 0.9rem;
+        }
+
+        textarea.form-control {
+            min-height: 7rem;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--brand-blue);
+            box-shadow: 0 0 0 0.25rem rgba(31, 95, 139, 0.12);
+        }
+
+        .btn-brand {
+            background: linear-gradient(135deg, var(--brand-navy), var(--brand-blue));
+            border: 0;
+            color: #fff;
+        }
+
+        .btn-brand:hover,
+        .btn-brand:focus {
+            color: #fff;
+            background: linear-gradient(135deg, #0f2c42, #174e73);
+        }
+
+        .btn-soft {
+            background: #edf4f8;
+            color: var(--brand-blue);
+            border: 1px solid #d6e5ef;
+        }
+
+        .btn-soft:hover,
+        .btn-soft:focus {
+            background: #e1edf5;
+            color: #174e73;
+        }
+
+        .footer-note {
+            color: var(--brand-muted);
+            font-size: 0.92rem;
+        }
+
+        @media (max-width: 991.98px) {
+            .app-navbar .navbar-collapse {
+                padding-top: 1rem;
+            }
+
+            .hero-panel,
+            .surface-card {
+                border-radius: 1.25rem;
+            }
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+    <nav class="navbar navbar-expand-lg app-navbar sticky-top" data-bs-theme="dark">
+        <div class="container py-2">
+            <a class="brand-lockup" href="{% if request.user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'login' %}{% endif %}">
+                <span class="brand-mark">GD</span>
+                <span>
+                    <span class="d-block fw-semibold">Gestion Documental</span>
+                    <span class="d-block small text-white-50">Plataforma corporativa</span>
+                </span>
+            </a>
+
+            <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#appNavbar" aria-controls="appNavbar" aria-expanded="false" aria-label="Mostrar navegacion">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="appNavbar">
+                {% if request.user.is_authenticated %}
+                    <ul class="navbar-nav nav nav-pills ms-auto me-lg-3 gap-2 mt-3 mt-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'listar_clientes' or request.resolver_match.url_name == 'crear_cliente' or request.resolver_match.url_name == 'editar_cliente' or request.resolver_match.url_name == 'eliminar_cliente' %}active{% endif %}" href="{% url 'listar_clientes' %}">Clientes</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'listar_personal' or request.resolver_match.url_name == 'crear_personal' or request.resolver_match.url_name == 'editar_personal' or request.resolver_match.url_name == 'eliminar_personal' %}active{% endif %}" href="{% url 'listar_personal' %}">RRHH</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'listar_presupuestos_gestion' or request.resolver_match.url_name == 'listar_presupuestos' or request.resolver_match.url_name == 'subir_presupuesto' or request.resolver_match.url_name == 'crear_presupuesto' or request.resolver_match.url_name == 'editar_presupuesto' or request.resolver_match.url_name == 'historial_presupuesto' or request.resolver_match.url_name == 'eliminar_presupuesto' or request.resolver_match.url_name == 'listar_documentos' or request.resolver_match.url_name == 'historial_versiones' or request.resolver_match.url_name == 'editar_documento' or request.resolver_match.url_name == 'eliminar_documento' or request.resolver_match.url_name == 'subir_documento' or request.resolver_match.url_name == 'subir_version' %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Gestion
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'listar_presupuestos_gestion' or request.resolver_match.url_name == 'crear_presupuesto' %}active{% endif %}" href="{% url 'listar_presupuestos_gestion' %}">
+                                        Presupuestos
+                                        <span class="menu-note">Vista comercial y aceptacion</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'listar_presupuestos' or request.resolver_match.url_name == 'editar_presupuesto' or request.resolver_match.url_name == 'historial_presupuesto' or request.resolver_match.url_name == 'eliminar_presupuesto' %}active{% endif %}" href="{% url 'listar_presupuestos' %}">
+                                        Control
+                                        <span class="menu-note">Seguimiento operativo y comercial</span>
+                                    </a>
+                                </li>
+                                {% if perms.core.add_cargapresupuesto %}
+                                    <li>
+                                        <a class="dropdown-item {% if request.resolver_match.url_name == 'subir_presupuesto' %}active{% endif %}" href="{% url 'subir_presupuesto' %}">
+                                            Cargas
+                                            <span class="menu-note">Importacion de planillas</span>
+                                        </a>
+                                    </li>
+                                {% elif perms.core.add_documento %}
+                                    <li>
+                                        <a class="dropdown-item {% if request.resolver_match.url_name == 'subir_documento' or request.resolver_match.url_name == 'subir_version' %}active{% endif %}" href="{% url 'subir_documento' %}">
+                                            Cargas
+                                            <span class="menu-note">Ingreso de respaldos documentales</span>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                <li>
+                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'listar_documentos' or request.resolver_match.url_name == 'historial_versiones' or request.resolver_match.url_name == 'editar_documento' or request.resolver_match.url_name == 'eliminar_documento' or request.resolver_match.url_name == 'subir_documento' or request.resolver_match.url_name == 'subir_version' %}active{% endif %}" href="{% url 'listar_documentos' %}">
+                                        Documentos
+                                        <span class="menu-note">Repositorio y respaldos</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+
+	                    <div class="d-flex flex-column flex-lg-row align-items-lg-center gap-3 mt-3 mt-lg-0">
+	                        {% if request.user.is_staff %}
+	                            <a href="/admin/" class="btn btn-soft rounded-pill px-3 {% if request.path|slice:':7' == '/admin/' %}active{% endif %}">
+	                                Administracion
+	                            </a>
+	                        {% endif %}
+	                        <div class="text-white-50 small">
+	                            <div class="fw-semibold text-white">{{ request.user.username }}</div>
+	                            <div>Sesion activa</div>
+	                        </div>
+                        <form action="{% url 'logout' %}" method="post" class="mb-0">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-light rounded-pill px-3">Salir</button>
+                        </form>
+                    </div>
+                {% else %}
+                    <div class="ms-auto mt-3 mt-lg-0 text-white-50 small">
+                        Acceso seguro para usuarios autorizados
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="container py-4 py-lg-5">
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }} mb-2" role="alert">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
