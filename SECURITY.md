@@ -17,16 +17,16 @@ Escala usada:
 | Control | Estado | Evidencia principal | Acción recomendada |
 | --- | --- | --- | --- |
 | Configuración segura de Django | Parcial | `config/settings_base.py`, `config/settings_prod.py` | Confirmar `DEBUG=False` y `DJANGO_SECRET_KEY` fuerte en producción. Ejecutar `manage.py check --deploy` en cada despliegue. |
-| Gestión de secretos | Parcial | Variables de entorno en settings | Evitar defaults inseguros en producción y documentar rotación de secretos. |
+| Gestión de secretos | Parcial | Variables de entorno en settings y ejemplo más seguro para producción | Evitar defaults inseguros efectivos en runtime y documentar rotación de secretos. |
 | Control de acceso | Parcial | Vistas de lectura y edición protegidas con autenticación y permisos por modelo en `core/views_*.py` | Revisar y formalizar la matriz completa de roles, grupos y accesos por operación. |
 | CSRF y protección XSS por defecto | Cumple | Middleware estándar de Django y plantillas con autoescape | Mantener sin `csrf_exempt` salvo necesidad documentada. |
 | Inyección SQL | Cumple | Uso de ORM de Django | Evitar consultas SQL raw sin parametrización. |
 | Autenticación resistente a abuso | Parcial | Login con rate limiting por IP/usuario en la vista de acceso | Evaluar bloqueo más avanzado, observabilidad y posible MFA según criticidad. |
 | Subida segura de archivos | Parcial | `core/forms.py` valida extensión, tamaño y tipo informado para documentos y planillas | Falta validación más profunda de contenido y política final de formatos permitidos por negocio. |
-| Logging y auditoría | Parcial | Auditoría de negocio, logger `security` y registro de bloqueos, permisos denegados y rechazos de archivos | Consolidar destino de logs y alertas operativas fuera de consola. |
+| Logging y auditoría | Parcial | Auditoría de negocio con degradación segura, logger `security` y registro de bloqueos, permisos denegados y rechazos de archivos | Consolidar alertas operativas y correlación con monitoreo externo. |
 | Manejo de errores de seguridad | Parcial | Respuesta 403 personalizada y vista de fallo CSRF con logging | Revisar experiencia final en producción y cobertura adicional para otros errores sensibles. |
 | Encabezados HTTP de seguridad | Parcial | `settings_prod.py` cubre HSTS, cookies seguras, `X-Frame-Options`, `Referrer-Policy` | Evaluar CSP y revisar configuración efectiva en producción. |
-| Dependencias y despliegue | Parcial | `Dockerfile` usa usuario no root | Incorporar revisión de dependencias y checklist de despliegue seguro. |
+| Dependencias y despliegue | Parcial | `Dockerfile` usa usuario no root y `HEALTHCHECK` | Incorporar revisión de dependencias y checklist de despliegue seguro. |
 
 ## Flujo mínimo recomendado antes de publicar
 

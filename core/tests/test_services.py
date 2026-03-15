@@ -52,3 +52,15 @@ class AuditoriaServiceTests(TestCase):
 
         auditoria = Auditoria.objects.get()
         self.assertEqual(auditoria.ip, '198.51.100.10')
+
+    def test_no_rompe_el_flujo_si_falla_la_auditoria(self):
+        usuario = User.objects.create(username='audit-user')
+        request = RequestFactory().get('/')
+        request.user = usuario
+
+        with patch('core.services.audit.Auditoria.objects.create', side_effect=RuntimeError('sin espacio')):
+            with self.assertLogs('security', level='ERROR') as captured:
+                registrar_auditoria(request, 'Prueba', 'Documento', 7, 'Registro de prueba')
+
+        self.assertEqual(Auditoria.objects.count(), 0)
+        self.assertTrue(any('Fallo al registrar auditoría' in line for line in captured.output))
