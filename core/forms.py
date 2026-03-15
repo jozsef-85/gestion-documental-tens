@@ -145,6 +145,17 @@ class CargaPresupuestoForm(forms.Form):
     nombre = forms.CharField(label='Nombre de la carga', max_length=200, required=False)
     archivo = forms.FileField(label='Planilla Excel')
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['nombre'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Ej: Carga marzo 2026',
+        })
+        self.fields['archivo'].widget.attrs.update({
+            'class': 'form-control',
+            'accept': '.xls,.xlsx',
+        })
+
     def clean_archivo(self):
         archivo = self.cleaned_data['archivo']
         return validate_uploaded_file(

@@ -2,30 +2,165 @@
 
 {% block title %}Subir planilla | Gestión Documental{% endblock %}
 
-{% block content %}
-<section class="surface-card p-4 p-lg-5 mx-auto" style="max-width: 760px;">
-    <span class="eyebrow mb-3">Importación</span>
-    <h1 class="page-title mb-2">Subir planilla de presupuestos</h1>
-    <p class="muted-label mb-4">Carga una planilla Excel para poblar el control operativo y comercial.</p>
+{% block extra_head %}
+<style>
+    .upload-shell {
+        display: grid;
+        gap: 1.5rem;
+        align-items: stretch;
+    }
 
-    <form method="post" enctype="multipart/form-data" novalidate>
-        {% csrf_token %}
-        {% for field in form %}
-            <div class="mb-3">
-                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% for error in field.errors %}
-                    <div class="text-danger small mt-1">{{ error }}</div>
+    .upload-form-card {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .upload-form-card::after {
+        content: "";
+        position: absolute;
+        inset: auto -4rem -6rem auto;
+        width: 14rem;
+        height: 14rem;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(79, 167, 181, 0.16), transparent 68%);
+        pointer-events: none;
+    }
+
+    .upload-side-card {
+        background:
+            linear-gradient(160deg, rgba(18, 52, 77, 0.97), rgba(31, 95, 139, 0.92)),
+            linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0));
+        color: #fff;
+        border-radius: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 1.5rem 3rem rgba(18, 52, 77, 0.14);
+    }
+
+    .upload-side-card::after {
+        content: "";
+        position: absolute;
+        width: 16rem;
+        height: 16rem;
+        right: -5rem;
+        bottom: -7rem;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .upload-note {
+        border-radius: 1.15rem;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(8px);
+    }
+
+    .upload-list {
+        margin: 0;
+        padding-left: 1.1rem;
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .upload-list li {
+        color: rgba(255, 255, 255, 0.88);
+    }
+
+    .upload-file-wrap {
+        border-radius: 1.15rem;
+        border: 1px dashed #9cb8ca;
+        background: linear-gradient(180deg, #f9fcfe, #f2f7fb);
+        padding: 1rem;
+    }
+
+    .upload-file-wrap .form-control {
+        min-height: auto;
+        padding: 0.85rem 1rem;
+        background: #fff;
+    }
+
+    .upload-help {
+        color: var(--brand-muted);
+        font-size: 0.92rem;
+    }
+
+    .field-error + .field-error {
+        margin-top: 0.35rem;
+    }
+
+    @media (min-width: 992px) {
+        .upload-shell {
+            grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="upload-shell">
+    <article class="surface-card upload-form-card p-4 p-lg-5">
+        <span class="eyebrow mb-3">Importación operativa</span>
+        <h1 class="page-title mb-2">Subir planilla de presupuestos</h1>
+        <p class="muted-label mb-4">Carga una planilla Excel para actualizar el control comercial sin perder trazabilidad de cada importación.</p>
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger rounded-4 mb-4">
+                {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
                 {% endfor %}
             </div>
-        {% endfor %}
-        {% for error in form.non_field_errors %}
-            <div class="alert alert-danger">{{ error }}</div>
-        {% endfor %}
-        <div class="d-flex flex-column flex-sm-row gap-3 mt-4">
-            <button type="submit" class="btn btn-brand rounded-pill px-4">Importar</button>
-            <a href="{% url 'listar_presupuestos' %}" class="btn btn-soft rounded-pill px-4">Cancelar</a>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+
+            <div class="mb-4">
+                <label class="form-label fw-semibold" for="{{ form.nombre.id_for_label }}">{{ form.nombre.label }}</label>
+                {{ form.nombre }}
+                <div class="upload-help mt-2">Puedes dejarlo vacío y usaremos el nombre del archivo cargado.</div>
+                {% for error in form.nombre.errors %}
+                    <div class="text-danger small mt-2 field-error">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-semibold" for="{{ form.archivo.id_for_label }}">{{ form.archivo.label }}</label>
+                <div class="upload-file-wrap">
+                    {{ form.archivo }}
+                    <div class="upload-help mt-3">
+                        Formatos permitidos: `.xls` y `.xlsx`. Tamaño máximo: 10 MB.
+                    </div>
+                </div>
+                {% for error in form.archivo.errors %}
+                    <div class="text-danger small mt-2 field-error">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="d-flex flex-column flex-sm-row gap-3 mt-4">
+                <button type="submit" class="btn btn-brand rounded-pill px-4">Importar planilla</button>
+                <a href="{% url 'listar_presupuestos' %}" class="btn btn-soft rounded-pill px-4">Cancelar</a>
+            </div>
+        </form>
+    </article>
+
+    <aside class="upload-side-card p-4 p-lg-5">
+        <span class="eyebrow mb-3">Antes de subir</span>
+        <h2 class="h3 mb-3">Checklist rápido de importación</h2>
+        <p class="text-white-50 mb-4">La carga crea un registro auditable y deja disponible la hoja fuente para revisar cualquier diferencia posterior.</p>
+
+        <div class="upload-note p-4 mb-4 position-relative">
+            <div class="fw-semibold mb-2">Incluye</div>
+            <ul class="upload-list">
+                <li>Alta masiva de presupuestos desde Excel.</li>
+                <li>Conservación del nombre de hoja procesada.</li>
+                <li>Trazabilidad de quién importó y cuándo lo hizo.</li>
+            </ul>
         </div>
-    </form>
+
+        <div class="upload-note p-4 position-relative">
+            <div class="fw-semibold mb-2">Recomendación</div>
+            <p class="mb-0 text-white-50">Usa nombres de carga reconocibles, por ejemplo mes, cliente o corte operativo. Eso facilita auditoría e historial.</p>
+        </div>
+    </aside>
 </section>
 {% endblock %}
