@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}Gestion Documental{% endblock %}</title>
+    <title>{% block title %}Gestión Documental{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -271,7 +271,7 @@
             <a class="brand-lockup" href="{% if request.user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'login' %}{% endif %}">
                 <span class="brand-mark">GD</span>
                 <span>
-                    <span class="d-block fw-semibold">Gestion Documental</span>
+                    <span class="d-block fw-semibold">Gestión Documental</span>
                     <span class="d-block small text-white-50">Plataforma corporativa</span>
                 </span>
             </a>
@@ -294,13 +294,13 @@
                         </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'listar_presupuestos_gestion' or request.resolver_match.url_name == 'listar_presupuestos' or request.resolver_match.url_name == 'subir_presupuesto' or request.resolver_match.url_name == 'crear_presupuesto' or request.resolver_match.url_name == 'editar_presupuesto' or request.resolver_match.url_name == 'historial_presupuesto' or request.resolver_match.url_name == 'eliminar_presupuesto' or request.resolver_match.url_name == 'listar_documentos' or request.resolver_match.url_name == 'historial_versiones' or request.resolver_match.url_name == 'editar_documento' or request.resolver_match.url_name == 'eliminar_documento' or request.resolver_match.url_name == 'subir_documento' or request.resolver_match.url_name == 'subir_version' %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Gestion
+                                Gestión
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li>
                                     <a class="dropdown-item {% if request.resolver_match.url_name == 'listar_presupuestos_gestion' or request.resolver_match.url_name == 'crear_presupuesto' %}active{% endif %}" href="{% url 'listar_presupuestos_gestion' %}">
                                         Presupuestos
-                                        <span class="menu-note">Vista comercial y aceptacion</span>
+                                        <span class="menu-note">Vista comercial y aceptación</span>
                                     </a>
                                 </li>
                                 <li>
@@ -313,7 +313,7 @@
                                     <li>
                                         <a class="dropdown-item {% if request.resolver_match.url_name == 'subir_presupuesto' %}active{% endif %}" href="{% url 'subir_presupuesto' %}">
                                             Cargas
-                                            <span class="menu-note">Importacion de planillas</span>
+                                            <span class="menu-note">Importación de planillas</span>
                                         </a>
                                     </li>
                                 {% elif perms.core.add_documento %}
@@ -337,12 +337,12 @@
 	                    <div class="d-flex flex-column flex-lg-row align-items-lg-center gap-3 mt-3 mt-lg-0">
 	                        {% if request.user.is_superuser %}
 	                            <a href="/admin/" class="btn btn-soft rounded-pill px-3 {% if request.path|slice:':7' == '/admin/' %}active{% endif %}">
-	                                Administracion
+	                                Administración
 	                            </a>
 	                        {% endif %}
 	                        <div class="text-white-50 small">
 	                            <div class="fw-semibold text-white">{{ request.user.username }}</div>
-	                            <div>Sesion activa</div>
+	                            <div>Sesión activa</div>
 	                        </div>
                         <form action="{% url 'logout' %}" method="post" class="mb-0">
                             {% csrf_token %}

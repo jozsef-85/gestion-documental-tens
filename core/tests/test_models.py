@@ -9,7 +9,7 @@ class RegistroPresupuestoModelTests(SimpleTestCase):
         registro = RegistroPresupuesto(
             presupuesto='Presupuesto demo',
             nota_pedido='OC-123',
-            recepcion='Recepcion 1',
+            recepcion='Recepción 1',
             factura='FAC-9',
         )
 
@@ -19,11 +19,11 @@ class RegistroPresupuestoModelTests(SimpleTestCase):
     def test_sin_nota_pedido_no_se_considera_aceptado(self):
         registro = RegistroPresupuesto(
             presupuesto='Presupuesto demo',
-            recepcion='Recepcion parcial',
+            recepcion='Recepción parcial',
             guia_despacho='GD-55',
         )
 
-        self.assertEqual(registro.estado_seguimiento, 'Pendiente aprobacion')
+        self.assertEqual(registro.estado_seguimiento, 'Pendiente de aprobación')
 
     def test_estado_manual_tiene_prioridad(self):
         registro = RegistroPresupuesto(
@@ -32,7 +32,7 @@ class RegistroPresupuestoModelTests(SimpleTestCase):
             estado_manual='pendiente',
         )
 
-        self.assertEqual(registro.estado_seguimiento, 'Pendiente aprobacion')
+        self.assertEqual(registro.estado_seguimiento, 'Pendiente de aprobación')
 
 
 class MonedaTemplateFilterTests(SimpleTestCase):

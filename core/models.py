@@ -112,8 +112,8 @@ class CargaPresupuesto(models.Model):
 
 class RegistroPresupuesto(models.Model):
     ESTADOS_MANUALES = [
-        ('', 'Automatico segun flujo'),
-        ('pendiente', 'Pendiente aprobacion'),
+        ('', 'Automático según flujo'),
+        ('pendiente', 'Pendiente de aprobación'),
         ('en_proceso', 'Aceptado / En curso'),
         ('facturado', 'Realizado'),
         ('pagado', 'Pagado'),
@@ -151,9 +151,9 @@ class RegistroPresupuesto(models.Model):
     def hitos_flujo(self):
         return [
             ('Nota de pedido', bool(self.nota_pedido)),
-            ('Recepcion', bool(self.recepcion)),
-            ('Guia de despacho', bool(self.guia_despacho)),
-            ('Facturacion', bool(self.factura or self.fecha_facturacion or self.fecha_facturacion_texto)),
+            ('Recepción', bool(self.recepcion)),
+            ('Guía de despacho', bool(self.guia_despacho)),
+            ('Facturación', bool(self.factura or self.fecha_facturacion or self.fecha_facturacion_texto)),
             ('Pago', bool(self.fecha_pago or self.fecha_pago_texto)),
         ]
 
@@ -175,7 +175,7 @@ class RegistroPresupuesto(models.Model):
             return 'Realizado'
         if self.nota_pedido:
             return 'Aceptado / En curso'
-        return 'Pendiente aprobacion'
+        return 'Pendiente de aprobación'
 
     @property
     def tiene_estado_manual(self):

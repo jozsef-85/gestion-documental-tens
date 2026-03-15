@@ -136,5 +136,5 @@ class DashboardViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Pendientes por cobrar')
-        self.assertContains(response, 'Trabajos aceptados con nota de pedido que aun no pasan a estado pagado.')
-        self.assertNotContains(response, 'Pendientes de aprobacion')
+        self.assertContains(response, 'Trabajos aceptados con nota de pedido que aún no pasan a estado pagado.')
+        self.assertNotContains(response, 'Pendientes de aprobación')

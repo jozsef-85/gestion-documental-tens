@@ -42,7 +42,7 @@ def dashboard(request):
         {
             'cantidad': total_pendientes_por_cobrar,
             'titulo': 'Pendientes por cobrar',
-            'detalle': 'Trabajos aceptados con nota de pedido que aun no pasan a estado pagado.',
+            'detalle': 'Trabajos aceptados con nota de pedido que aún no pasan a estado pagado.',
         },
         {
             'titulo': 'Trabajos pagados',

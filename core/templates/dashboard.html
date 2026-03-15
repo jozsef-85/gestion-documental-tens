@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load moneda %}
 
-{% block title %}Dashboard | Gestion Documental{% endblock %}
+{% block title %}Dashboard | Gestión Documental{% endblock %}
 
 {% block extra_head %}
     <style>
@@ -122,7 +122,7 @@
                     <span class="eyebrow mb-3">Panel ejecutivo</span>
                     <h1 class="page-title mb-3">Estado Operativo de la Empresa</h1>
                     <p class="mb-4 text-white-50 fs-5">
-                        Vista inicial para conocer rapidamente el estado de actividades segun trabajos aprobados, avance operativo y situacion de pago.
+                        Vista inicial para conocer rápidamente el estado de actividades según trabajos aprobados, avance operativo y situación de pago.
                     </p>
                     <div class="d-flex flex-column flex-sm-row gap-3">
                         <a href="{% url 'listar_presupuestos' %}" class="btn btn-light rounded-pill px-4">Abrir control</a>
@@ -142,7 +142,7 @@
                                 <div class="fw-semibold">{{ uf }}</div>
                             </div>
                             <div class="col-4">
-                                <div class="text-secondary small">Dolar</div>
+                                <div class="text-secondary small">Dólar</div>
                                 <div class="fw-semibold">{{ dolar }}</div>
                             </div>
                             <div class="col-4">
@@ -152,7 +152,7 @@
                         </div>
                         {% if ultima_carga_presupuesto %}
                             <div class="footer-note mt-4">
-                                Ultima carga: {{ ultima_carga_presupuesto.nombre }} · {{ ultima_carga_presupuesto.fecha_carga|date:"d/m/Y H:i" }}
+                                Última carga: {{ ultima_carga_presupuesto.nombre }} · {{ ultima_carga_presupuesto.fecha_carga|date:"d/m/Y H:i" }}
                             </div>
                         {% endif %}
                     </div>

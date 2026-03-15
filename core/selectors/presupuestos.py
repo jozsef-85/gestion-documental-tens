@@ -59,9 +59,9 @@ def filtrar_por_estado(queryset, estado):
 
 def resumir_flujo(queryset):
     etapas = [
-        ('Pendientes de aprobacion', q_estado_presupuesto('pendiente')),
+        ('Pendientes de aprobación', q_estado_presupuesto('pendiente')),
         ('Aceptados / En curso', q_estado_presupuesto('en_proceso')),
-        ('Con guia de despacho', Q(guia_despacho__gt='')),
+        ('Con guía de despacho', Q(guia_despacho__gt='')),
         ('Realizados', q_estado_presupuesto('facturado') | q_estado_presupuesto('pagado')),
         ('Pagados', q_estado_presupuesto('pagado')),
     ]
