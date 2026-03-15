@@ -4,6 +4,68 @@ from .models import Cliente, Documento, PersonalTrabajo, RegistroPresupuesto
 from .presupuestos import parsear_fecha_texto
 
 
+MAX_DOCUMENT_UPLOAD_SIZE = 15 * 1024 * 1024
+MAX_SPREADSHEET_UPLOAD_SIZE = 10 * 1024 * 1024
+
+ALLOWED_DOCUMENT_EXTENSIONS = {
+    '.pdf',
+    '.doc',
+    '.docx',
+    '.xls',
+    '.xlsx',
+    '.ppt',
+    '.pptx',
+    '.txt',
+    '.csv',
+    '.jpg',
+    '.jpeg',
+    '.png',
+}
+ALLOWED_DOCUMENT_CONTENT_TYPES = {
+    'application/pdf',
+    'application/msword',
+    'application/vnd.ms-excel',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'text/plain',
+    'text/csv',
+    'image/jpeg',
+    'image/png',
+}
+ALLOWED_SPREADSHEET_EXTENSIONS = {'.xls', '.xlsx'}
+ALLOWED_SPREADSHEET_CONTENT_TYPES = {
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/octet-stream',
+}
+
+
+def validate_uploaded_file(archivo, *, allowed_extensions, allowed_content_types, max_size, label):
+    nombre = archivo.name.lower()
+
+    if not any(nombre.endswith(extension) for extension in allowed_extensions):
+        extensiones = ', '.join(sorted(allowed_extensions))
+        raise forms.ValidationError(
+            f'El {label} debe tener uno de estos formatos permitidos: {extensiones}.'
+        )
+
+    if archivo.size > max_size:
+        max_size_mb = max_size // (1024 * 1024)
+        raise forms.ValidationError(
+            f'El {label} supera el tamaño máximo permitido de {max_size_mb} MB.'
+        )
+
+    content_type = getattr(archivo, 'content_type', '') or ''
+    if content_type and content_type not in allowed_content_types:
+        raise forms.ValidationError(
+            f'El tipo de archivo informado para el {label} no está permitido.'
+        )
+
+    return archivo
+
+
 class DocumentoForm(forms.ModelForm):
     presupuestos = forms.ModelMultipleChoiceField(
         label='Registros de control vinculados',
@@ -16,6 +78,16 @@ class DocumentoForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['presupuestos'].queryset = RegistroPresupuesto.objects.select_related('carga').order_by('-carga__fecha_carga', 'presupuesto')
         self.fields['estado'].choices = [choice for choice in self.fields['estado'].choices if choice[0] != 'eliminado']
+
+    def clean_archivo_actual(self):
+        archivo = self.cleaned_data['archivo_actual']
+        return validate_uploaded_file(
+            archivo,
+            allowed_extensions=ALLOWED_DOCUMENT_EXTENSIONS,
+            allowed_content_types=ALLOWED_DOCUMENT_CONTENT_TYPES,
+            max_size=MAX_DOCUMENT_UPLOAD_SIZE,
+            label='documento',
+        )
 
     class Meta:
         model = Documento
@@ -35,6 +107,16 @@ class VersionDocumentoForm(forms.Form):
     archivo = forms.FileField(label='Archivo actualizado')
     comentario = forms.CharField(label='Comentario', required=False, widget=forms.Textarea)
 
+    def clean_archivo(self):
+        archivo = self.cleaned_data['archivo']
+        return validate_uploaded_file(
+            archivo,
+            allowed_extensions=ALLOWED_DOCUMENT_EXTENSIONS,
+            allowed_content_types=ALLOWED_DOCUMENT_CONTENT_TYPES,
+            max_size=MAX_DOCUMENT_UPLOAD_SIZE,
+            label='archivo actualizado',
+        )
+
 
 class CargaPresupuestoForm(forms.Form):
     nombre = forms.CharField(label='Nombre de la carga', max_length=200, required=False)
@@ -42,10 +124,13 @@ class CargaPresupuestoForm(forms.Form):
 
     def clean_archivo(self):
         archivo = self.cleaned_data['archivo']
-        nombre = archivo.name.lower()
-        if not (nombre.endswith('.xlsx') or nombre.endswith('.xls')):
-            raise forms.ValidationError('Debes subir una planilla en formato .xlsx o .xls.')
-        return archivo
+        return validate_uploaded_file(
+            archivo,
+            allowed_extensions=ALLOWED_SPREADSHEET_EXTENSIONS,
+            allowed_content_types=ALLOWED_SPREADSHEET_CONTENT_TYPES,
+            max_size=MAX_SPREADSHEET_UPLOAD_SIZE,
+            label='planilla',
+        )
 
 
 class RegistroPresupuestoForm(forms.ModelForm):
