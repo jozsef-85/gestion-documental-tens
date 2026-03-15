@@ -335,7 +335,7 @@
                     </ul>
 
 	                    <div class="d-flex flex-column flex-lg-row align-items-lg-center gap-3 mt-3 mt-lg-0">
-	                        {% if request.user.is_staff %}
+	                        {% if request.user.is_superuser %}
 	                            <a href="/admin/" class="btn btn-soft rounded-pill px-3 {% if request.path|slice:':7' == '/admin/' %}active{% endif %}">
 	                                Administracion
 	                            </a>
