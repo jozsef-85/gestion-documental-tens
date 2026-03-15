@@ -1,5 +1,9 @@
 # Gestion Documental
 
+## Documentación útil
+
+- [SECURITY.md](SECURITY.md): checklist operativa de seguridad basada en OWASP para este proyecto.
+
 ## Convenciones de desarrollo
 
 ### Migraciones de Django
