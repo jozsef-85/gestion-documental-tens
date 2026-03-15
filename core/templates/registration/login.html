@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Iniciar sesion | Gestion Documental{% endblock %}
+{% block title %}Iniciar sesión | Gestión Documental{% endblock %}
 
 {% block body_class %}login-page{% endblock %}
 
@@ -10,11 +10,12 @@
         min-height: calc(100vh - 10rem);
         display: grid;
         align-items: center;
+        padding-block: 1rem;
     }
 
     .login-layout {
         display: grid;
-        gap: 1.5rem;
+        gap: 0;
     }
 
     .login-panel {
@@ -45,6 +46,7 @@
 
     .login-form {
         padding: 2rem;
+        order: 1;
     }
 
     .login-form label {
@@ -79,6 +81,45 @@
         font-size: 0.92rem;
     }
 
+    .login-aside {
+        order: 2;
+    }
+
+    @media (max-width: 991.98px) {
+        .login-shell {
+            min-height: auto;
+            padding-block: 0;
+        }
+
+        .login-panel {
+            border-radius: 1.2rem;
+        }
+
+        .login-form,
+        .login-aside {
+            padding: 1.5rem;
+        }
+
+        .login-aside {
+            min-height: auto;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .login-form,
+        .login-aside {
+            padding: 1.25rem;
+        }
+
+        .page-title {
+            font-size: 1.9rem;
+        }
+
+        .login-form .section-title {
+            font-size: 1.45rem !important;
+        }
+    }
+
     @media (min-width: 992px) {
         .login-layout {
             grid-template-columns: minmax(18rem, 24rem) minmax(20rem, 28rem);
@@ -87,6 +128,14 @@
         .login-form,
         .login-aside {
             padding: 2.5rem;
+        }
+
+        .login-form {
+            order: 2;
+        }
+
+        .login-aside {
+            order: 1;
         }
     }
 </style>
@@ -97,7 +146,7 @@
     <div class="login-layout surface-card login-panel mx-auto w-100" style="max-width: 980px;">
         <aside class="login-aside">
             <span class="eyebrow mb-3">Acceso seguro</span>
-            <h1 class="page-title mb-3">Gestion documental para operacion y seguimiento</h1>
+            <h1 class="page-title mb-3">Gestión documental para operación y seguimiento</h1>
             <p class="login-note mb-4">
                 Ingresa con tu usuario corporativo para revisar presupuestos, respaldos y actividad comercial.
             </p>
@@ -115,14 +164,14 @@
 
         <div class="login-form">
             <div class="mb-4">
-                <span class="eyebrow text-bg-light border">Inicio de sesion</span>
+                <span class="eyebrow text-bg-light border">Inicio de sesión</span>
                 <h2 class="section-title mt-3 mb-2" style="font-size: 1.6rem;">Bienvenido</h2>
                 <p class="muted-label mb-0">Usa tus credenciales para continuar.</p>
             </div>
 
             {% if form.non_field_errors or form.errors %}
                 <div class="alert alert-danger" role="alert">
-                    Usuario o contrasena incorrectos. Revisa tus credenciales e intenta nuevamente.
+                    Usuario o contraseña incorrectos. Revisa tus credenciales e intenta nuevamente.
                 </div>
             {% endif %}
 
@@ -136,7 +185,7 @@
                 </div>
 
                 <div class="mb-4">
-                    <label for="{{ form.password.id_for_label }}">Contrasena</label>
+                    <label for="{{ form.password.id_for_label }}">Contraseña</label>
                     {{ form.password }}
                     {{ form.password.errors }}
                 </div>
