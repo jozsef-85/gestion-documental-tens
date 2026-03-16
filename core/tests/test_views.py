@@ -421,7 +421,7 @@ class ControlPresupuestosViewTests(TestCase):
     def setUp(self):
         self.usuario = User.objects.create_user(username='presupuestos', password='secreta123')
         permisos = Permission.objects.filter(
-            codename__in=['view_registropresupuesto', 'change_registropresupuesto', 'add_asignaciontrabajo']
+            codename__in=['view_registropresupuesto', 'change_registropresupuesto', 'add_registropresupuesto', 'add_asignaciontrabajo']
         )
         self.usuario.user_permissions.add(*permisos)
         self.client.force_login(self.usuario)
@@ -455,20 +455,27 @@ class ControlPresupuestosViewTests(TestCase):
         self.cliente = Cliente.objects.create(nombre='Constructora Sur')
         self.cliente_alt = Cliente.objects.create(nombre='Electro Minera')
 
-    def test_listar_presupuestos_gestion_expone_resumen(self):
-        with patch('core.views_control_presupuestos.render') as mocked_render:
-            mocked_render.side_effect = lambda request, template, context: HttpResponse('ok')
-
-            response = self.client.get(reverse('listar_presupuestos_gestion'))
+    def test_listar_presupuestos_gestion_espera_consulta_antes_de_listar(self):
+        response = self.client.get(reverse('listar_presupuestos_gestion'))
 
         self.assertEqual(response.status_code, 200)
-        template_name = mocked_render.call_args.args[1]
-        context = mocked_render.call_args.args[2]
-        self.assertEqual(template_name, 'listar_presupuestos_gestion.html')
-        self.assertEqual(context['total_presupuestos'], 2)
-        self.assertEqual(context['total_pendientes_aprobacion'], 1)
-        self.assertEqual(context['total_aceptados'], 1)
-        self.assertEqual(context['monto_por_cobrar'], 800000)
+        self.assertFalse(response.context['consulta_activa'])
+        self.assertEqual(list(response.context['registros']), [])
+        self.assertContains(response, 'Nuevo registro')
+        self.assertContains(response, 'Aún no hay una consulta aplicada')
+        self.assertNotContains(response, 'Total presupuestos')
+        self.assertNotContains(response, 'Pendientes de aprobación')
+        self.assertNotContains(response, 'Monto por cobrar')
+        self.assertNotContains(response, 'PRES-PEND')
+
+    def test_listar_presupuestos_gestion_filtra_solo_cuando_hay_consulta(self):
+        response = self.client.get(reverse('listar_presupuestos_gestion'), {'estado': 'aceptado'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['consulta_activa'])
+        self.assertEqual(response.context['total_filtrados'], 1)
+        self.assertContains(response, 'PRES-ACEP')
+        self.assertNotContains(response, 'PRES-PEND')
 
     def test_editar_presupuesto_actualiza_registro_y_auditoria(self):
         response = self.client.post(
