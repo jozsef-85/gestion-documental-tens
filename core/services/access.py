@@ -32,13 +32,7 @@ def any_permission_required(*perms):
 
 def model_access_required(app_label, model_name):
     model_name = model_name.lower()
-    perms = [
-        f'{app_label}.view_{model_name}',
-        f'{app_label}.add_{model_name}',
-        f'{app_label}.change_{model_name}',
-        f'{app_label}.delete_{model_name}',
-    ]
-    return any_permission_required(*perms)
+    return any_permission_required(f'{app_label}.view_{model_name}')
 
 
 def usuario_confidencialidad_alta(user):

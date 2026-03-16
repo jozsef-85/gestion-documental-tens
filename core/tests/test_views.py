@@ -277,6 +277,17 @@ class DashboardViewTests(TestCase):
         response = self.client.get(reverse('dashboard'))
 
         self.assertEqual(response.status_code, 403)
+
+    def test_dashboard_no_se_habilita_con_permiso_de_alta_sin_view(self):
+        self.client.logout()
+        usuario = User.objects.create_user(username='soloalta', password='secreta123')
+        permiso = Permission.objects.get(codename='add_registropresupuesto')
+        usuario.user_permissions.add(permiso)
+        self.client.force_login(usuario)
+
+        response = self.client.get(reverse('dashboard'))
+
+        self.assertEqual(response.status_code, 403)
         self.assertContains(response, 'No tienes acceso a esta operación', status_code=403)
 
     @patch('core.views_dashboard.obtener_indicadores', return_value={'uf': 'N/D', 'dolar': 'N/D', 'utm': 'N/D'})
