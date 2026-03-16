@@ -67,6 +67,31 @@ No recargar primero.
 - `Documentos`, `Clientes` y `Personal` también priorizan consulta con filtros antes de cargar listados.
 - Documentos con confidencialidad `alta` quedan visibles solo para administradores, editores o creador del archivo.
 - En producción no se debe publicar `/media/` como ruta abierta para documentos sensibles; las descargas documentales deben pasar por vistas protegidas.
+- Las alertas de cobranza usan SMTP configurable por `.env` y el comando `python manage.py enviar_alertas_cobro`.
+
+## Correo operativo de cobranzas
+
+Antes de usar el comando en producción, definir:
+
+```bash
+DJANGO_EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+DJANGO_EMAIL_HOST=smtp.tu-operador.cl
+DJANGO_EMAIL_PORT=587
+DJANGO_EMAIL_HOST_USER=cobranzas@tuempresa.cl
+DJANGO_EMAIL_HOST_PASSWORD=tu-clave
+DJANGO_EMAIL_USE_TLS=True
+DJANGO_DEFAULT_FROM_EMAIL="Gestion Documental <cobranzas@tuempresa.cl>"
+DJANGO_COBRANZA_OPERATOR_EMAILS=cobranzas@tuempresa.cl,administracion@tuempresa.cl
+DJANGO_COBRANZA_REPLY_TO=cobranzas@tuempresa.cl
+DJANGO_COBRANZA_APP_URL=https://app.sysnergia.com/gestion/presupuestos/?estado=por_cobrar
+```
+
+Secuencia recomendada:
+
+1. Probar con `python manage.py enviar_alertas_cobro --dry-run`
+2. Revisar destinatarios y resumen
+3. Ejecutar `python manage.py enviar_alertas_cobro`
+4. Si se desea contacto directo con clientes, usar `python manage.py enviar_alertas_cobro --enviar-clientes`
 
 ## Checklist rápido post-deploy
 

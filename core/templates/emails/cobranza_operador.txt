@@ -1,0 +1,19 @@
+Resumen interno de cobranza
+
+Facturas pendientes detectadas: {{ total_registros }}
+Registros con email de cliente: {{ total_con_email }}
+Registros sin email de cliente: {{ total_sin_email }}
+Monto total pendiente: ${{ total_monto }}
+
+{% if app_url %}Ver seguimiento: {{ app_url }}
+
+{% endif %}Detalle:
+{% for item in items %}
+- Cliente: {{ item.cliente_nombre }}
+  Presupuesto: {{ item.registro.presupuesto }}
+  Factura: {{ item.registro.factura|default:"Sin factura" }}
+  Fecha facturacion: {{ item.registro.fecha_facturacion_texto|default:item.registro.fecha_facturacion|default:"Sin fecha" }}
+  Dias pendiente: {{ item.dias_pendiente|default:"Sin fecha de facturacion" }}
+  Monto: ${{ item.monto }}
+  Contacto email: {{ item.cliente_email|default:"Sin email" }}
+{% endfor %}

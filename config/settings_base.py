@@ -136,6 +136,20 @@ STORAGES = {
 MEDIA_URL = '/media/'
 MEDIA_ROOT = config('DJANGO_MEDIA_ROOT', default=str(DEFAULT_STORAGE_ROOT / 'media'))
 
+EMAIL_BACKEND = config('DJANGO_EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = config('DJANGO_EMAIL_HOST', default='localhost')
+EMAIL_PORT = config('DJANGO_EMAIL_PORT', default=25, cast=int)
+EMAIL_HOST_USER = config('DJANGO_EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('DJANGO_EMAIL_HOST_PASSWORD', default='')
+EMAIL_USE_TLS = config('DJANGO_EMAIL_USE_TLS', default=False, cast=bool)
+EMAIL_USE_SSL = config('DJANGO_EMAIL_USE_SSL', default=False, cast=bool)
+EMAIL_TIMEOUT = config('DJANGO_EMAIL_TIMEOUT', default=30, cast=int)
+DEFAULT_FROM_EMAIL = config('DJANGO_DEFAULT_FROM_EMAIL', default='noreply@localhost')
+SERVER_EMAIL = config('DJANGO_SERVER_EMAIL', default=DEFAULT_FROM_EMAIL)
+COBRANZA_OPERATOR_EMAILS = split_csv(config('DJANGO_COBRANZA_OPERATOR_EMAILS', default=''))
+COBRANZA_REPLY_TO = split_csv(config('DJANGO_COBRANZA_REPLY_TO', default=''))
+COBRANZA_APP_URL = config('DJANGO_COBRANZA_APP_URL', default='')
+
 
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'

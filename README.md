@@ -5,6 +5,39 @@
 - [DEPLOY.md](DEPLOY.md): flujo recomendado de despliegue y operación para este entorno.
 - [SECURITY.md](SECURITY.md): checklist operativa de seguridad basada en OWASP para este proyecto.
 
+## Correos de cobranza
+
+El proyecto queda preparado para usar SMTP real y enviar alertas de cobranza sobre facturas pendientes de pago.
+
+Variables base:
+
+```bash
+DJANGO_EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+DJANGO_EMAIL_HOST=smtp.tu-operador.cl
+DJANGO_EMAIL_PORT=587
+DJANGO_EMAIL_HOST_USER=cobranzas@tuempresa.cl
+DJANGO_EMAIL_HOST_PASSWORD=tu-clave
+DJANGO_EMAIL_USE_TLS=True
+DJANGO_DEFAULT_FROM_EMAIL="Gestion Documental <cobranzas@tuempresa.cl>"
+DJANGO_COBRANZA_OPERATOR_EMAILS=cobranzas@tuempresa.cl,administracion@tuempresa.cl
+DJANGO_COBRANZA_REPLY_TO=cobranzas@tuempresa.cl
+DJANGO_COBRANZA_APP_URL=https://app.sysnergia.com/gestion/presupuestos/?estado=por_cobrar
+```
+
+Comando disponible:
+
+```bash
+python manage.py enviar_alertas_cobro --dry-run
+python manage.py enviar_alertas_cobro
+python manage.py enviar_alertas_cobro --enviar-clientes
+```
+
+Uso sugerido:
+
+- `--dry-run`: revisar el resumen sin enviar correos.
+- sin flags extra: enviar resumen interno al operador de cobranzas.
+- `--enviar-clientes`: ademas enviar recordatorios a clientes con email cargado.
+
 ## Logs en producción
 
 El proyecto soporta salida de logs a archivo rotado para operación real.

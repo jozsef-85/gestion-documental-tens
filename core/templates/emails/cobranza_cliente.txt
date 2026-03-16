@@ -1,0 +1,18 @@
+Estimado/a {{ cliente.contacto|default:cliente.nombre }},
+
+Le escribimos para informar que existen factura(s) pendiente(s) de pago asociadas a servicios realizados:
+
+{% for item in registros %}
+- Presupuesto: {{ item.registro.presupuesto }}
+  Factura: {{ item.registro.factura|default:"Sin factura informada" }}
+  Fecha facturacion: {{ item.registro.fecha_facturacion_texto|default:item.registro.fecha_facturacion|default:"Sin fecha informada" }}
+  Monto: ${{ item.registro.monto|default:"0" }}
+  Dias transcurridos: {{ item.dias_pendiente|default:"No disponible" }}
+{% endfor %}
+
+Si el pago ya fue realizado, por favor ignore este mensaje o respondanos con el comprobante para actualizar el sistema.
+
+{% if app_url %}Referencia interna: {{ app_url }}
+
+{% endif %}Saludos,
+Equipo de cobranzas

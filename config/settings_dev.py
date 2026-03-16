@@ -12,4 +12,4 @@ CSRF_TRUSTED_ORIGINS = split_csv(
     )
 )
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = config('DJANGO_EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
