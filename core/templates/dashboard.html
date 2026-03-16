@@ -178,7 +178,7 @@
             <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
                 <div>
                     <p class="section-kicker mb-2">Resumen ejecutivo</p>
-                    <h2 class="section-title">ACTIVIDAD DE TRABAJOS ACEPTADOS</h2>
+                    <h2 class="section-title">ACTIVIDAD DE TRABAJOS</h2>
                 </div>
                 <p class="footer-note mb-0">El control consolida estados efectivos, incluyendo ajustes manuales cuando existen.</p>
             </div>
@@ -188,7 +188,7 @@
                     <div class="data-stat counter-card p-4 h-100">
                         <div class="d-flex align-items-center gap-2 mb-2">
                             <span class="status-dot status-curso"></span>
-                            <div class="muted-label">Aceptados / realizados</div>
+                            <div class="muted-label">Aceptados</div>
                         </div>
                         <div class="value">{{ total_con_nota_pedido }}</div>
                     </div>
@@ -230,10 +230,11 @@
                         <div>
                             <p class="section-kicker mb-2">Seguimiento</p>
                             <h2 class="section-title">Seguimiento principal</h2>
+                            <div class="footer-note mt-1">Solo incluye presupuestos actualmente en curso.</div>
                         </div>
                         <div class="status-badge">
                             <span class="status-dot status-curso"></span>
-                            Activos con gestión: {{ total_con_nota_pedido }}
+                            En curso: {{ total_en_ejecucion }}
                         </div>
                     </div>
 
@@ -282,7 +283,7 @@
                                     </tr>
                                 {% empty %}
                                     <tr>
-                                        <td colspan="5" class="text-center muted-label py-4">No hay trabajos para mostrar en seguimiento.</td>
+                                        <td colspan="5" class="text-center muted-label py-4">No hay presupuestos en curso para mostrar.</td>
                                     </tr>
                                 {% endfor %}
                             </tbody>

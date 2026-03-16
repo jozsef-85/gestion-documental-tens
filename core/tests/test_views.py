@@ -154,9 +154,10 @@ class DashboardViewTests(TestCase):
         self.assertContains(response, 'Pendientes por cobrar')
         self.assertContains(response, f'{reverse("listar_presupuestos")}?estado=por_cobrar')
         self.assertContains(response, 'Fecha de facturación')
-        self.assertContains(response, '08/03/2026')
         self.assertContains(response, 'Trabajos aceptados o realizados que aún no pasan a estado pagado.')
         self.assertNotContains(response, 'Pendientes de aprobación')
+        self.assertContains(response, 'Solo incluye presupuestos actualmente en curso.')
+        self.assertEqual([registro.presupuesto for registro in response.context['dashboard_registros']], ['PEND-001'])
 
     def test_dashboard_requiere_permiso_de_acceso(self):
         self.client.logout()

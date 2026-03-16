@@ -1,5 +1,4 @@
 from django.contrib.auth.decorators import login_required
-from django.db.models import Case, Value, When
 from django.db.models.functions import Coalesce
 from django.shortcuts import render
 from django.urls import reverse
@@ -9,7 +8,7 @@ from .models import CargaPresupuesto, RegistroPresupuesto
 from .selectors.presupuestos import (
     aggregate_presupuesto_metrics,
     inventario_presupuestos_queryset,
-    q_aceptado_efectivo,
+    q_estado_presupuesto,
 )
 from .services.access import model_access_required
 from .services.indicators import obtener_indicadores
@@ -23,13 +22,9 @@ def dashboard(request):
     inventario_actual = inventario_presupuestos_queryset().prefetch_related('documentos')
     resumen = aggregate_presupuesto_metrics(inventario_actual)
     dashboard_registros = list(
-        inventario_actual.select_related('carga', 'actualizado_por').annotate(
+        inventario_actual.filter(q_estado_presupuesto('en_proceso')).select_related('carga', 'actualizado_por').annotate(
             fecha_gestion=Coalesce('fecha_actualizacion', 'carga__fecha_carga'),
-            orden_nota=Case(
-                When(q_aceptado_efectivo(), then=Value(1)),
-                default=Value(0),
-            ),
-        ).order_by('-orden_nota', '-fecha_gestion', 'presupuesto')[:12]
+        ).order_by('-fecha_gestion', 'presupuesto')[:12]
     )
     ultimos_presupuestos = list(
         inventario_actual.select_related('carga').order_by('-carga__fecha_carga', 'presupuesto')[:6]
