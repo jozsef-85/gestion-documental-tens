@@ -289,6 +289,7 @@ class ControlPresupuestosViewTests(TestCase):
             activo=True,
         )
         self.cliente = Cliente.objects.create(nombre='Constructora Sur')
+        self.cliente_alt = Cliente.objects.create(nombre='Electro Minera')
 
     def test_listar_presupuestos_gestion_expone_resumen(self):
         with patch('core.views_control_presupuestos.render') as mocked_render:
@@ -414,6 +415,54 @@ class ControlPresupuestosViewTests(TestCase):
         self.assertContains(response, 'PRES-ACEP')
         self.assertContains(response, 'PRES-FACT')
         self.assertNotContains(response, 'PRES-PAG')
+
+    def test_listar_presupuestos_no_carga_registros_sin_consulta(self):
+        response = self.client.get(reverse('listar_presupuestos'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Aún no hay una consulta aplicada.')
+        self.assertNotContains(response, 'PRES-PEND')
+        self.assertFalse(response.context['consulta_activa'])
+        self.assertEqual(len(response.context['registros']), 0)
+
+    def test_listar_presupuestos_filtra_por_cliente_tipo_y_ubicacion(self):
+        self.registro_en_proceso.cliente = self.cliente
+        self.registro_en_proceso.tipo_trabajo = 'instalacion'
+        self.registro_en_proceso.ubicacion_obra = 'Obra Hospital Norte'
+        self.registro_en_proceso.save(update_fields=['cliente', 'tipo_trabajo', 'ubicacion_obra'])
+
+        RegistroPresupuesto.objects.create(
+            carga=self.carga,
+            fila_origen=5,
+            cliente=self.cliente_alt,
+            presupuesto='PRES-ALT',
+            tipo_trabajo='mantencion',
+            ubicacion_obra='Planta Sur',
+            descripcion='Mantencion electrica',
+            nota_pedido='OC-777',
+        )
+
+        response = self.client.get(reverse('listar_presupuestos'), {
+            'cliente': self.cliente.id,
+            'tipo_trabajo': 'instalacion',
+            'ubicacion': 'Hospital',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'PRES-ACEP')
+        self.assertNotContains(response, 'PRES-ALT')
+        self.assertTrue(response.context['consulta_activa'])
+
+    def test_listar_presupuestos_no_muestra_acciones_administrativas_en_consulta(self):
+        permiso_alta = Permission.objects.get(codename='add_registropresupuesto')
+        permiso_carga = Permission.objects.get(codename='add_cargapresupuesto')
+        self.usuario.user_permissions.add(permiso_alta, permiso_carga)
+
+        response = self.client.get(reverse('listar_presupuestos'), {'estado': 'en_proceso'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'Nuevo registro')
+        self.assertNotContains(response, 'Subir planilla')
 
 
 class TemplateSmokeTests(TestCase):

@@ -246,11 +246,33 @@
         <span class="badge badge-soft rounded-pill">Realizado: ya tiene factura o fecha de facturacion</span>
     </div>
     <form method="get" class="row g-3 align-items-end">
-        <div class="col-12 col-lg-5">
+        <div class="col-12 col-xl-4">
             <label class="form-label" for="q">Buscar</label>
             <input class="form-control" id="q" type="text" name="q" value="{{ request.GET.q }}" placeholder="Presupuesto, cliente, ubicacion, solicitante, O.C. o factura">
         </div>
-        <div class="col-12 col-lg-2">
+        <div class="col-12 col-md-6 col-xl-2">
+            <label class="form-label" for="cliente">Cliente</label>
+            <select class="form-select" id="cliente" name="cliente">
+                <option value="">Todos</option>
+                {% for cliente in clientes %}
+                    <option value="{{ cliente.id }}" {% if request.GET.cliente == cliente.id|stringformat:"s" %}selected{% endif %}>{{ cliente.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-12 col-md-6 col-xl-2">
+            <label class="form-label" for="tipo_trabajo">Tipo de trabajo</label>
+            <select class="form-select" id="tipo_trabajo" name="tipo_trabajo">
+                <option value="">Todos</option>
+                {% for valor, etiqueta in tipos_trabajo %}
+                    <option value="{{ valor }}" {% if request.GET.tipo_trabajo == valor %}selected{% endif %}>{{ etiqueta }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-12 col-md-6 col-xl-2">
+            <label class="form-label" for="ubicacion">Ubicación</label>
+            <input class="form-control" id="ubicacion" type="text" name="ubicacion" value="{{ request.GET.ubicacion }}" placeholder="Obra, faena o planta">
+        </div>
+        <div class="col-12 col-md-6 col-xl-2">
             <label class="form-label" for="estado">Estado</label>
             <select class="form-select" id="estado" name="estado">
                 <option value="">Todos</option>
@@ -261,12 +283,20 @@
                 <option value="pagado" {% if request.GET.estado == 'pagado' %}selected{% endif %}>Pagado</option>
             </select>
         </div>
-        <div class="col-12 col-lg-3">
+        <div class="col-12 col-md-6 col-xl-3">
             <label class="form-label" for="carga">Carga</label>
-            <input class="form-control" id="carga" type="text" name="carga" value="{{ request.GET.carga }}" placeholder="ID de carga">
+            <select class="form-select" id="carga" name="carga">
+                <option value="">Todas</option>
+                {% for carga in cargas_recientes %}
+                    <option value="{{ carga.id }}" {% if request.GET.carga == carga.id|stringformat:"s" %}selected{% endif %}>#{{ carga.id }} · {{ carga.nombre }}</option>
+                {% endfor %}
+            </select>
         </div>
-        <div class="col-12 col-lg-2 d-grid">
+        <div class="col-12 col-md-6 col-xl-2 d-grid">
             <button type="submit" class="btn btn-brand rounded-pill">Filtrar</button>
+        </div>
+        <div class="col-12 col-md-6 col-xl-1 d-grid">
+            <a href="{% url 'listar_presupuestos' %}" class="btn btn-soft rounded-pill">Limpiar</a>
         </div>
     </form>
 </section>
@@ -276,18 +306,15 @@
     <div class="records-toolbar">
         <div>
             <p class="section-title mb-1">Registros</p>
-            <div class="footer-note">{{ total_filtrados }} resultado(s). {% if selected_carga %}Carga seleccionada: {{ selected_carga.nombre }}.{% endif %}</div>
-        </div>
-        <div class="d-flex flex-wrap gap-2">
-            {% if perms.core.add_registropresupuesto %}
-                <a href="{% url 'crear_presupuesto' %}" class="btn btn-soft rounded-pill px-4">Nuevo registro</a>
-            {% endif %}
-            {% if perms.core.add_cargapresupuesto %}
-                <a href="{% url 'subir_presupuesto' %}" class="btn btn-brand rounded-pill px-4">Subir planilla</a>
+            {% if consulta_activa %}
+                <div class="footer-note">{{ total_filtrados }} resultado(s). {% if selected_carga %}Carga seleccionada: {{ selected_carga.nombre }}.{% endif %}</div>
+            {% else %}
+                <div class="footer-note">Esta pantalla funciona como consulta. Usa los filtros para buscar trabajos antes de cargar resultados.</div>
             {% endif %}
         </div>
     </div>
 
+    {% if consulta_activa %}
     <div class="records-table-wrap">
     <div class="table-responsive">
         <table class="table records-table align-middle">
@@ -394,6 +421,11 @@
         </table>
     </div>
     </div>
+    {% else %}
+    <div class="document-card p-4 text-center muted-label">
+        Aún no hay una consulta aplicada. Filtra por cliente, tipo de trabajo, ubicación, estado o carga para ver resultados.
+    </div>
+    {% endif %}
     </div>
 </section>
 {% endblock %}

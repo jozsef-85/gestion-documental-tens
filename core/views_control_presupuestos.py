@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.timezone import now
 
 from .forms import AsignacionTrabajoForm, CargaPresupuestoForm, RegistroPresupuestoForm
-from .models import AsignacionTrabajo, Auditoria, CargaPresupuesto, RegistroPresupuesto, TrabajoPresupuesto
+from .models import AsignacionTrabajo, Auditoria, CargaPresupuesto, Cliente, RegistroPresupuesto, TrabajoPresupuesto
 from .presupuestos import parsear_planilla_presupuestos
 from .selectors.presupuestos import (
     aggregate_presupuesto_metrics,
@@ -92,7 +92,7 @@ def listar_presupuestos_gestion(request):
 @login_required
 @model_access_required('core', 'registropresupuesto')
 def listar_presupuestos(request):
-    registros = inventario_presupuestos_queryset().select_related('cliente').prefetch_related(
+    base_queryset = inventario_presupuestos_queryset().select_related('cliente').prefetch_related(
         'documentos',
         'trabajo__asignaciones',
         'trabajo__asignaciones__trabajador',
@@ -102,6 +102,44 @@ def listar_presupuestos(request):
     q = request.GET.get('q', '').strip()
     estado = request.GET.get('estado', '').strip()
     carga_id = request.GET.get('carga', '').strip()
+    cliente_id = request.GET.get('cliente', '').strip()
+    tipo_trabajo = request.GET.get('tipo_trabajo', '').strip()
+    ubicacion = request.GET.get('ubicacion', '').strip()
+    consulta_activa = any([q, estado, carga_id, cliente_id, tipo_trabajo, ubicacion])
+
+    inventario_actual = inventario_presupuestos_queryset()
+    resumen_metricas = aggregate_presupuesto_metrics(inventario_actual)
+    cargas_recientes = CargaPresupuesto.objects.select_related('creado_por')[:8]
+    auditorias_recientes = Auditoria.objects.filter(entidad='CargaPresupuesto').order_by('-fecha_evento')[:8]
+    consolidados_solicitante = inventario_actual.filter(q_aceptado()).exclude(solicitante='').values('solicitante').annotate(
+        total_items=Count('id'),
+        total_monto=Sum('monto'),
+    ).order_by('-total_monto', 'solicitante')[:6]
+    clientes = Cliente.objects.filter(activo=True).order_by('nombre')
+
+    if not consulta_activa:
+        page_obj = Paginator(RegistroPresupuesto.objects.none(), 20).get_page(request.GET.get('page'))
+        return render(request, 'listar_presupuestos.html', {
+            'registros': page_obj.object_list,
+            'page_obj': page_obj,
+            'total_filtrados': 0,
+            'total_cargas_presupuesto': CargaPresupuesto.objects.count(),
+            'total_registros_presupuesto': RegistroPresupuesto.objects.count(),
+            'total_pagados': resumen_metricas['total_pagados'],
+            'total_facturados': resumen_metricas['total_facturados'],
+            'total_en_proceso': resumen_metricas['total_en_proceso'],
+            'ultima_carga': CargaPresupuesto.objects.first(),
+            'cargas_recientes': cargas_recientes,
+            'auditorias_recientes': auditorias_recientes,
+            'consolidados_solicitante': consolidados_solicitante,
+            'consolidado_flujo': resumir_flujo(inventario_actual),
+            'selected_carga': selected_carga,
+            'clientes': clientes,
+            'tipos_trabajo': RegistroPresupuesto.TIPOS_TRABAJO,
+            'consulta_activa': False,
+        })
+
+    registros = base_queryset
 
     if q:
         registros = registros.filter(
@@ -118,6 +156,15 @@ def listar_presupuestos(request):
             | Q(ubicacion_obra__icontains=q)
         )
 
+    if cliente_id.isdigit():
+        registros = registros.filter(cliente_id=int(cliente_id))
+
+    if tipo_trabajo:
+        registros = registros.filter(tipo_trabajo=tipo_trabajo)
+
+    if ubicacion:
+        registros = registros.filter(ubicacion_obra__icontains=ubicacion)
+
     if carga_id.isdigit():
         selected_carga = get_object_or_404(CargaPresupuesto.objects.select_related('creado_por'), id=int(carga_id))
         registros = RegistroPresupuesto.objects.select_related(
@@ -131,21 +178,33 @@ def listar_presupuestos(request):
             'trabajo__asignaciones__trabajador',
         ).filter(carga=selected_carga)
 
+        if q:
+            registros = registros.filter(
+                Q(presupuesto__icontains=q)
+                | Q(descripcion__icontains=q)
+                | Q(solicitante__icontains=q)
+                | Q(nota_pedido__icontains=q)
+                | Q(estado_oc__icontains=q)
+                | Q(observacion_oc__icontains=q)
+                | Q(factura__icontains=q)
+                | Q(estado_recepcion__icontains=q)
+                | Q(cliente__nombre__icontains=q)
+                | Q(tipo_trabajo__icontains=q)
+                | Q(ubicacion_obra__icontains=q)
+            )
+        if cliente_id.isdigit():
+            registros = registros.filter(cliente_id=int(cliente_id))
+        if tipo_trabajo:
+            registros = registros.filter(tipo_trabajo=tipo_trabajo)
+        if ubicacion:
+            registros = registros.filter(ubicacion_obra__icontains=ubicacion)
+
     registros = filtrar_por_estado(registros, estado)
 
     registros = registros.order_by('-carga__fecha_carga', 'fila_origen')
     total_filtrados = registros.count()
     paginator = Paginator(registros, 20)
     page_obj = paginator.get_page(request.GET.get('page'))
-    inventario_actual = inventario_presupuestos_queryset()
-    resumen_base = registros if selected_carga else inventario_actual
-    resumen_metricas = aggregate_presupuesto_metrics(resumen_base)
-    cargas_recientes = CargaPresupuesto.objects.select_related('creado_por')[:8]
-    auditorias_recientes = Auditoria.objects.filter(entidad='CargaPresupuesto').order_by('-fecha_evento')[:8]
-    consolidados_solicitante = resumen_base.filter(q_aceptado()).exclude(solicitante='').values('solicitante').annotate(
-        total_items=Count('id'),
-        total_monto=Sum('monto'),
-    ).order_by('-total_monto', 'solicitante')[:6]
 
     return render(request, 'listar_presupuestos.html', {
         'registros': page_obj.object_list,
@@ -160,8 +219,11 @@ def listar_presupuestos(request):
         'cargas_recientes': cargas_recientes,
         'auditorias_recientes': auditorias_recientes,
         'consolidados_solicitante': consolidados_solicitante,
-        'consolidado_flujo': resumir_flujo(resumen_base),
+        'consolidado_flujo': resumir_flujo(inventario_actual),
         'selected_carga': selected_carga,
+        'clientes': clientes,
+        'tipos_trabajo': RegistroPresupuesto.TIPOS_TRABAJO,
+        'consulta_activa': True,
     })
 
 
