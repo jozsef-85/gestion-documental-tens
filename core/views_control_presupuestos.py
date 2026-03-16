@@ -56,6 +56,9 @@ def asegurar_trabajo_en_registro(registro):
 @model_access_required('core', 'registropresupuesto')
 def listar_presupuestos_gestion(request):
     registros = inventario_presupuestos_queryset().select_related('cliente').prefetch_related('documentos', 'trabajo__asignaciones')
+    registros = registros.filter(
+        q_estado_presupuesto('pendiente') | q_estado_presupuesto('en_proceso')
+    )
     q = request.GET.get('q', '').strip()
     estado = request.GET.get('estado', '').strip()
     consulta_activa = any([q, estado])
@@ -81,7 +84,7 @@ def listar_presupuestos_gestion(request):
     if estado == 'pendiente':
         registros = registros.filter(q_estado_presupuesto('pendiente'))
     elif estado == 'aceptado':
-        registros = registros.filter(q_aceptado())
+        registros = registros.filter(q_estado_presupuesto('en_proceso'))
 
     registros = registros.order_by('-carga__fecha_carga', 'presupuesto')
 

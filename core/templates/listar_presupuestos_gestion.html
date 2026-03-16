@@ -1,20 +1,20 @@
 {% extends "base.html" %}
 {% load moneda %}
 
-{% block title %}Gestión de presupuestos | Gestión Documental{% endblock %}
+{% block title %}Gestión comercial de presupuestos | Gestión Documental{% endblock %}
 
 {% block content %}
 <section class="hero-panel p-4 p-lg-5 mb-4">
     <span class="eyebrow mb-3">Vista comercial</span>
-    <h1 class="page-title mb-2">Gestión de presupuestos</h1>
-    <p class="mb-0 text-white-50">Seguimiento comercial rapido para servicios y obras desde aceptacion hasta cobro.</p>
+    <h1 class="page-title mb-2">Gestión comercial de presupuestos</h1>
+    <p class="mb-0 text-white-50">Revisa presupuestos antes de la ejecución y administra su preparación comercial con foco en aceptación.</p>
 </section>
 
 <section class="surface-card p-4 p-lg-5">
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
         <div>
             <p class="section-title mb-1">Consulta comercial</p>
-            <div class="footer-note">Busca presupuestos por texto y estado. Los resultados aparecen solo cuando haces una consulta.</div>
+            <div class="footer-note">Este módulo está pensado para preparar, revisar y editar presupuestos pendientes o aceptados antes del seguimiento operativo.</div>
         </div>
         {% if perms.core.add_registropresupuesto %}
             <a href="{% url 'crear_presupuesto' %}" class="btn btn-brand rounded-pill px-4">Nuevo registro</a>
@@ -22,14 +22,14 @@
     </div>
 
     <div class="d-flex flex-wrap gap-2 mb-4">
-        <span class="badge badge-soft rounded-pill">Aceptado: ya existe nota de pedido</span>
-        <span class="badge badge-soft rounded-pill">Usa esta vista para consultar antes de editar o revisar historial</span>
+        <span class="badge badge-soft rounded-pill">Pendiente: aún no existe nota de pedido</span>
+        <span class="badge badge-soft rounded-pill">Aceptado: ya existe nota de pedido y puede pasar a seguimiento operativo</span>
     </div>
 
     <form method="get" class="row g-3 align-items-end mb-4">
         <div class="col-12 col-lg-8">
             <label class="form-label" for="q">Buscar</label>
-            <input class="form-control" id="q" type="text" name="q" value="{{ request.GET.q }}" placeholder="Presupuesto, cliente, tipo de trabajo, ubicacion o nota de pedido">
+            <input class="form-control" id="q" type="text" name="q" value="{{ request.GET.q }}" placeholder="Presupuesto, cliente, tipo de trabajo, ubicación o nota de pedido">
         </div>
         <div class="col-12 col-lg-2">
             <label class="form-label" for="estado">Estado</label>
@@ -57,7 +57,7 @@
                         <th>Presupuesto</th>
                         <th>Cliente / Obra</th>
                         <th>Nota de pedido</th>
-                        <th>Estado</th>
+                        <th>Estado comercial</th>
                         <th>Monto</th>
                         <th class="text-end">Acciones</th>
                     </tr>
@@ -74,10 +74,21 @@
                                 </div>
                             </td>
                             <td>{{ registro.nota_pedido|default:"Sin nota" }}</td>
-                            <td>{{ registro.estado_seguimiento }}</td>
+                            <td>
+                                {% if registro.nota_pedido %}
+                                    <span class="badge badge-soft rounded-pill">Aceptado</span>
+                                {% else %}
+                                    <span class="badge badge-soft rounded-pill">Pendiente</span>
+                                {% endif %}
+                            </td>
                             <td>{{ registro.monto|clp }}</td>
                             <td class="text-end">
-                                <a href="{% url 'historial_presupuesto' registro.id %}" class="btn btn-soft btn-sm rounded-pill">Historial</a>
+                                {% if perms.core.change_registropresupuesto %}
+                                    <a href="{% url 'editar_presupuesto' registro.id %}" class="btn btn-brand btn-sm rounded-pill">Editar</a>
+                                    <a href="{% url 'historial_presupuesto' registro.id %}" class="btn btn-soft btn-sm rounded-pill">Historial operativo</a>
+                                {% else %}
+                                    <a href="{% url 'historial_presupuesto' registro.id %}" class="btn btn-soft btn-sm rounded-pill">Ver detalle</a>
+                                {% endif %}
                             </td>
                         </tr>
                     {% empty %}
@@ -90,7 +101,7 @@
         </div>
     {% else %}
         <div class="document-card p-4 text-center muted-label">
-            Aún no hay una consulta aplicada. Usa el buscador o el estado para revisar presupuestos antes de cargar resultados.
+            Aún no hay una consulta aplicada. Usa el buscador o el estado para revisar presupuestos comerciales antes de cargar resultados.
         </div>
     {% endif %}
 </section>

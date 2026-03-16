@@ -446,6 +446,15 @@ class ControlPresupuestosViewTests(TestCase):
             nota_pedido='OC-999',
             monto='800000',
         )
+        self.registro_realizado = RegistroPresupuesto.objects.create(
+            carga=self.carga,
+            fila_origen=3,
+            presupuesto='PRES-REAL',
+            descripcion='Realizado',
+            nota_pedido='OC-777',
+            factura='FAC-10',
+            monto='450000',
+        )
         self.trabajador = PersonalTrabajo.objects.create(
             nombre='Ana Perez',
             cargo='Tecnica',
@@ -463,6 +472,7 @@ class ControlPresupuestosViewTests(TestCase):
         self.assertEqual(list(response.context['registros']), [])
         self.assertContains(response, 'Nuevo registro')
         self.assertContains(response, 'Aún no hay una consulta aplicada')
+        self.assertContains(response, 'Gestión comercial de presupuestos')
         self.assertNotContains(response, 'Total presupuestos')
         self.assertNotContains(response, 'Pendientes de aprobación')
         self.assertNotContains(response, 'Monto por cobrar')
@@ -476,6 +486,18 @@ class ControlPresupuestosViewTests(TestCase):
         self.assertEqual(response.context['total_filtrados'], 1)
         self.assertContains(response, 'PRES-ACEP')
         self.assertNotContains(response, 'PRES-PEND')
+        self.assertNotContains(response, 'PRES-REAL')
+        self.assertContains(response, 'Historial operativo')
+
+    def test_listar_presupuestos_gestion_no_mezcla_estados_realizados(self):
+        response = self.client.get(reverse('listar_presupuestos_gestion'), {'q': 'PRES'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['consulta_activa'])
+        self.assertEqual(response.context['total_filtrados'], 2)
+        self.assertContains(response, 'PRES-PEND')
+        self.assertContains(response, 'PRES-ACEP')
+        self.assertNotContains(response, 'PRES-REAL')
 
     def test_editar_presupuesto_actualiza_registro_y_auditoria(self):
         response = self.client.post(
@@ -563,7 +585,7 @@ class ControlPresupuestosViewTests(TestCase):
     def test_listar_presupuestos_filtra_pendientes_por_cobrar(self):
         RegistroPresupuesto.objects.create(
             carga=self.carga,
-            fila_origen=3,
+            fila_origen=5,
             presupuesto='PRES-FACT',
             descripcion='Facturado',
             nota_pedido='OC-333',
@@ -572,7 +594,7 @@ class ControlPresupuestosViewTests(TestCase):
         )
         RegistroPresupuesto.objects.create(
             carga=self.carga,
-            fila_origen=4,
+            fila_origen=6,
             presupuesto='PRES-PAG',
             descripcion='Pagado',
             nota_pedido='OC-444',

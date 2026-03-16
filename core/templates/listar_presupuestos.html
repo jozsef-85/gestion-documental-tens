@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load moneda %}
 
-{% block title %}Control de presupuestos | Gestión Documental{% endblock %}
+{% block title %}Seguimiento operativo de presupuestos | Gestión Documental{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -207,9 +207,9 @@
 
 {% block content %}
 <section class="hero-panel p-4 p-lg-5 mb-4">
-    <span class="eyebrow mb-3">Control operativo</span>
-    <h1 class="page-title mb-2">Seguimiento de presupuestos</h1>
-    <p class="mb-0 text-white-50">Control detallado del flujo comercial, operativo y de cobro para obras y servicios electricos.</p>
+    <span class="eyebrow mb-3">Operación y cobro</span>
+    <h1 class="page-title mb-2">Seguimiento operativo de presupuestos</h1>
+    <p class="mb-0 text-white-50">Controla la ejecución del trabajo, su avance administrativo y el estado de cobro hasta el pago final.</p>
 </section>
 
 <section class="row g-3 mb-4">
@@ -242,8 +242,8 @@
 <section class="surface-card p-4 p-lg-5 mb-4">
     <div class="d-flex flex-wrap gap-2 mb-4">
         <span class="badge badge-soft rounded-pill">O.C. = orden de compra</span>
-        <span class="badge badge-soft rounded-pill">Pendiente: aun no fue aceptado</span>
-        <span class="badge badge-soft rounded-pill">Realizado: ya tiene factura o fecha de facturacion</span>
+        <span class="badge badge-soft rounded-pill">Esta vista concentra ejecución, facturación, pago y personal asignado</span>
+        <span class="badge badge-soft rounded-pill">Realizado: ya tiene factura o fecha de facturación</span>
     </div>
     <form method="get" class="row g-3 align-items-end">
         <div class="col-12 col-xl-4">
@@ -305,11 +305,11 @@
     <div class="records-shell">
     <div class="records-toolbar">
         <div>
-            <p class="section-title mb-1">Registros</p>
+            <p class="section-title mb-1">Trabajos en seguimiento</p>
             {% if consulta_activa %}
                 <div class="footer-note">{{ total_filtrados }} resultado(s). {% if selected_carga %}Carga seleccionada: {{ selected_carga.nombre }}.{% endif %}</div>
             {% else %}
-                <div class="footer-note">Esta pantalla funciona como consulta. Usa los filtros para buscar trabajos antes de cargar resultados.</div>
+                <div class="footer-note">Usa esta pantalla para revisar trabajos ya aceptados, en ejecución, facturados o pagados.</div>
             {% endif %}
         </div>
     </div>
