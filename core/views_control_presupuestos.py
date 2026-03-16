@@ -1,9 +1,12 @@
+import csv
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Q, Sum
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.timezone import now
 
@@ -83,13 +86,26 @@ def filtrar_cobranzas_queryset(params, queryset=None):
     return registros
 
 
+def _consulta_cobranzas_activa(params):
+    return any([
+        params.get('q', '').strip(),
+        params.get('cliente', '').strip(),
+        params.get('email_estado', '').strip(),
+    ])
+
+
 @login_required
 @model_access_required('core', 'registropresupuesto')
 def listar_cobranzas(request):
     base_queryset = obtener_facturas_pendientes_queryset()
-    registros = filtrar_cobranzas_queryset(request.POST if request.method == 'POST' else request.GET, base_queryset)
-    registros = list(registros)
-    resumen = construir_resumen_cobranzas(registros)
+    parametros = request.POST if request.method == 'POST' else request.GET
+    consulta_activa = _consulta_cobranzas_activa(parametros)
+    registros = []
+    resumen = construir_resumen_cobranzas([])
+
+    if consulta_activa:
+        registros = list(filtrar_cobranzas_queryset(parametros, base_queryset))
+        resumen = construir_resumen_cobranzas(registros)
     clientes_ids = base_queryset.exclude(cliente_id__isnull=True).values_list('cliente_id', flat=True).distinct()
     clientes = Cliente.objects.filter(id__in=clientes_ids).order_by('nombre')
 
@@ -141,7 +157,48 @@ def listar_cobranzas(request):
         'clientes': clientes,
         'resumen': resumen,
         'items_cobranza': resumen['items'],
+        'consulta_activa': consulta_activa,
     })
+
+
+@login_required
+@model_access_required('core', 'registropresupuesto')
+def descargar_consolidado_cobranzas(request):
+    if not _consulta_cobranzas_activa(request.GET):
+        messages.warning(request, 'Aplica al menos un filtro antes de descargar el consolidado de cobranza.')
+        return redirect('listar_cobranzas')
+
+    registros = list(filtrar_cobranzas_queryset(request.GET, obtener_facturas_pendientes_queryset()))
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = 'attachment; filename="consolidado_cobranzas.csv"'
+    response.write('\ufeff')
+
+    writer = csv.writer(response)
+    writer.writerow([
+        'Cliente',
+        'Contacto',
+        'Email',
+        'Presupuesto',
+        'Factura',
+        'Fecha facturacion',
+        'Dias pendiente',
+        'Monto',
+    ])
+
+    for item in construir_resumen_cobranzas(registros)['items']:
+        registro = item['registro']
+        writer.writerow([
+            item['cliente_nombre'],
+            getattr(registro.cliente, 'contacto', '') or '',
+            item['cliente_email'],
+            registro.presupuesto,
+            registro.factura,
+            registro.fecha_facturacion_texto or (registro.fecha_facturacion.strftime('%d/%m/%Y') if registro.fecha_facturacion else ''),
+            item['dias_pendiente'] if item['dias_pendiente'] is not None else '',
+            str(item['monto'] or ''),
+        ])
+
+    return response
 
 
 @login_required

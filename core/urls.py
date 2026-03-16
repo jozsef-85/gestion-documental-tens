@@ -21,6 +21,7 @@ urlpatterns = [
     path('gestion/presupuestos/', views.listar_presupuestos_gestion, name='listar_presupuestos_gestion'),
     path('presupuestos/', views.listar_presupuestos, name='listar_presupuestos'),
     path('cobranzas/', views.listar_cobranzas, name='listar_cobranzas'),
+    path('cobranzas/consolidado/', views.descargar_consolidado_cobranzas, name='descargar_consolidado_cobranzas'),
     path('presupuestos/nuevo/', views.crear_presupuesto, name='crear_presupuesto'),
     path('presupuestos/subir/', views.subir_presupuesto, name='subir_presupuesto'),
     path('presupuestos/historial/<int:registro_id>/', views.historial_presupuesto, name='historial_presupuesto'),

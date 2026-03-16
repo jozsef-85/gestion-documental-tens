@@ -616,6 +616,15 @@ class ControlPresupuestosViewTests(TestCase):
         self.assertContains(response, 'PRES-FACT')
         self.assertNotContains(response, 'PRES-PAG')
 
+    def test_listar_cobranzas_espera_consulta_antes_de_listar(self):
+        response = self.client.get(reverse('listar_cobranzas'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context['consulta_activa'])
+        self.assertContains(response, 'Consolidado: descarga un archivo CSV')
+        self.assertContains(response, 'Aún no hay una consulta aplicada')
+        self.assertNotContains(response, 'PRES-REAL')
+
     def test_listar_cobranzas_muestra_facturas_pendientes(self):
         RegistroPresupuesto.objects.create(
             carga=self.carga,
@@ -630,13 +639,22 @@ class ControlPresupuestosViewTests(TestCase):
             monto='250000',
         )
 
-        response = self.client.get(reverse('listar_cobranzas'))
+        response = self.client.get(reverse('listar_cobranzas'), {'q': 'PRES'})
 
         self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['consulta_activa'])
         self.assertContains(response, 'Gestión de cobranza')
         self.assertContains(response, 'PRES-REAL')
         self.assertNotContains(response, 'PRES-PAGADO')
         self.assertEqual(response.context['resumen']['total_registros'], 1)
+
+    def test_descargar_consolidado_cobranzas_entrega_csv_filtrado(self):
+        response = self.client.get(reverse('descargar_consolidado_cobranzas'), {'q': 'PRES-REAL'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/csv; charset=utf-8')
+        self.assertIn('attachment; filename="consolidado_cobranzas.csv"', response['Content-Disposition'])
+        self.assertIn('PRES-REAL', response.content.decode('utf-8-sig'))
 
     @patch('core.views_control_presupuestos.enviar_resumen_operador')
     def test_listar_cobranzas_permite_enviar_resumen_interno(self, mocked_enviar):

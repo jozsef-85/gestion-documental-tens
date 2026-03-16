@@ -21,6 +21,7 @@ from .views_maestros import (
 from .views_presupuestos import (
     crear_presupuesto,
     dashboard,
+    descargar_consolidado_cobranzas,
     editar_presupuesto,
     eliminar_presupuesto,
     historial_presupuesto,
@@ -37,6 +38,7 @@ __all__ = [
     'descargar_documento',
     'descargar_version_documento',
     'dashboard',
+    'descargar_consolidado_cobranzas',
     'editar_cliente',
     'editar_documento',
     'editar_personal',
