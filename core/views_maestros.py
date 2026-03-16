@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import ClienteForm, PersonalTrabajoForm
@@ -105,7 +105,9 @@ def eliminar_cliente(request, cliente_id):
 @login_required
 @model_access_required('core', 'personaltrabajo')
 def listar_personal(request):
-    personal = PersonalTrabajo.objects.order_by('nombre')
+    personal = PersonalTrabajo.objects.annotate(
+        total_trabajos_activos=Count('asignaciones', filter=Q(asignaciones__estado='activo'), distinct=True)
+    ).order_by('nombre')
     q = request.GET.get('q', '').strip()
     estado = request.GET.get('estado', '').strip()
 
@@ -126,6 +128,7 @@ def listar_personal(request):
         'personal': personal,
         'total_personal': PersonalTrabajo.objects.count(),
         'total_activos': PersonalTrabajo.objects.filter(activo=True).count(),
+        'total_con_trabajos_activos': PersonalTrabajo.objects.filter(asignaciones__estado='activo').distinct().count(),
     })
 
 

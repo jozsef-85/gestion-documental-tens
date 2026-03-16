@@ -52,7 +52,7 @@ class PresupuestoSelectorsTests(TestCase):
             fila_origen=2,
             presupuesto='PRES-COBRO',
             nota_pedido='OC-101',
-            valor='500000',
+            monto='500000',
         )
         RegistroPresupuesto.objects.create(
             carga=self.carga,
@@ -60,7 +60,7 @@ class PresupuestoSelectorsTests(TestCase):
             presupuesto='PRES-PAG',
             nota_pedido='OC-102',
             fecha_pago_texto='12/03/2026',
-            valor='200000',
+            monto='200000',
         )
 
         resumen = aggregate_presupuesto_metrics(inventario_presupuestos_queryset())
@@ -79,7 +79,7 @@ class PresupuestoSelectorsTests(TestCase):
             presupuesto='PRES-MANUAL-PEND',
             nota_pedido='OC-777',
             estado_manual='pendiente',
-            valor='300000',
+            monto='300000',
         )
         RegistroPresupuesto.objects.create(
             carga=self.carga,
@@ -87,7 +87,7 @@ class PresupuestoSelectorsTests(TestCase):
             presupuesto='PRES-MANUAL-FACT',
             nota_pedido='OC-778',
             estado_manual='facturado',
-            valor='400000',
+            monto='400000',
         )
 
         resumen = aggregate_presupuesto_metrics(inventario_presupuestos_queryset())

@@ -56,7 +56,7 @@ def subir_documento(request):
                 entidad_id=doc.id,
                 detalle=f'Documento creado: {doc.titulo}',
             )
-
+            messages.success(request, 'El documento fue creado correctamente.')
             return redirect('listar_documentos')
     else:
         form = DocumentoForm()

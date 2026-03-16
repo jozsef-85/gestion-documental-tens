@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Case, Value, When
 from django.db.models.functions import Coalesce
 from django.shortcuts import render
+from django.urls import reverse
 from django.utils.timezone import localtime
 
 from .models import CargaPresupuesto, RegistroPresupuesto
@@ -38,11 +39,15 @@ def dashboard(request):
             'cantidad': resumen['total_pendientes_por_cobrar'],
             'titulo': 'Pendientes por cobrar',
             'detalle': 'Trabajos aceptados o realizados que aún no pasan a estado pagado.',
+            'url': f"{reverse('listar_presupuestos')}?estado=por_cobrar",
+            'cta': 'Ver detalle',
         },
         {
             'titulo': 'Trabajos pagados',
             'cantidad': resumen['total_pagados'],
             'detalle': 'Trabajos cerrados con pago registrado.',
+            'url': f"{reverse('listar_presupuestos')}?estado=pagado",
+            'cta': 'Abrir listado',
         },
     ]
 

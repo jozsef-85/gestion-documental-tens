@@ -1,13 +1,14 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
+from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Q, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.timezone import now
 
-from .forms import CargaPresupuestoForm, RegistroPresupuestoForm
-from .models import Auditoria, CargaPresupuesto, RegistroPresupuesto
+from .forms import AsignacionTrabajoForm, CargaPresupuestoForm, RegistroPresupuestoForm
+from .models import AsignacionTrabajo, Auditoria, CargaPresupuesto, RegistroPresupuesto, TrabajoPresupuesto
 from .presupuestos import parsear_planilla_presupuestos
 from .selectors.presupuestos import (
     aggregate_presupuesto_metrics,
@@ -22,10 +23,39 @@ from .services.access import model_access_required
 from .services.audit import registrar_auditoria
 
 
+def asegurar_trabajos_presupuesto(presupuestos):
+    codigos = sorted({(presupuesto or '').strip() for presupuesto in presupuestos if (presupuesto or '').strip()})
+    if not codigos:
+        return {}
+
+    existentes = {
+        trabajo.presupuesto: trabajo
+        for trabajo in TrabajoPresupuesto.objects.filter(presupuesto__in=codigos)
+    }
+    faltantes = [
+        TrabajoPresupuesto(presupuesto=presupuesto)
+        for presupuesto in codigos
+        if presupuesto not in existentes
+    ]
+    if faltantes:
+        TrabajoPresupuesto.objects.bulk_create(faltantes, ignore_conflicts=True)
+        existentes = {
+            trabajo.presupuesto: trabajo
+            for trabajo in TrabajoPresupuesto.objects.filter(presupuesto__in=codigos)
+        }
+    return existentes
+
+
+def asegurar_trabajo_en_registro(registro):
+    trabajo = asegurar_trabajos_presupuesto([registro.presupuesto]).get((registro.presupuesto or '').strip())
+    registro.trabajo = trabajo
+    return trabajo
+
+
 @login_required
 @model_access_required('core', 'registropresupuesto')
 def listar_presupuestos_gestion(request):
-    registros = inventario_presupuestos_queryset().prefetch_related('documentos')
+    registros = inventario_presupuestos_queryset().prefetch_related('documentos', 'trabajo__asignaciones')
     inventario_actual = inventario_presupuestos_queryset()
     q = request.GET.get('q', '').strip()
     estado = request.GET.get('estado', '').strip()
@@ -59,7 +89,11 @@ def listar_presupuestos_gestion(request):
 @login_required
 @model_access_required('core', 'registropresupuesto')
 def listar_presupuestos(request):
-    registros = inventario_presupuestos_queryset().prefetch_related('documentos')
+    registros = inventario_presupuestos_queryset().prefetch_related(
+        'documentos',
+        'trabajo__asignaciones',
+        'trabajo__asignaciones__trabajador',
+    )
     selected_carga = None
 
     q = request.GET.get('q', '').strip()
@@ -80,7 +114,15 @@ def listar_presupuestos(request):
 
     if carga_id.isdigit():
         selected_carga = get_object_or_404(CargaPresupuesto.objects.select_related('creado_por'), id=int(carga_id))
-        registros = RegistroPresupuesto.objects.select_related('carga', 'carga__creado_por').prefetch_related('documentos').filter(carga=selected_carga)
+        registros = RegistroPresupuesto.objects.select_related(
+            'carga',
+            'carga__creado_por',
+            'trabajo',
+        ).prefetch_related(
+            'documentos',
+            'trabajo__asignaciones',
+            'trabajo__asignaciones__trabajador',
+        ).filter(carga=selected_carga)
 
     registros = filtrar_por_estado(registros, estado)
 
@@ -95,8 +137,8 @@ def listar_presupuestos(request):
     auditorias_recientes = Auditoria.objects.filter(entidad='CargaPresupuesto').order_by('-fecha_evento')[:8]
     consolidados_solicitante = resumen_base.filter(q_aceptado()).exclude(solicitante='').values('solicitante').annotate(
         total_items=Count('id'),
-        total_valor=Sum('valor'),
-    ).order_by('-total_valor', 'solicitante')[:6]
+        total_monto=Sum('monto'),
+    ).order_by('-total_monto', 'solicitante')[:6]
 
     return render(request, 'listar_presupuestos.html', {
         'registros': page_obj.object_list,
@@ -124,6 +166,7 @@ def crear_presupuesto(request):
         if form.is_valid():
             with transaction.atomic():
                 registro = form.save(commit=False)
+                asegurar_trabajo_en_registro(registro)
                 registro.carga = CargaPresupuesto.objects.create(
                     nombre=f"Registro manual - {form.cleaned_data['presupuesto']}",
                     hoja='Manual',
@@ -169,6 +212,7 @@ def subir_presupuesto(request):
             else:
                 nombre = form.cleaned_data['nombre'].strip() if form.cleaned_data['nombre'] else archivo.name
                 archivo.seek(0)
+                trabajos = asegurar_trabajos_presupuesto([registro.presupuesto for registro in resultado.registros])
 
                 with transaction.atomic():
                     carga = CargaPresupuesto.objects.create(
@@ -182,13 +226,14 @@ def subir_presupuesto(request):
                     RegistroPresupuesto.objects.bulk_create([
                         RegistroPresupuesto(
                             carga=carga,
+                            trabajo=trabajos.get((registro.presupuesto or '').strip()),
                             fila_origen=registro.fila_origen,
                             fecha=registro.fecha,
                             fecha_texto=registro.fecha_texto,
                             presupuesto=registro.presupuesto,
                             descripcion=registro.descripcion,
                             solicitante=registro.solicitante,
-                            valor=registro.valor,
+                            monto=registro.monto,
                             nota_pedido=registro.nota_pedido,
                             estado_oc=registro.estado_oc,
                             observacion_oc=registro.observacion_oc,
@@ -223,17 +268,48 @@ def subir_presupuesto(request):
 @model_access_required('core', 'registropresupuesto')
 def historial_presupuesto(request, registro_id):
     registro = get_object_or_404(
-        RegistroPresupuesto.objects.select_related('carga', 'carga__creado_por').prefetch_related('documentos'),
+        RegistroPresupuesto.objects.select_related('carga', 'carga__creado_por', 'trabajo').prefetch_related('documentos'),
         id=registro_id,
     )
+    if not registro.trabajo_id:
+        asegurar_trabajo_en_registro(registro)
+        registro.save(update_fields=['trabajo'])
+
     historial = RegistroPresupuesto.objects.select_related('carga', 'carga__creado_por').prefetch_related('documentos').filter(
         presupuesto=registro.presupuesto
     ).order_by('-carga__fecha_carga', '-id')
+
+    asignaciones = AsignacionTrabajo.objects.select_related('trabajador', 'creado_por').filter(
+        trabajo=registro.trabajo
+    )
+
+    if request.method == 'POST':
+        if not request.user.has_perm('core.add_asignaciontrabajo') and not request.user.is_superuser:
+            raise PermissionDenied
+        asignacion_form = AsignacionTrabajoForm(request.POST)
+        if asignacion_form.is_valid():
+            asignacion = asignacion_form.save(commit=False)
+            asignacion.trabajo = registro.trabajo
+            asignacion.creado_por = request.user
+            asignacion.save()
+            registrar_auditoria(
+                request,
+                accion='Asignacion de personal',
+                entidad='TrabajoPresupuesto',
+                entidad_id=registro.trabajo.id,
+                detalle=f'Se asigno {asignacion.trabajador.nombre} al trabajo {registro.presupuesto}',
+            )
+            messages.success(request, 'El trabajador fue vinculado correctamente a este trabajo.')
+            return redirect('historial_presupuesto', registro_id=registro.id)
+    else:
+        asignacion_form = AsignacionTrabajoForm()
 
     return render(request, 'historial_presupuesto.html', {
         'registro': registro,
         'historial': historial,
         'consolidado_flujo': resumir_flujo(historial),
+        'asignaciones': asignaciones,
+        'asignacion_form': asignacion_form,
     })
 
 
@@ -241,7 +317,7 @@ def historial_presupuesto(request, registro_id):
 @permission_required('core.change_registropresupuesto', raise_exception=True)
 def editar_presupuesto(request, registro_id):
     registro = get_object_or_404(
-        RegistroPresupuesto.objects.select_related('carga', 'carga__creado_por').prefetch_related('documentos'),
+        RegistroPresupuesto.objects.select_related('carga', 'carga__creado_por', 'trabajo').prefetch_related('documentos'),
         id=registro_id,
     )
 
@@ -249,6 +325,7 @@ def editar_presupuesto(request, registro_id):
         form = RegistroPresupuestoForm(request.POST, instance=registro)
         if form.is_valid():
             registro = form.save(commit=False)
+            asegurar_trabajo_en_registro(registro)
             registro.actualizado_por = request.user
             registro.fecha_actualizacion = now()
             registro.save()

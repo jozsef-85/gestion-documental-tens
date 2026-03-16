@@ -2,33 +2,289 @@
 
 {% block title %}{% if modo_creacion %}Nuevo presupuesto{% else %}Editar presupuesto{% endif %} | Gestión Documental{% endblock %}
 
-{% block content %}
-<section class="surface-card p-4 p-lg-5 mx-auto" style="max-width: 980px;">
-    <span class="eyebrow mb-3">{% if modo_creacion %}Creación{% else %}Edición{% endif %}</span>
-    <h1 class="page-title mb-2">{% if modo_creacion %}Nuevo registro de control{% else %}Editar presupuesto{% endif %}</h1>
-    <p class="muted-label mb-4">Actualiza los hitos del flujo comercial, operativo y de cobro.</p>
+{% block extra_head %}
+<style>
+    .budget-editor-shell {
+        display: grid;
+        gap: 1.5rem;
+    }
 
-    <form method="post" novalidate>
-        {% csrf_token %}
-        {% for field in form %}
-            <div class="mb-3">
-                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.help_text %}
-                    <div class="form-text">{{ field.help_text }}</div>
-                {% endif %}
-                {% for error in field.errors %}
-                    <div class="text-danger small mt-1">{{ error }}</div>
-                {% endfor %}
-            </div>
-        {% endfor %}
-        {% for error in form.non_field_errors %}
-            <div class="alert alert-danger">{{ error }}</div>
-        {% endfor %}
-        <div class="d-flex flex-column flex-sm-row gap-3 mt-4">
-            <button type="submit" class="btn btn-brand rounded-pill px-4">Guardar</button>
-            <a href="{% url 'listar_presupuestos' %}" class="btn btn-soft rounded-pill px-4">Cancelar</a>
+    .budget-editor-card {
+        max-width: 1100px;
+        margin: 0 auto;
+        overflow: hidden;
+    }
+
+    .budget-editor-hero {
+        position: relative;
+        padding: 2.25rem 2.25rem 1.5rem;
+        background:
+            radial-gradient(circle at top right, rgba(79, 167, 181, 0.18), transparent 28%),
+            linear-gradient(145deg, rgba(18, 52, 77, 0.05), rgba(31, 95, 139, 0.02));
+        border-bottom: 1px solid #e2eaf0;
+    }
+
+    .budget-editor-hero::after {
+        content: "";
+        position: absolute;
+        inset: auto -4rem -4rem auto;
+        width: 12rem;
+        height: 12rem;
+        border-radius: 50%;
+        background: rgba(31, 95, 139, 0.08);
+    }
+
+    .budget-editor-grid {
+        display: grid;
+        gap: 1.25rem;
+        padding: 1.75rem;
+    }
+
+    .budget-panel {
+        border: 1px solid #dde8ef;
+        border-radius: 1.25rem;
+        background: linear-gradient(180deg, #ffffff, #f9fbfd);
+        padding: 1.3rem;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    .budget-panel-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--brand-blue);
+        margin-bottom: 1rem;
+    }
+
+    .budget-fields {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 1rem 1.1rem;
+    }
+
+    .budget-field {
+        grid-column: span 12;
+    }
+
+    .budget-field.span-6 {
+        grid-column: span 6;
+    }
+
+    .budget-field.span-4 {
+        grid-column: span 4;
+    }
+
+    .budget-field.span-8 {
+        grid-column: span 8;
+    }
+
+    .budget-field .form-label {
+        font-weight: 600;
+        margin-bottom: 0.45rem;
+    }
+
+    .budget-hint {
+        color: var(--brand-muted);
+        font-size: 0.9rem;
+        margin-top: 0.45rem;
+    }
+
+    .budget-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: center;
+        padding: 0 1.75rem 1.75rem;
+    }
+
+    .budget-notes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        color: var(--brand-muted);
+        font-size: 0.92rem;
+    }
+
+    .budget-note-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.55rem 0.8rem;
+        border-radius: 999px;
+        background: #edf5f9;
+        border: 1px solid #d5e4ee;
+    }
+
+    @media (max-width: 991px) {
+        .budget-editor-hero,
+        .budget-editor-grid,
+        .budget-actions {
+            padding-left: 1.25rem;
+            padding-right: 1.25rem;
+        }
+
+        .budget-field.span-6,
+        .budget-field.span-4,
+        .budget-field.span-8 {
+            grid-column: span 12;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="budget-editor-shell">
+    <article class="surface-card budget-editor-card">
+        <div class="budget-editor-hero">
+            <span class="eyebrow mb-3">{% if modo_creacion %}Creacion{% else %}Edicion{% endif %}</span>
+            <h1 class="page-title mb-2">{% if modo_creacion %}Nuevo registro de control{% else %}Editar presupuesto{% endif %}</h1>
+            <p class="muted-label mb-0">Organiza la informacion comercial, operacional y de cierre en secciones claras para actualizar el seguimiento con menos friccion.</p>
         </div>
-    </form>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="budget-editor-grid">
+                {% for error in form.non_field_errors %}
+                    <div class="alert alert-danger mb-0">{{ error }}</div>
+                {% endfor %}
+
+                <section class="budget-panel">
+                    <div class="budget-panel-title">Resumen comercial</div>
+                    <div class="budget-fields">
+                        <div class="budget-field span-4">
+                            <label class="form-label" for="{{ form.presupuesto.id_for_label }}">{{ form.presupuesto.label }}</label>
+                            {{ form.presupuesto }}
+                            {% for error in form.presupuesto.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="budget-field span-4">
+                            <label class="form-label" for="{{ form.solicitante.id_for_label }}">{{ form.solicitante.label }}</label>
+                            {{ form.solicitante }}
+                            {% for error in form.solicitante.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="budget-field span-4">
+                            <label class="form-label" for="{{ form.monto.id_for_label }}">{{ form.monto.label }}</label>
+                            {{ form.monto }}
+                            {% for error in form.monto.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="budget-field span-4">
+                            <label class="form-label" for="{{ form.fecha_texto.id_for_label }}">{{ form.fecha_texto.label }}</label>
+                            {{ form.fecha_texto }}
+                            {% if form.fecha_texto.help_text %}<div class="budget-hint">{{ form.fecha_texto.help_text }}</div>{% endif %}
+                            {% for error in form.fecha_texto.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="budget-field span-8">
+                            <label class="form-label" for="{{ form.descripcion.id_for_label }}">{{ form.descripcion.label }}</label>
+                            {{ form.descripcion }}
+                            {% for error in form.descripcion.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+                </section>
+
+                <section class="budget-panel">
+                    <div class="budget-panel-title">Orden de compra</div>
+                    <div class="budget-fields">
+                        <div class="budget-field span-4">
+                            <label class="form-label" for="{{ form.nota_pedido.id_for_label }}">{{ form.nota_pedido.label }}</label>
+                            {{ form.nota_pedido }}
+                            {% if form.nota_pedido.help_text %}<div class="budget-hint">{{ form.nota_pedido.help_text }}</div>{% endif %}
+                            {% for error in form.nota_pedido.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="budget-field span-4">
+                            <label class="form-label" for="{{ form.estado_oc.id_for_label }}">{{ form.estado_oc.label }}</label>
+                            {{ form.estado_oc }}
+                            {% if form.estado_oc.help_text %}<div class="budget-hint">{{ form.estado_oc.help_text }}</div>{% endif %}
+                            <div class="budget-hint">Estados disponibles: No Aprobado, Aprobado, En curso y Terminado.</div>
+                            {% for error in form.estado_oc.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="budget-field span-4">
+                            <label class="form-label" for="{{ form.estado_manual.id_for_label }}">{{ form.estado_manual.label }}</label>
+                            {{ form.estado_manual }}
+                            {% if form.estado_manual.help_text %}<div class="budget-hint">{{ form.estado_manual.help_text }}</div>{% endif %}
+                            {% for error in form.estado_manual.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="budget-field">
+                            <label class="form-label" for="{{ form.observacion_oc.id_for_label }}">{{ form.observacion_oc.label }}</label>
+                            {{ form.observacion_oc }}
+                            {% for error in form.observacion_oc.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+                </section>
+
+                <section class="budget-panel">
+                    <div class="budget-panel-title">Operacion y despacho</div>
+                    <div class="budget-fields">
+                        <div class="budget-field span-8">
+                            <label class="form-label" for="{{ form.recepcion.id_for_label }}">{{ form.recepcion.label }}</label>
+                            {{ form.recepcion }}
+                            {% if form.recepcion.help_text %}<div class="budget-hint">{{ form.recepcion.help_text }}</div>{% endif %}
+                            {% for error in form.recepcion.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="budget-field span-4">
+                            <label class="form-label" for="{{ form.estado_recepcion.id_for_label }}">{{ form.estado_recepcion.label }}</label>
+                            {{ form.estado_recepcion }}
+                            {% for error in form.estado_recepcion.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="budget-field span-4">
+                            <label class="form-label" for="{{ form.guia_despacho.id_for_label }}">{{ form.guia_despacho.label }}</label>
+                            {{ form.guia_despacho }}
+                            {% for error in form.guia_despacho.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+                </section>
+
+                <section class="budget-panel">
+                    <div class="budget-panel-title">Facturacion y cierre</div>
+                    <div class="budget-fields">
+                        <div class="budget-field span-4">
+                            <label class="form-label" for="{{ form.factura.id_for_label }}">{{ form.factura.label }}</label>
+                            {{ form.factura }}
+                            {% for error in form.factura.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="budget-field span-4">
+                            <label class="form-label" for="{{ form.fecha_facturacion_texto.id_for_label }}">{{ form.fecha_facturacion_texto.label }}</label>
+                            {{ form.fecha_facturacion_texto }}
+                            {% for error in form.fecha_facturacion_texto.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="budget-field span-4">
+                            <label class="form-label" for="{{ form.fecha_pago_texto.id_for_label }}">{{ form.fecha_pago_texto.label }}</label>
+                            {{ form.fecha_pago_texto }}
+                            {% for error in form.fecha_pago_texto.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="budget-field">
+                            <label class="form-label" for="{{ form.observaciones.id_for_label }}">{{ form.observaciones.label }}</label>
+                            {{ form.observaciones }}
+                            {% for error in form.observaciones.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+                </section>
+
+                <section class="budget-panel">
+                    <div class="budget-panel-title">Documentos vinculados</div>
+                    <div class="budget-fields">
+                        <div class="budget-field">
+                            <label class="form-label" for="{{ form.documentos_relacionados.id_for_label }}">{{ form.documentos_relacionados.label }}</label>
+                            {{ form.documentos_relacionados }}
+                            {% if form.documentos_relacionados.help_text %}<div class="budget-hint">{{ form.documentos_relacionados.help_text }}</div>{% endif %}
+                            <div class="budget-hint">Puedes asociar respaldos tecnicos, comerciales o administrativos al mismo seguimiento.</div>
+                            {% for error in form.documentos_relacionados.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="budget-actions">
+                <div class="budget-notes">
+                    <span class="budget-note-chip">Fechas aceptan formatos como 17/01/2025</span>
+                    <span class="budget-note-chip">O.C. significa orden de compra</span>
+                    <span class="budget-note-chip">El estado O.C. queda estandarizado para seguimiento</span>
+                </div>
+                <div class="d-flex flex-column flex-sm-row gap-3">
+                    <button type="submit" class="btn btn-brand rounded-pill px-4">Guardar cambios</button>
+                    <a href="{% url 'listar_presupuestos' %}" class="btn btn-soft rounded-pill px-4">Cancelar</a>
+                </div>
+            </div>
+        </form>
+    </article>
 </section>
 {% endblock %}

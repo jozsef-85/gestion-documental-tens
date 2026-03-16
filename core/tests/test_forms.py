@@ -17,9 +17,10 @@ class RegistroPresupuestoFormTests(SimpleTestCase):
             'presupuesto': 'Presupuesto demo',
             'descripcion': 'Servicio',
             'solicitante': 'Usuario',
-            'valor': '150000',
+            'monto': '150000',
             'fecha_texto': '17 de enero del 2025',
             'nota_pedido': '',
+            'estado_oc': 'En curso',
             'recepcion': '',
             'guia_despacho': '',
             'factura': '',
@@ -31,6 +32,12 @@ class RegistroPresupuestoFormTests(SimpleTestCase):
 
         self.assertTrue(form.is_valid(), form.errors)
         self.assertEqual(form.cleaned_data['fecha_texto'], '17/01/2025')
+
+    def test_estado_oc_se_muestra_como_lista_desplegable(self):
+        form = RegistroPresupuestoForm()
+
+        self.assertEqual(form.fields['estado_oc'].__class__.__name__, 'ChoiceField')
+        self.assertIn(('En curso', 'En curso'), form.fields['estado_oc'].choices)
 
 
 class DocumentoFormTests(SimpleTestCase):

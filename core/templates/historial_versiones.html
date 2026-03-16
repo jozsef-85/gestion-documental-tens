@@ -1,44 +1,87 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Historial de versiones</title>
-    <style>
-        body { font-family: Arial; margin: 40px; background:#f5f7fa; }
-        .box {
-            background:white;
-            padding:20px;
-            border-radius:8px;
-        }
-        .item {
-            padding:10px;
-            border-bottom:1px solid #ddd;
-        }
-        a { text-decoration:none; color:#1f3c88; }
-    </style>
-</head>
-<body>
-    <div class="box">
-        <h2>Historial de versiones</h2>
-        <strong>{{ documento.titulo }}</strong>
-        <p>Versión actual: {{ documento.version_actual }}</p>
+{% extends "base.html" %}
 
+{% block title %}Historial de versiones | Gestión Documental{% endblock %}
+
+{% block content %}
+<section class="hero-panel p-4 p-lg-5 mb-4">
+    <span class="eyebrow mb-3">Trazabilidad documental</span>
+    <h1 class="page-title mb-2">{{ documento.titulo }}</h1>
+    <p class="mb-0 text-white-50">Consulta qué versión está vigente y revisa el historial de cambios del documento.</p>
+</section>
+
+<section class="row g-3 mb-4">
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="data-stat p-4 h-100">
+            <div class="muted-label">Version actual</div>
+            <div class="value">v{{ documento.version_actual }}</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="data-stat p-4 h-100">
+            <div class="muted-label">Total versiones</div>
+            <div class="value">{{ versiones|length }}</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="data-stat p-4 h-100">
+            <div class="muted-label">Estado</div>
+            <div class="fw-semibold">{{ documento.get_estado_display }}</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="data-stat p-4 h-100">
+            <div class="muted-label">Confidencialidad</div>
+            <div class="fw-semibold">{{ documento.get_nivel_confidencialidad_display }}</div>
+        </div>
+    </div>
+</section>
+
+<section class="surface-card p-4 p-lg-5">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+        <div>
+            <p class="section-title mb-1">Historial de versiones</p>
+            <div class="footer-note">La versión más reciente aparece primero.</div>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            {% if perms.core.add_versiondocumento %}
+                <a href="{% url 'subir_version' documento.id %}" class="btn btn-brand rounded-pill px-4">Agregar nueva versión</a>
+            {% endif %}
+            <a href="{% url 'listar_documentos' %}" class="btn btn-soft rounded-pill px-4">Volver al repositorio</a>
+        </div>
+    </div>
+
+    <div class="row g-3">
         {% for v in versiones %}
-            <div class="item">
-                <strong>Versión {{ v.numero_version }}</strong><br>
-                Subido por: {{ v.subido_por }}<br>
-                Fecha: {{ v.fecha_subida }}<br>
-                {% if v.comentario %}
-                    Comentario: {{ v.comentario }}<br>
-                {% endif %}
-                <a href="{{ v.archivo.url }}">Descargar versión</a>
+            <div class="col-12">
+                <article class="document-card p-4">
+                    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3">
+                        <div>
+                            <h2 class="h5 mb-1">Versión {{ v.numero_version }}</h2>
+                            <div class="muted-label">Subida el {{ v.fecha_subida|date:"d/m/Y H:i" }}</div>
+                        </div>
+                        <div class="badge badge-soft rounded-pill align-self-start">Subido por {{ v.subido_por|default:"Usuario no disponible" }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="muted-label mb-1">Comentario</div>
+                        <div>{{ v.comentario|default:"Sin comentario registrado." }}</div>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{{ v.archivo.url }}" class="btn btn-brand btn-sm rounded-pill" download>Descargar versión</a>
+                        {% if v.numero_version == documento.version_actual %}
+                            <span class="btn btn-soft btn-sm rounded-pill disabled" aria-disabled="true">Versión vigente</span>
+                        {% endif %}
+                    </div>
+                </article>
             </div>
         {% empty %}
-            <p>No hay versiones registradas.</p>
+            <div class="col-12">
+                <div class="document-card p-4 text-center muted-label">
+                    No hay versiones registradas todavía para este documento.
+                </div>
+            </div>
         {% endfor %}
-
-        <br>
-        <a href="/">← Volver</a>
     </div>
-</body>
-</html>
+</section>
+{% endblock %}

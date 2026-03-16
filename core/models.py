@@ -54,6 +54,18 @@ class PersonalTrabajo(models.Model):
         return self.nombre
 
 
+class TrabajoPresupuesto(models.Model):
+    presupuesto = models.CharField(max_length=200, unique=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['presupuesto']
+
+    def __str__(self):
+        return self.presupuesto
+
+
 class Documento(models.Model):
     ESTADOS = [
         ('activo', 'Activo'),
@@ -120,13 +132,20 @@ class RegistroPresupuesto(models.Model):
     ]
 
     carga = models.ForeignKey(CargaPresupuesto, on_delete=models.CASCADE, related_name='registros')
+    trabajo = models.ForeignKey(
+        TrabajoPresupuesto,
+        on_delete=models.SET_NULL,
+        related_name='registros',
+        blank=True,
+        null=True,
+    )
     fila_origen = models.PositiveIntegerField()
     fecha = models.DateField(blank=True, null=True)
     fecha_texto = models.CharField(max_length=120, blank=True)
     presupuesto = models.CharField(max_length=200)
     descripcion = models.TextField(blank=True)
     solicitante = models.CharField(max_length=200, blank=True)
-    valor = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    monto = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
     nota_pedido = models.CharField(max_length=255, blank=True)
     estado_oc = models.CharField(max_length=120, blank=True)
     observacion_oc = models.TextField(blank=True)
@@ -189,8 +208,46 @@ class RegistroPresupuesto(models.Model):
     def tiene_estado_manual(self):
         return bool(self.estado_manual)
 
+    @property
+    def total_personal_asignado(self):
+        if not self.trabajo_id:
+            return 0
+        cache = getattr(self.trabajo, '_prefetched_objects_cache', {})
+        if 'asignaciones' in cache:
+            return len(cache['asignaciones'])
+        return self.trabajo.asignaciones.count()
+
     def __str__(self):
         return self.presupuesto
+
+
+class AsignacionTrabajo(models.Model):
+    ESTADOS = [
+        ('activo', 'Activo'),
+        ('pausado', 'Pausado'),
+        ('finalizado', 'Finalizado'),
+    ]
+
+    trabajo = models.ForeignKey(TrabajoPresupuesto, on_delete=models.CASCADE, related_name='asignaciones')
+    trabajador = models.ForeignKey(PersonalTrabajo, on_delete=models.CASCADE, related_name='asignaciones')
+    rol = models.CharField(max_length=120, blank=True)
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='activo')
+    fecha_asignacion = models.DateTimeField(auto_now_add=True)
+    fecha_inicio = models.DateField(blank=True, null=True)
+    fecha_fin = models.DateField(blank=True, null=True)
+    horas_estimadas = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)
+    horas_reales = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)
+    observaciones = models.TextField(blank=True)
+    creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        ordering = ['-fecha_asignacion', 'trabajador__nombre']
+        indexes = [
+            models.Index(fields=['estado'], name='asigtrab_estado_idx'),
+        ]
+
+    def __str__(self):
+        return f'{self.trabajo.presupuesto} - {self.trabajador.nombre}'
 
 
 class Auditoria(models.Model):

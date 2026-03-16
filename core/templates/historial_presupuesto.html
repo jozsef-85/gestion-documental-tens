@@ -7,7 +7,7 @@
 <section class="hero-panel p-4 p-lg-5 mb-4">
     <span class="eyebrow mb-3">Trazabilidad</span>
     <h1 class="page-title mb-2">{{ registro.presupuesto }}</h1>
-    <p class="mb-0 text-white-50">Historial consolidado del presupuesto y su evolución operativa.</p>
+    <p class="mb-0 text-white-50">Historial consolidado del presupuesto, su avance operativo y el personal vinculado al trabajo.</p>
 </section>
 
 <section class="surface-card p-4 p-lg-5 mb-4">
@@ -20,8 +20,8 @@
         </div>
         <div class="col-12 col-md-6 col-xl-3">
             <div class="data-stat p-4 h-100">
-                <div class="muted-label">Valor</div>
-                <div class="fw-semibold">{{ registro.valor|clp }}</div>
+                <div class="muted-label">Monto</div>
+                <div class="fw-semibold">{{ registro.monto|clp }}</div>
             </div>
         </div>
         <div class="col-12 col-md-6 col-xl-3">
@@ -32,8 +32,8 @@
         </div>
         <div class="col-12 col-md-6 col-xl-3">
             <div class="data-stat p-4 h-100">
-                <div class="muted-label">Carga origen</div>
-                <div class="fw-semibold">{{ registro.carga.nombre }}</div>
+                <div class="muted-label">Personal vinculado</div>
+                <div class="fw-semibold">{{ asignaciones|length }}</div>
             </div>
         </div>
     </div>
@@ -41,7 +41,112 @@
         {% if perms.core.change_registropresupuesto %}
             <a href="{% url 'editar_presupuesto' registro.id %}" class="btn btn-brand rounded-pill px-4">Editar</a>
         {% endif %}
-        <a href="{% url 'listar_presupuestos' %}" class="btn btn-soft rounded-pill px-4">Volver al control</a>
+        <a href="{% url 'listar_presupuestos' %}" class="btn btn-soft rounded-pill px-4">Volver al seguimiento</a>
+    </div>
+</section>
+
+<section class="row g-3 mb-4">
+    <div class="col-12 col-xl-7">
+        <div class="surface-card p-4 p-lg-5 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="section-title mb-1">Personal asignado</h2>
+                    <div class="footer-note">Este equipo queda vinculado al trabajo aunque existan nuevas cargas del mismo presupuesto.</div>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                {% for asignacion in asignaciones %}
+                    <div class="col-12">
+                        <article class="document-card p-4">
+                            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3">
+                                <div>
+                                    <div class="h5 mb-1">{{ asignacion.trabajador.nombre }}</div>
+                                    <div class="muted-label">
+                                        {{ asignacion.trabajador.cargo }}
+                                        {% if asignacion.trabajador.area %} · {{ asignacion.trabajador.area }}{% endif %}
+                                    </div>
+                                </div>
+                                <div class="d-flex flex-wrap gap-2 align-self-start">
+                                    <span class="badge badge-soft rounded-pill">{{ asignacion.get_estado_display }}</span>
+                                    {% if asignacion.rol %}
+                                        <span class="badge badge-soft rounded-pill">{{ asignacion.rol }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-sm-6 col-lg-3">
+                                    <div class="muted-label">Inicio</div>
+                                    <div class="fw-semibold">{{ asignacion.fecha_inicio|date:"d/m/Y"|default:"Sin fecha" }}</div>
+                                </div>
+                                <div class="col-sm-6 col-lg-3">
+                                    <div class="muted-label">Fin</div>
+                                    <div class="fw-semibold">{{ asignacion.fecha_fin|date:"d/m/Y"|default:"Sin fecha" }}</div>
+                                </div>
+                                <div class="col-sm-6 col-lg-3">
+                                    <div class="muted-label">Horas estimadas</div>
+                                    <div class="fw-semibold">{{ asignacion.horas_estimadas|default:"Sin dato" }}</div>
+                                </div>
+                                <div class="col-sm-6 col-lg-3">
+                                    <div class="muted-label">Horas reales</div>
+                                    <div class="fw-semibold">{{ asignacion.horas_reales|default:"Sin dato" }}</div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="muted-label mb-1">Observaciones</div>
+                                <div>{{ asignacion.observaciones|default:"Sin observaciones registradas." }}</div>
+                            </div>
+                        </article>
+                    </div>
+                {% empty %}
+                    <div class="col-12">
+                        <div class="document-card p-4 text-center muted-label">
+                            Todavia no hay trabajadores vinculados a este trabajo.
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-5">
+        <div class="surface-card p-4 p-lg-5 h-100">
+            <h2 class="section-title mb-2">Vincular trabajador</h2>
+            <p class="footer-note mb-4">Usa este formulario cuando una persona participe en este trabajo segun el presupuesto.</p>
+
+            {% if perms.core.add_asignaciontrabajo %}
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% for error in asignacion_form.non_field_errors %}
+                        <div class="alert alert-danger">{{ error }}</div>
+                    {% endfor %}
+
+                    {% for field in asignacion_form %}
+                        <div class="mb-3">
+                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}
+                                <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+
+                    <div class="d-flex flex-column flex-sm-row gap-3 mt-4">
+                        <button type="submit" class="btn btn-brand rounded-pill px-4">Vincular trabajador</button>
+                        <a href="{% url 'listar_personal' %}" class="btn btn-soft rounded-pill px-4">Ver personal</a>
+                    </div>
+                </form>
+            {% else %}
+                <div class="document-card p-4 muted-label">
+                    Tu perfil puede ver el equipo asignado, pero no tiene permiso para vincular trabajadores.
+                </div>
+            {% endif %}
+        </div>
     </div>
 </section>
 
@@ -56,7 +161,7 @@
                     <th>Estado</th>
                     <th>Factura</th>
                     <th>Pago</th>
-                    <th>Valor</th>
+                    <th>Monto</th>
                 </tr>
             </thead>
             <tbody>
@@ -67,7 +172,7 @@
                         <td>{{ item.estado_seguimiento }}</td>
                         <td>{{ item.factura|default:"Sin factura" }}</td>
                         <td>{{ item.fecha_pago_texto|default:"Sin pago" }}</td>
-                        <td>{{ item.valor|clp }}</td>
+                        <td>{{ item.monto|clp }}</td>
                     </tr>
                 {% empty %}
                     <tr>

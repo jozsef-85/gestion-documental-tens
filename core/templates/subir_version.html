@@ -1,41 +1,69 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Nueva versión</title>
-    <style>
-        body { font-family: Arial; margin: 40px; background:#f5f7fa; }
-        .box {
-            background:white;
-            padding:20px;
-            border-radius:8px;
-            max-width:600px;
-        }
-        button {
-            padding:10px 16px;
-            background:#1f3c88;
-            color:white;
-            border:none;
-            border-radius:6px;
-            cursor:pointer;
-        }
-        a { text-decoration:none; color:#1f3c88; }
-    </style>
-</head>
-<body>
-    <div class="box">
-        <h2>Nueva versión para:</h2>
-        <strong>{{ documento.titulo }}</strong>
-        <p>Versión actual: {{ documento.version_actual }}</p>
+{% extends "base.html" %}
 
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Guardar versión</button>
-        </form>
+{% block title %}Nueva versión | Gestión Documental{% endblock %}
 
-        <br>
-        <a href="/">← Volver</a>
+{% block content %}
+<section class="row g-4">
+    <div class="col-12 col-xl-8">
+        <article class="surface-card p-4 p-lg-5 h-100">
+            <span class="eyebrow mb-3">Control de versiones</span>
+            <h1 class="page-title mb-2">Nueva versión de documento</h1>
+            <p class="muted-label mb-4">Actualiza el archivo sin perder historial de cambios ni trazabilidad.</p>
+
+            <div class="surface-card p-4 mb-4">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div class="muted-label">Documento</div>
+                        <div class="fw-semibold">{{ documento.titulo }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="muted-label">Version actual</div>
+                        <div class="fw-semibold">v{{ documento.version_actual }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+
+                {% for error in form.non_field_errors %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endfor %}
+
+                {% for field in form %}
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.help_text %}
+                            <div class="form-text">{{ field.help_text }}</div>
+                        {% endif %}
+                        {% for error in field.errors %}
+                            <div class="text-danger small mt-2">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                <div class="d-flex flex-column flex-sm-row gap-3 mt-4">
+                    <button type="submit" class="btn btn-brand rounded-pill px-4">Guardar nueva versión</button>
+                    <a href="{% url 'historial_versiones' documento.id %}" class="btn btn-soft rounded-pill px-4">Ver historial</a>
+                    <a href="{% url 'listar_documentos' %}" class="btn btn-soft rounded-pill px-4">Volver al repositorio</a>
+                </div>
+            </form>
+        </article>
     </div>
-</body>
-</html>
+
+    <div class="col-12 col-xl-4">
+        <aside class="surface-card p-4 p-lg-5 h-100">
+            <p class="section-title mb-3">Cuando crear una nueva version</p>
+            <div class="footer-note mb-3">Usa este flujo cuando el archivo cambia pero sigue siendo el mismo documento de referencia.</div>
+            <ul class="mb-4">
+                <li>Correcciones en fechas, datos o firmas.</li>
+                <li>Actualizacion de contenido manteniendo el mismo objetivo.</li>
+                <li>Nuevo respaldo que reemplaza al archivo anterior.</li>
+            </ul>
+            <p class="section-title mb-3">Consejo</p>
+            <div class="footer-note">Explica el cambio en una frase corta. Eso evita abrir varios archivos para saber cual corresponde usar.</div>
+        </aside>
+    </div>
+</section>
+{% endblock %}

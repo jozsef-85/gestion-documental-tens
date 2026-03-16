@@ -1,8 +1,8 @@
 from django import forms
 import logging
 
-from .models import Cliente, Documento, PersonalTrabajo, RegistroPresupuesto
-from .presupuestos import parsear_fecha_texto
+from .models import AsignacionTrabajo, Cliente, Documento, PersonalTrabajo, RegistroPresupuesto
+from .presupuestos import ESTADOS_OC, normalizar_estado_oc, parsear_fecha_texto
 
 
 security_logger = logging.getLogger('security')
@@ -101,6 +101,14 @@ class DocumentoForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['presupuestos'].queryset = RegistroPresupuesto.objects.select_related('carga').order_by('-carga__fecha_carga', 'presupuesto')
         self.fields['estado'].choices = [choice for choice in self.fields['estado'].choices if choice[0] != 'eliminado']
+        self.fields['titulo'].help_text = 'Usa un nombre facil de reconocer, por ejemplo contrato, informe o respaldo.'
+        self.fields['descripcion'].help_text = 'Explica brevemente para que sirve el documento o que contiene.'
+        self.fields['tipo_documento'].help_text = 'Selecciona la categoria que mejor describe el archivo.'
+        self.fields['departamento'].help_text = 'Area responsable o dueña del documento.'
+        self.fields['archivo_actual'].help_text = 'Formatos permitidos: PDF, Office, texto, CSV e imagenes. Maximo 15 MB.'
+        self.fields['estado'].help_text = 'Activo aparece en el repositorio principal. Archivado se conserva sin destacar.'
+        self.fields['nivel_confidencialidad'].help_text = 'Define que tan restringido debe considerarse el archivo.'
+        self.fields['presupuestos'].help_text = 'Relaciona este archivo con uno o mas seguimientos para encontrarlo mas rapido.'
 
     def clean_archivo_actual(self):
         archivo = self.cleaned_data['archivo_actual']
@@ -116,19 +124,34 @@ class DocumentoForm(forms.ModelForm):
         model = Documento
         fields = ['titulo', 'descripcion', 'tipo_documento', 'departamento', 'archivo_actual', 'estado', 'nivel_confidencialidad', 'presupuestos']
         widgets = {
-            'titulo': forms.TextInput(attrs={'class': 'form-control'}),
-            'descripcion': forms.Textarea(attrs={'class': 'form-control'}),
+            'titulo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Contrato marco cliente ACME'}),
+            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Resumen corto del contenido del archivo'}),
             'tipo_documento': forms.Select(attrs={'class': 'form-select'}),
             'departamento': forms.Select(attrs={'class': 'form-select'}),
+            'archivo_actual': forms.ClearableFileInput(attrs={'class': 'form-control'}),
             'estado': forms.Select(attrs={'class': 'form-select'}),
             'nivel_confidencialidad': forms.Select(attrs={'class': 'form-select'}),
         }
 
 
 class VersionDocumentoForm(forms.Form):
-    numero_version = forms.CharField(label='Nueva versión', max_length=20)
-    archivo = forms.FileField(label='Archivo actualizado')
-    comentario = forms.CharField(label='Comentario', required=False, widget=forms.Textarea)
+    numero_version = forms.CharField(
+        label='Nueva version',
+        max_length=20,
+        help_text='Ejemplo: 1.1, 2.0 o 2026-03.',
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 1.1'}),
+    )
+    archivo = forms.FileField(
+        label='Archivo actualizado',
+        help_text='Sube el archivo que reemplazara la version actual. Maximo 15 MB.',
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control'}),
+    )
+    comentario = forms.CharField(
+        label='Que cambio en esta version',
+        required=False,
+        help_text='Opcional. Sirve para explicar correcciones, nuevas firmas o cambios de contenido.',
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Ej: Se agrego firma del cliente y se corrigio la fecha'}),
+    )
 
     def clean_archivo(self):
         archivo = self.cleaned_data['archivo']
@@ -168,6 +191,12 @@ class CargaPresupuestoForm(forms.Form):
 
 
 class RegistroPresupuestoForm(forms.ModelForm):
+    estado_oc = forms.ChoiceField(
+        label='Estado de orden de compra',
+        required=False,
+        choices=[('', 'Selecciona un estado')] + ESTADOS_OC,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+    )
     documentos_relacionados = forms.ModelMultipleChoiceField(
         label='Documentos de respaldo',
         queryset=Documento.objects.none(),
@@ -178,8 +207,43 @@ class RegistroPresupuestoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['documentos_relacionados'].queryset = Documento.objects.order_by('titulo')
+        self.fields['presupuesto'].label = 'Presupuesto'
+        self.fields['descripcion'].label = 'Descripcion del trabajo'
+        self.fields['solicitante'].label = 'Solicitante'
+        self.fields['monto'].label = 'Monto'
+        self.fields['fecha_texto'].label = 'Fecha de solicitud'
+        self.fields['nota_pedido'].label = 'Nota de pedido'
+        self.fields['estado_oc'].label = 'Estado de la orden de compra (O.C.)'
+        self.fields['observacion_oc'].label = 'Observaciones de la orden de compra'
+        self.fields['recepcion'].label = 'Recepcion'
+        self.fields['estado_recepcion'].label = 'Estado de recepcion'
+        self.fields['guia_despacho'].label = 'Guia de despacho'
+        self.fields['factura'].label = 'Factura'
+        self.fields['fecha_facturacion_texto'].label = 'Fecha de facturacion'
+        self.fields['fecha_pago_texto'].label = 'Fecha de pago'
+        self.fields['estado_manual'].label = 'Estado manual de seguimiento'
+        self.fields['observaciones'].label = 'Observaciones internas'
+        self.fields['presupuesto'].help_text = 'Codigo o nombre con el que identificas este trabajo.'
+        self.fields['fecha_texto'].help_text = 'Acepta fechas como 17/01/2025.'
+        self.fields['nota_pedido'].help_text = 'Completa este dato cuando el trabajo ya fue aceptado por el cliente.'
+        self.fields['estado_oc'].help_text = 'O.C. significa orden de compra.'
+        self.fields['recepcion'].help_text = 'Registra recepcion, entrega o hitos relevantes del trabajo.'
+        self.fields['estado_manual'].help_text = 'Usa este campo solo si necesitas corregir el estado calculado automaticamente.'
+        self.fields['documentos_relacionados'].help_text = 'Selecciona respaldos como contratos, guias o informes relacionados.'
+
+        self.fields['descripcion'].widget.attrs.update({'rows': 4, 'placeholder': 'Describe el alcance del trabajo o servicio'})
+        self.fields['solicitante'].widget.attrs.update({'placeholder': 'Ej: VSPT / Cristian Martinez'})
+        self.fields['monto'].widget.attrs.update({'placeholder': 'Ej: 2572978'})
+        self.fields['nota_pedido'].widget.attrs.update({'placeholder': 'Ej: 4503257316'})
+        self.fields['observacion_oc'].widget.attrs.update({'rows': 3, 'placeholder': 'Comentarios de aprobacion, restricciones o contexto'})
+        self.fields['recepcion'].widget.attrs.update({'rows': 3, 'placeholder': 'Detalle de recepcion o hitos asociados'})
+        self.fields['estado_recepcion'].widget.attrs.update({'placeholder': 'Ej: Recibido parcialmente'})
+        self.fields['guia_despacho'].widget.attrs.update({'placeholder': 'Ej: GD-55'})
+        self.fields['factura'].widget.attrs.update({'placeholder': 'Ej: N° 780'})
+        self.fields['observaciones'].widget.attrs.update({'rows': 4, 'placeholder': 'Notas internas para seguimiento del registro'})
         if self.instance.pk:
             self.fields['documentos_relacionados'].initial = self.instance.documentos.all()
+            self.fields['estado_oc'].initial = normalizar_estado_oc(self.instance.estado_oc)
 
     class Meta:
         model = RegistroPresupuesto
@@ -187,7 +251,7 @@ class RegistroPresupuestoForm(forms.ModelForm):
             'presupuesto',
             'descripcion',
             'solicitante',
-            'valor',
+            'monto',
             'fecha_texto',
             'nota_pedido',
             'estado_oc',
@@ -206,10 +270,9 @@ class RegistroPresupuestoForm(forms.ModelForm):
             'presupuesto': forms.TextInput(attrs={'class': 'form-control'}),
             'descripcion': forms.Textarea(attrs={'class': 'form-control'}),
             'solicitante': forms.TextInput(attrs={'class': 'form-control'}),
-            'valor': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'monto': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'fecha_texto': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 17/01/2025'}),
             'nota_pedido': forms.TextInput(attrs={'class': 'form-control'}),
-            'estado_oc': forms.TextInput(attrs={'class': 'form-control'}),
             'observacion_oc': forms.Textarea(attrs={'class': 'form-control'}),
             'recepcion': forms.Textarea(attrs={'class': 'form-control'}),
             'estado_recepcion': forms.TextInput(attrs={'class': 'form-control'}),
@@ -226,6 +289,9 @@ class RegistroPresupuestoForm(forms.ModelForm):
         fecha, texto_normalizado = parsear_fecha_texto(texto)
         self.cleaned_data['fecha'] = fecha
         return texto_normalizado or texto
+
+    def clean_estado_oc(self):
+        return normalizar_estado_oc(self.cleaned_data.get('estado_oc', ''))
 
     def clean_fecha_facturacion_texto(self):
         texto = self.cleaned_data.get('fecha_facturacion_texto', '')
@@ -278,3 +344,40 @@ class PersonalTrabajoForm(forms.ModelForm):
             'fecha_ingreso': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'activo': forms.Select(choices=[(True, 'Activo'), (False, 'Inactivo')], attrs={'class': 'form-select'}),
         }
+
+
+class AsignacionTrabajoForm(forms.ModelForm):
+    class Meta:
+        model = AsignacionTrabajo
+        fields = [
+            'trabajador',
+            'rol',
+            'estado',
+            'fecha_inicio',
+            'fecha_fin',
+            'horas_estimadas',
+            'horas_reales',
+            'observaciones',
+        ]
+        widgets = {
+            'trabajador': forms.Select(attrs={'class': 'form-select'}),
+            'rol': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Supervisor, Tecnico, Apoyo en terreno'}),
+            'estado': forms.Select(attrs={'class': 'form-select'}),
+            'fecha_inicio': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'fecha_fin': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'horas_estimadas': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': 'Ej: 24'}),
+            'horas_reales': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': 'Ej: 18.5'}),
+            'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Notas sobre el trabajo asignado'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['trabajador'].queryset = PersonalTrabajo.objects.filter(activo=True).order_by('nombre')
+        self.fields['trabajador'].help_text = 'Solo se muestran trabajadores activos.'
+        self.fields['rol'].help_text = 'Describe como participa la persona en este trabajo.'
+        self.fields['estado'].help_text = 'Activo: trabajando hoy. Pausado o finalizado si ya no participa.'
+        self.fields['fecha_inicio'].help_text = 'Opcional. Sirve para ordenar la participacion real.'
+        self.fields['fecha_fin'].help_text = 'Completa este campo cuando la participacion termine.'
+        self.fields['horas_estimadas'].help_text = 'Opcional. Horas planificadas para esta persona.'
+        self.fields['horas_reales'].help_text = 'Opcional. Horas efectivamente trabajadas.'
+        self.fields['observaciones'].help_text = 'Cualquier detalle util para coordinacion o trazabilidad.'

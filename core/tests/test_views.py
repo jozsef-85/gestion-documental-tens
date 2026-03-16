@@ -8,7 +8,17 @@ from django.http import HttpResponse
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from core.models import Auditoria, CargaPresupuesto, Departamento, Documento, RegistroPresupuesto, TipoDocumento
+from core.models import (
+    AsignacionTrabajo,
+    Auditoria,
+    CargaPresupuesto,
+    Departamento,
+    Documento,
+    PersonalTrabajo,
+    RegistroPresupuesto,
+    TipoDocumento,
+    TrabajoPresupuesto,
+)
 
 
 class EnlaceDocumentoPresupuestoTests(TestCase):
@@ -123,7 +133,7 @@ class DashboardViewTests(TestCase):
             presupuesto='PEND-001',
             descripcion='Trabajo aceptado sin pago',
             nota_pedido='OC-123',
-            valor='250000',
+            monto='250000',
         )
         RegistroPresupuesto.objects.create(
             carga=self.carga,
@@ -131,7 +141,8 @@ class DashboardViewTests(TestCase):
             presupuesto='PAG-001',
             descripcion='Trabajo pagado',
             nota_pedido='OC-124',
-            valor='180000',
+            monto='180000',
+            fecha_facturacion_texto='08/03/2026',
             fecha_pago_texto='10/03/2026',
         )
 
@@ -141,6 +152,9 @@ class DashboardViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Pendientes por cobrar')
+        self.assertContains(response, f'{reverse("listar_presupuestos")}?estado=por_cobrar')
+        self.assertContains(response, 'Fecha de facturación')
+        self.assertContains(response, '08/03/2026')
         self.assertContains(response, 'Trabajos aceptados o realizados que aún no pasan a estado pagado.')
         self.assertNotContains(response, 'Pendientes de aprobación')
 
@@ -162,7 +176,7 @@ class DashboardViewTests(TestCase):
             presupuesto='MANUAL-PEND',
             nota_pedido='OC-125',
             estado_manual='pendiente',
-            valor='500000',
+            monto='500000',
         )
         RegistroPresupuesto.objects.create(
             carga=self.carga,
@@ -170,7 +184,7 @@ class DashboardViewTests(TestCase):
             presupuesto='MANUAL-FACT',
             nota_pedido='OC-126',
             estado_manual='facturado',
-            valor='900000',
+            monto='900000',
         )
 
         response = self.client.get(reverse('dashboard'))
@@ -207,7 +221,7 @@ class ControlPresupuestosViewTests(TestCase):
     def setUp(self):
         self.usuario = User.objects.create_user(username='presupuestos', password='secreta123')
         permisos = Permission.objects.filter(
-            codename__in=['view_registropresupuesto', 'change_registropresupuesto']
+            codename__in=['view_registropresupuesto', 'change_registropresupuesto', 'add_asignaciontrabajo']
         )
         self.usuario.user_permissions.add(*permisos)
         self.client.force_login(self.usuario)
@@ -230,7 +244,13 @@ class ControlPresupuestosViewTests(TestCase):
             presupuesto='PRES-ACEP',
             descripcion='Aceptado',
             nota_pedido='OC-999',
-            valor='800000',
+            monto='800000',
+        )
+        self.trabajador = PersonalTrabajo.objects.create(
+            nombre='Ana Perez',
+            cargo='Tecnica',
+            area='Operaciones',
+            activo=True,
         )
 
     def test_listar_presupuestos_gestion_expone_resumen(self):
@@ -255,10 +275,10 @@ class ControlPresupuestosViewTests(TestCase):
                 'presupuesto': 'PRES-PEND',
                 'descripcion': 'Pendiente actualizado',
                 'solicitante': 'Usuario Control',
-                'valor': '250000',
+                'monto': '250000',
                 'fecha_texto': '17/01/2025',
                 'nota_pedido': 'OC-321',
-                'estado_oc': 'En proceso',
+                'estado_oc': 'En curso',
                 'observacion_oc': 'Observacion',
                 'recepcion': 'Recepción parcial',
                 'estado_recepcion': 'Parcial',
@@ -277,6 +297,7 @@ class ControlPresupuestosViewTests(TestCase):
         self.registro_pendiente.refresh_from_db()
         self.assertEqual(self.registro_pendiente.nota_pedido, 'OC-321')
         self.assertEqual(self.registro_pendiente.descripcion, 'Pendiente actualizado')
+        self.assertEqual(self.registro_pendiente.estado_oc, 'En curso')
         self.assertEqual(self.registro_pendiente.estado_seguimiento, 'Aceptado / En curso')
         self.assertTrue(
             Auditoria.objects.filter(
@@ -285,6 +306,71 @@ class ControlPresupuestosViewTests(TestCase):
                 accion='Edicion de control',
             ).exists()
         )
+        self.assertIsNotNone(self.registro_pendiente.trabajo)
+        self.assertEqual(self.registro_pendiente.trabajo.presupuesto, 'PRES-PEND')
+
+    def test_historial_presupuesto_permite_vincular_trabajador(self):
+        trabajo = TrabajoPresupuesto.objects.create(presupuesto=self.registro_en_proceso.presupuesto)
+        self.registro_en_proceso.trabajo = trabajo
+        self.registro_en_proceso.save(update_fields=['trabajo'])
+
+        response = self.client.post(
+            reverse('historial_presupuesto', args=[self.registro_en_proceso.id]),
+            {
+                'trabajador': self.trabajador.id,
+                'rol': 'Supervisor en terreno',
+                'estado': 'activo',
+                'fecha_inicio': '2026-03-15',
+                'fecha_fin': '',
+                'horas_estimadas': '16',
+                'horas_reales': '',
+                'observaciones': 'Coordina la ejecucion del servicio',
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('historial_presupuesto', args=[self.registro_en_proceso.id]))
+        self.assertTrue(
+            AsignacionTrabajo.objects.filter(
+                trabajo=trabajo,
+                trabajador=self.trabajador,
+                rol='Supervisor en terreno',
+            ).exists()
+        )
+        self.assertTrue(
+            Auditoria.objects.filter(
+                entidad='TrabajoPresupuesto',
+                entidad_id=trabajo.id,
+                accion='Asignacion de personal',
+            ).exists()
+        )
+
+    def test_listar_presupuestos_filtra_pendientes_por_cobrar(self):
+        RegistroPresupuesto.objects.create(
+            carga=self.carga,
+            fila_origen=3,
+            presupuesto='PRES-FACT',
+            descripcion='Facturado',
+            nota_pedido='OC-333',
+            factura='FAC-333',
+            monto='500000',
+        )
+        RegistroPresupuesto.objects.create(
+            carga=self.carga,
+            fila_origen=4,
+            presupuesto='PRES-PAG',
+            descripcion='Pagado',
+            nota_pedido='OC-444',
+            fecha_pago_texto='15/03/2026',
+            monto='400000',
+        )
+
+        response = self.client.get(reverse('listar_presupuestos'), {'estado': 'por_cobrar'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'PRES-ACEP')
+        self.assertContains(response, 'PRES-FACT')
+        self.assertNotContains(response, 'PRES-PAG')
 
 
 class TemplateSmokeTests(TestCase):
@@ -307,7 +393,7 @@ class TemplateSmokeTests(TestCase):
             fila_origen=1,
             presupuesto='PRES-SMOKE',
             descripcion='Smoke',
-            valor='1000',
+            monto='1000',
         )
         departamento = Departamento.objects.create(nombre='Calidad smoke')
         tipo = TipoDocumento.objects.create(nombre='Procedimiento smoke')

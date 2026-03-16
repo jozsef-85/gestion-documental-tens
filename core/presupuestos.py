@@ -1,13 +1,12 @@
+import re
+import unicodedata
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from io import BytesIO
 from pathlib import PurePosixPath
-import re
-import unicodedata
 from xml.etree import ElementTree as ET
 from zipfile import ZipFile
-
 
 NAMESPACE = {
     'main': 'http://schemas.openxmlformats.org/spreadsheetml/2006/main',
@@ -15,13 +14,22 @@ NAMESPACE = {
     'pkg': 'http://schemas.openxmlformats.org/package/2006/relationships',
 }
 
+ESTADOS_OC = [
+    ('No Aprobado', 'No Aprobado'),
+    ('Aprobado', 'Aprobado'),
+    ('En curso', 'En curso'),
+    ('Terminado', 'Terminado'),
+]
+
 HEADER_MAP = {
     'FECHA': 'fecha',
     'PRESUPUESTO': 'presupuesto',
+    'N PRESUPUESTO': 'presupuesto',
     'DESCRIPCION': 'descripcion',
     'SOLICITANTE': 'solicitante',
-    'VALOR': 'valor',
-    'ORDEN DE COMPRA': 'valor',
+    'VALOR': 'monto',
+    'MONTO': 'monto',
+    'ORDEN DE COMPRA': 'monto',
     'NOTA DE PEDIDO': 'nota_pedido',
     'NOTA DE PEDIDO O.C': 'nota_pedido',
     'ESTADO O.C': 'estado_oc',
@@ -52,6 +60,28 @@ SPANISH_MONTHS = {
 EXCEL_EPOCH = date(1899, 12, 30)
 
 
+def normalizar_estado_oc(valor):
+    texto = str(valor or '').strip()
+    if not texto:
+        return ''
+
+    normalizado = unicodedata.normalize('NFKD', texto)
+    normalizado = normalizado.encode('ascii', 'ignore').decode('ascii').lower()
+    normalizado = ' '.join(normalizado.replace('_', ' ').replace('-', ' ').split())
+
+    equivalencias = {
+        'no aprobado': 'No Aprobado',
+        'aprobado': 'Aprobado',
+        'en curso': 'En curso',
+        'en proceso': 'En curso',
+        'terminado': 'Terminado',
+        'realizado': 'Terminado',
+        'finalizado': 'Terminado',
+        'completado': 'Terminado',
+    }
+    return equivalencias.get(normalizado, texto)
+
+
 @dataclass
 class PresupuestoImportado:
     fila_origen: int
@@ -60,7 +90,7 @@ class PresupuestoImportado:
     presupuesto: str
     descripcion: str
     solicitante: str
-    valor: Decimal | None
+    monto: Decimal | None
     nota_pedido: str
     estado_oc: str
     observacion_oc: str
@@ -274,9 +304,9 @@ def parsear_planilla_presupuestos(archivo):
                 presupuesto=datos.get('presupuesto', ''),
                 descripcion=datos.get('descripcion', ''),
                 solicitante=datos.get('solicitante', ''),
-                valor=parsear_decimal(datos.get('valor', '')),
+                monto=parsear_decimal(datos.get('monto', '')),
                 nota_pedido=datos.get('nota_pedido', ''),
-                estado_oc=datos.get('estado_oc', ''),
+                estado_oc=normalizar_estado_oc(datos.get('estado_oc', '')),
                 observacion_oc=datos.get('observacion_oc', ''),
                 recepcion=datos.get('recepcion', ''),
                 estado_recepcion=datos.get('estado_recepcion', ''),

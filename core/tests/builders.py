@@ -2,7 +2,7 @@ from io import BytesIO
 from zipfile import ZipFile
 
 
-def construir_xlsx_prueba():
+def construir_xlsx_prueba(*, encabezado_presupuesto='PRESUPUESTO', encabezado_monto='ORDEN DE COMPRA'):
     workbook_xml = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
               xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
@@ -20,13 +20,13 @@ def construir_xlsx_prueba():
     </Relationships>
     """
 
-    shared_strings_xml = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    shared_strings_xml = f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="23" uniqueCount="23">
         <si><t>FECHA</t></si>
-        <si><t>PRESUPUESTO</t></si>
+        <si><t>{encabezado_presupuesto}</t></si>
         <si><t>DESCRIPCION</t></si>
         <si><t>SOLICITANTE</t></si>
-        <si><t>ORDEN DE COMPRA</t></si>
+        <si><t>{encabezado_monto}</t></si>
         <si><t>NOTA DE PEDIDO</t></si>
         <si><t>FACTURA</t></si>
         <si><t>FECHA DE PAGO</t></si>

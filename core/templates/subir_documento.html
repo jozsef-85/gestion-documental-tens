@@ -1,7 +1,297 @@
-<h2>Subir Documento</h2>
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Guardar</button>
-</form>
-<a href="/">Volver</a>
+{% extends "base.html" %}
+
+{% block title %}{% if es_edicion %}Editar documento{% else %}Nuevo documento{% endif %} | Gestión Documental{% endblock %}
+
+{% block extra_head %}
+<style>
+    .document-shell {
+        display: grid;
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    .document-card {
+        overflow: hidden;
+    }
+
+    .document-hero {
+        position: relative;
+        padding: 2rem 2rem 1.5rem;
+        background:
+            radial-gradient(circle at top right, rgba(79, 167, 181, 0.18), transparent 28%),
+            linear-gradient(145deg, rgba(18, 52, 77, 0.05), rgba(31, 95, 139, 0.02));
+        border-bottom: 1px solid #e2eaf0;
+    }
+
+    .document-hero::after {
+        content: "";
+        position: absolute;
+        inset: auto -4rem -4rem auto;
+        width: 12rem;
+        height: 12rem;
+        border-radius: 50%;
+        background: rgba(31, 95, 139, 0.08);
+    }
+
+    .document-body {
+        display: grid;
+        gap: 1.25rem;
+        padding: 1.75rem;
+    }
+
+    .document-panel {
+        border: 1px solid #dde8ef;
+        border-radius: 1.25rem;
+        background: linear-gradient(180deg, #ffffff, #f9fbfd);
+        padding: 1.3rem;
+    }
+
+    .document-panel-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--brand-blue);
+        margin-bottom: 1rem;
+    }
+
+    .document-grid {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 1rem 1.1rem;
+    }
+
+    .document-field {
+        grid-column: span 12;
+    }
+
+    .document-field.span-6 {
+        grid-column: span 6;
+    }
+
+    .document-field .form-label {
+        font-weight: 600;
+        margin-bottom: 0.45rem;
+    }
+
+    .document-help {
+        color: var(--brand-muted);
+        font-size: 0.92rem;
+        margin-top: 0.45rem;
+    }
+
+    .document-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: center;
+        padding: 0 1.75rem 1.75rem;
+    }
+
+    .document-notes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        color: var(--brand-muted);
+        font-size: 0.92rem;
+    }
+
+    .document-note-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.55rem 0.8rem;
+        border-radius: 999px;
+        background: #edf5f9;
+        border: 1px solid #d5e4ee;
+    }
+
+    .document-aside {
+        background:
+            linear-gradient(160deg, rgba(18, 52, 77, 0.97), rgba(31, 95, 139, 0.92)),
+            linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0));
+        color: #fff;
+        border-radius: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 1.5rem 3rem rgba(18, 52, 77, 0.14);
+    }
+
+    .document-aside::after {
+        content: "";
+        position: absolute;
+        width: 16rem;
+        height: 16rem;
+        right: -5rem;
+        bottom: -7rem;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .document-aside-note {
+        border-radius: 1.15rem;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(8px);
+    }
+
+    .document-aside ul {
+        margin: 0;
+        padding-left: 1.1rem;
+        display: grid;
+        gap: 0.7rem;
+    }
+
+    @media (min-width: 992px) {
+        .document-shell {
+            grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+        }
+    }
+
+    @media (max-width: 991px) {
+        .document-hero,
+        .document-body,
+        .document-actions {
+            padding-left: 1.25rem;
+            padding-right: 1.25rem;
+        }
+
+        .document-field.span-6 {
+            grid-column: span 12;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="document-shell">
+    <article class="surface-card document-card">
+        <div class="document-hero">
+            <span class="eyebrow mb-3">{% if es_edicion %}Edicion{% else %}Repositorio documental{% endif %}</span>
+            <h1 class="page-title mb-2">{% if es_edicion %}Editar documento{% else %}Nuevo documento{% endif %}</h1>
+            <p class="muted-label mb-0">
+                {% if es_edicion %}
+                    Actualiza los datos del archivo para que el repositorio siga siendo claro y facil de consultar.
+                {% else %}
+                    Carga un archivo con su contexto para que cualquier persona encuentre la version correcta sin dudar.
+                {% endif %}
+            </p>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            <div class="document-body">
+                {% for error in form.non_field_errors %}
+                    <div class="alert alert-danger mb-0">{{ error }}</div>
+                {% endfor %}
+
+                <section class="document-panel">
+                    <div class="document-panel-title">Datos principales</div>
+                    <div class="document-grid">
+                        <div class="document-field">
+                            <label class="form-label" for="{{ form.titulo.id_for_label }}">{{ form.titulo.label }}</label>
+                            {{ form.titulo }}
+                            {% if form.titulo.help_text %}<div class="document-help">{{ form.titulo.help_text }}</div>{% endif %}
+                            {% for error in form.titulo.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="document-field">
+                            <label class="form-label" for="{{ form.descripcion.id_for_label }}">{{ form.descripcion.label }}</label>
+                            {{ form.descripcion }}
+                            {% if form.descripcion.help_text %}<div class="document-help">{{ form.descripcion.help_text }}</div>{% endif %}
+                            {% for error in form.descripcion.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="document-field span-6">
+                            <label class="form-label" for="{{ form.tipo_documento.id_for_label }}">{{ form.tipo_documento.label }}</label>
+                            {{ form.tipo_documento }}
+                            {% if form.tipo_documento.help_text %}<div class="document-help">{{ form.tipo_documento.help_text }}</div>{% endif %}
+                            {% for error in form.tipo_documento.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="document-field span-6">
+                            <label class="form-label" for="{{ form.departamento.id_for_label }}">{{ form.departamento.label }}</label>
+                            {{ form.departamento }}
+                            {% if form.departamento.help_text %}<div class="document-help">{{ form.departamento.help_text }}</div>{% endif %}
+                            {% for error in form.departamento.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+                </section>
+
+                <section class="document-panel">
+                    <div class="document-panel-title">Archivo y acceso</div>
+                    <div class="document-grid">
+                        <div class="document-field">
+                            <label class="form-label" for="{{ form.archivo_actual.id_for_label }}">
+                                {% if es_edicion %}Reemplazar archivo{% else %}Archivo{% endif %}
+                            </label>
+                            {{ form.archivo_actual }}
+                            {% if es_edicion and documento %}
+                                <div class="document-help">Archivo actual: <a href="{{ documento.archivo_actual.url }}">{{ documento.archivo_actual.name|default:documento.titulo }}</a></div>
+                            {% endif %}
+                            {% if form.archivo_actual.help_text %}<div class="document-help">{{ form.archivo_actual.help_text }}</div>{% endif %}
+                            {% for error in form.archivo_actual.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="document-field span-6">
+                            <label class="form-label" for="{{ form.estado.id_for_label }}">{{ form.estado.label }}</label>
+                            {{ form.estado }}
+                            {% if form.estado.help_text %}<div class="document-help">{{ form.estado.help_text }}</div>{% endif %}
+                            {% for error in form.estado.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="document-field span-6">
+                            <label class="form-label" for="{{ form.nivel_confidencialidad.id_for_label }}">{{ form.nivel_confidencialidad.label }}</label>
+                            {{ form.nivel_confidencialidad }}
+                            {% if form.nivel_confidencialidad.help_text %}<div class="document-help">{{ form.nivel_confidencialidad.help_text }}</div>{% endif %}
+                            {% for error in form.nivel_confidencialidad.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+                </section>
+
+                <section class="document-panel">
+                    <div class="document-panel-title">Relacion con seguimiento</div>
+                    <div class="document-grid">
+                        <div class="document-field">
+                            <label class="form-label" for="{{ form.presupuestos.id_for_label }}">{{ form.presupuestos.label }}</label>
+                            {{ form.presupuestos }}
+                            {% if form.presupuestos.help_text %}<div class="document-help">{{ form.presupuestos.help_text }}</div>{% endif %}
+                            {% for error in form.presupuestos.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="document-actions">
+                <div class="document-notes">
+                    <span class="document-note-chip">Usa nombres claros y faciles de buscar</span>
+                    <span class="document-note-chip">Vincular presupuestos ayuda a encontrar respaldos rapido</span>
+                </div>
+                <div class="d-flex flex-column flex-sm-row gap-3">
+                    <button type="submit" class="btn btn-brand rounded-pill px-4">
+                        {% if es_edicion %}Guardar cambios{% else %}Guardar documento{% endif %}
+                    </button>
+                    <a href="{% url 'listar_documentos' %}" class="btn btn-soft rounded-pill px-4">Volver al repositorio</a>
+                </div>
+            </div>
+        </form>
+    </article>
+
+    <aside class="document-aside p-4 p-lg-5">
+        <span class="eyebrow mb-3">Ayuda rapida</span>
+        <h2 class="h3 mb-3">Como mantener claro el repositorio</h2>
+        <p class="text-white-50 mb-4">Un documento bien nombrado, bien clasificado y vinculado al seguimiento correcto se encuentra mucho mas rapido.</p>
+
+        <div class="document-aside-note p-4 mb-4 position-relative">
+            <div class="fw-semibold mb-2">Recomendaciones</div>
+            <ul>
+                <li>Usa titulos que cualquier persona reconozca sin abrir el archivo.</li>
+                <li>Elige el area responsable para que el documento no quede "sin dueño".</li>
+                <li>Vincula presupuestos cuando el archivo respalde un trabajo o cobro.</li>
+            </ul>
+        </div>
+
+        <div class="document-aside-note p-4 position-relative">
+            <div class="fw-semibold mb-2">Estados</div>
+            <p class="mb-2 text-white-50"><strong>Activo:</strong> visible y vigente en el repositorio.</p>
+            <p class="mb-2 text-white-50"><strong>Archivado:</strong> se conserva para consulta, pero ya no es el documento principal.</p>
+            <p class="mb-0 text-white-50"><strong>Confidencialidad:</strong> ayuda a recordar el nivel de cuidado con que debe compartirse.</p>
+        </div>
+    </aside>
+</section>
+{% endblock %}

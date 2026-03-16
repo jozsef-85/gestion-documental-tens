@@ -53,12 +53,14 @@ def inventario_presupuestos_queryset():
         presupuesto=OuterRef('presupuesto')
     ).order_by('-carga__fecha_carga', '-id')
 
-    return RegistroPresupuesto.objects.select_related('carga', 'carga__creado_por').annotate(
+    return RegistroPresupuesto.objects.select_related('carga', 'carga__creado_por', 'trabajo').annotate(
         ultimo_id=Subquery(ultimo_registro.values('id')[:1])
     ).filter(id=F('ultimo_id'))
 
 
 def filtrar_por_estado(queryset, estado):
+    if estado == 'por_cobrar':
+        return queryset.filter(q_pendiente_por_cobrar())
     if estado in {'pagado', 'facturado', 'en_proceso', 'pendiente'}:
         return queryset.filter(q_estado_presupuesto(estado))
     return queryset
@@ -78,7 +80,7 @@ def resumir_flujo(queryset):
         resumen.append({
             'etiqueta': etiqueta,
             'cantidad': subset.count(),
-            'total_valor': subset.filter(q_aceptado()).aggregate(total=Sum('valor'))['total'] or 0,
+            'total_monto': subset.filter(q_aceptado()).aggregate(total=Sum('monto'))['total'] or 0,
         })
     return resumen
 
@@ -93,7 +95,7 @@ def aggregate_presupuesto_metrics(queryset):
         total_facturados=Count('id', filter=q_estado_presupuesto('facturado')),
         total_pagados=Count('id', filter=q_estado_presupuesto('pagado')),
         total_activo=Count('id', filter=~q_estado_presupuesto('pagado')),
-        monto_por_cobrar=Sum('valor', filter=q_pendiente_por_cobrar()),
+        monto_por_cobrar=Sum('monto', filter=q_pendiente_por_cobrar()),
     )
 
 

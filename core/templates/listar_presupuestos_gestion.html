@@ -38,6 +38,10 @@
 </section>
 
 <section class="surface-card p-4 p-lg-5">
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <span class="badge badge-soft rounded-pill">Aceptado: ya existe nota de pedido</span>
+        <span class="badge badge-soft rounded-pill">Monto por cobrar: trabajos aceptados o realizados aun no pagados</span>
+    </div>
     <form method="get" class="row g-3 align-items-end mb-4">
         <div class="col-12 col-lg-8">
             <label class="form-label" for="q">Buscar</label>
@@ -71,7 +75,7 @@
                     <th>Solicitante</th>
                     <th>Nota de pedido</th>
                     <th>Estado</th>
-                    <th>Valor</th>
+                    <th>Monto</th>
                     <th class="text-end">Acciones</th>
                 </tr>
             </thead>
@@ -82,7 +86,7 @@
                         <td>{{ registro.solicitante|default:"Sin solicitante" }}</td>
                         <td>{{ registro.nota_pedido|default:"Sin nota" }}</td>
                         <td>{{ registro.estado_seguimiento }}</td>
-                        <td>{{ registro.valor|clp }}</td>
+                        <td>{{ registro.monto|clp }}</td>
                         <td class="text-end">
                             <a href="{% url 'historial_presupuesto' registro.id %}" class="btn btn-soft btn-sm rounded-pill">Historial</a>
                         </td>

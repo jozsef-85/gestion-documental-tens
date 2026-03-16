@@ -284,50 +284,51 @@
                 {% if request.user.is_authenticated %}
                     <ul class="navbar-nav nav nav-pills ms-auto me-lg-3 gap-2 mt-3 mt-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">Dashboard</a>
+                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">Inicio</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'listar_clientes' or request.resolver_match.url_name == 'crear_cliente' or request.resolver_match.url_name == 'editar_cliente' or request.resolver_match.url_name == 'eliminar_cliente' %}active{% endif %}" href="{% url 'listar_clientes' %}">Clientes</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'listar_personal' or request.resolver_match.url_name == 'crear_personal' or request.resolver_match.url_name == 'editar_personal' or request.resolver_match.url_name == 'eliminar_personal' %}active{% endif %}" href="{% url 'listar_personal' %}">RRHH</a>
+                            <a class="nav-link {% if request.resolver_match.url_name == 'listar_personal' or request.resolver_match.url_name == 'crear_personal' or request.resolver_match.url_name == 'editar_personal' or request.resolver_match.url_name == 'eliminar_personal' %}active{% endif %}" href="{% url 'listar_personal' %}">Personal</a>
                         </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'listar_presupuestos_gestion' or request.resolver_match.url_name == 'listar_presupuestos' or request.resolver_match.url_name == 'subir_presupuesto' or request.resolver_match.url_name == 'crear_presupuesto' or request.resolver_match.url_name == 'editar_presupuesto' or request.resolver_match.url_name == 'historial_presupuesto' or request.resolver_match.url_name == 'eliminar_presupuesto' or request.resolver_match.url_name == 'listar_documentos' or request.resolver_match.url_name == 'historial_versiones' or request.resolver_match.url_name == 'editar_documento' or request.resolver_match.url_name == 'eliminar_documento' or request.resolver_match.url_name == 'subir_documento' or request.resolver_match.url_name == 'subir_version' %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Gestión
+                                Operación
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li>
                                     <a class="dropdown-item {% if request.resolver_match.url_name == 'listar_presupuestos_gestion' or request.resolver_match.url_name == 'crear_presupuesto' %}active{% endif %}" href="{% url 'listar_presupuestos_gestion' %}">
                                         Presupuestos
-                                        <span class="menu-note">Vista comercial y aceptación</span>
+                                        <span class="menu-note">Cotizaciones, aceptación y monto</span>
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item {% if request.resolver_match.url_name == 'listar_presupuestos' or request.resolver_match.url_name == 'editar_presupuesto' or request.resolver_match.url_name == 'historial_presupuesto' or request.resolver_match.url_name == 'eliminar_presupuesto' %}active{% endif %}" href="{% url 'listar_presupuestos' %}">
-                                        Control
-                                        <span class="menu-note">Seguimiento operativo y comercial</span>
+                                        Seguimiento
+                                        <span class="menu-note">Estado del trabajo, factura y pago</span>
                                     </a>
                                 </li>
                                 {% if perms.core.add_cargapresupuesto %}
                                     <li>
                                         <a class="dropdown-item {% if request.resolver_match.url_name == 'subir_presupuesto' %}active{% endif %}" href="{% url 'subir_presupuesto' %}">
-                                            Cargas
-                                            <span class="menu-note">Importación de planillas</span>
+                                            Importar planilla
+                                            <span class="menu-note">Cargar presupuestos desde Excel</span>
                                         </a>
                                     </li>
-                                {% elif perms.core.add_documento %}
+                                {% endif %}
+                                {% if perms.core.add_documento %}
                                     <li>
                                         <a class="dropdown-item {% if request.resolver_match.url_name == 'subir_documento' or request.resolver_match.url_name == 'subir_version' %}active{% endif %}" href="{% url 'subir_documento' %}">
-                                            Cargas
-                                            <span class="menu-note">Ingreso de respaldos documentales</span>
+                                            Nuevo documento
+                                            <span class="menu-note">Agregar un archivo al repositorio</span>
                                         </a>
                                     </li>
                                 {% endif %}
                                 <li>
                                     <a class="dropdown-item {% if request.resolver_match.url_name == 'listar_documentos' or request.resolver_match.url_name == 'historial_versiones' or request.resolver_match.url_name == 'editar_documento' or request.resolver_match.url_name == 'eliminar_documento' or request.resolver_match.url_name == 'subir_documento' or request.resolver_match.url_name == 'subir_version' %}active{% endif %}" href="{% url 'listar_documentos' %}">
                                         Documentos
-                                        <span class="menu-note">Repositorio y respaldos</span>
+                                        <span class="menu-note">Repositorio, versiones y descargas</span>
                                     </a>
                                 </li>
                             </ul>
