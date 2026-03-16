@@ -108,7 +108,7 @@ class DocumentoForm(forms.ModelForm):
         self.fields['archivo_actual'].help_text = 'Formatos permitidos: PDF, Office, texto, CSV e imagenes. Maximo 15 MB.'
         self.fields['estado'].help_text = 'Activo aparece en el repositorio principal. Archivado se conserva sin destacar.'
         self.fields['nivel_confidencialidad'].help_text = 'Define que tan restringido debe considerarse el archivo.'
-        self.fields['presupuestos'].help_text = 'Relaciona este archivo con uno o mas seguimientos para encontrarlo mas rapido.'
+        self.fields['presupuestos'].help_text = 'Relaciona este archivo con uno o mas seguimientos para encontrar fotos, informes, certificados o respaldos mas rapido.'
 
     def clean_archivo_actual(self):
         archivo = self.cleaned_data['archivo_actual']
@@ -207,7 +207,10 @@ class RegistroPresupuestoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['documentos_relacionados'].queryset = Documento.objects.order_by('titulo')
+        self.fields['cliente'].label = 'Cliente'
         self.fields['presupuesto'].label = 'Presupuesto'
+        self.fields['tipo_trabajo'].label = 'Tipo de trabajo'
+        self.fields['ubicacion_obra'].label = 'Ubicacion de obra'
         self.fields['descripcion'].label = 'Descripcion del trabajo'
         self.fields['solicitante'].label = 'Solicitante'
         self.fields['monto'].label = 'Monto'
@@ -223,20 +226,26 @@ class RegistroPresupuestoForm(forms.ModelForm):
         self.fields['fecha_pago_texto'].label = 'Fecha de pago'
         self.fields['estado_manual'].label = 'Estado manual de seguimiento'
         self.fields['observaciones'].label = 'Observaciones internas'
+        self.fields['cliente'].help_text = 'Selecciona el cliente para identificar rapido a que obra o servicio corresponde.'
         self.fields['presupuesto'].help_text = 'Codigo o nombre con el que identificas este trabajo.'
+        self.fields['tipo_trabajo'].help_text = 'Ayuda a separar instalaciones, mantenciones, reparaciones o certificaciones.'
+        self.fields['ubicacion_obra'].help_text = 'Direccion, faena, planta o referencia donde se ejecuta el trabajo.'
         self.fields['fecha_texto'].help_text = 'Acepta fechas como 17/01/2025.'
         self.fields['nota_pedido'].help_text = 'Completa este dato cuando el trabajo ya fue aceptado por el cliente.'
         self.fields['estado_oc'].help_text = 'O.C. significa orden de compra.'
-        self.fields['recepcion'].help_text = 'Registra recepcion, entrega o hitos relevantes del trabajo.'
+        self.fields['recepcion'].help_text = 'Registra recepcion, entrega, visita tecnica, pruebas o hitos relevantes del trabajo.'
         self.fields['estado_manual'].help_text = 'Usa este campo solo si necesitas corregir el estado calculado automaticamente.'
-        self.fields['documentos_relacionados'].help_text = 'Selecciona respaldos como contratos, guias o informes relacionados.'
+        self.fields['documentos_relacionados'].help_text = 'Selecciona respaldos como contratos, guias, fotos, informes o certificados relacionados.'
 
+        self.fields['cliente'].widget.attrs.update({'class': 'form-select'})
         self.fields['descripcion'].widget.attrs.update({'rows': 4, 'placeholder': 'Describe el alcance del trabajo o servicio'})
+        self.fields['tipo_trabajo'].widget.attrs.update({'class': 'form-select'})
+        self.fields['ubicacion_obra'].widget.attrs.update({'placeholder': 'Ej: Obra edificio Vista Norte, piso 3'})
         self.fields['solicitante'].widget.attrs.update({'placeholder': 'Ej: VSPT / Cristian Martinez'})
         self.fields['monto'].widget.attrs.update({'placeholder': 'Ej: 2572978'})
         self.fields['nota_pedido'].widget.attrs.update({'placeholder': 'Ej: 4503257316'})
         self.fields['observacion_oc'].widget.attrs.update({'rows': 3, 'placeholder': 'Comentarios de aprobacion, restricciones o contexto'})
-        self.fields['recepcion'].widget.attrs.update({'rows': 3, 'placeholder': 'Detalle de recepcion o hitos asociados'})
+        self.fields['recepcion'].widget.attrs.update({'rows': 3, 'placeholder': 'Detalle de visita tecnica, recepcion, pruebas o hitos asociados'})
         self.fields['estado_recepcion'].widget.attrs.update({'placeholder': 'Ej: Recibido parcialmente'})
         self.fields['guia_despacho'].widget.attrs.update({'placeholder': 'Ej: GD-55'})
         self.fields['factura'].widget.attrs.update({'placeholder': 'Ej: N° 780'})
@@ -248,7 +257,10 @@ class RegistroPresupuestoForm(forms.ModelForm):
     class Meta:
         model = RegistroPresupuesto
         fields = [
+            'cliente',
             'presupuesto',
+            'tipo_trabajo',
+            'ubicacion_obra',
             'descripcion',
             'solicitante',
             'monto',
@@ -267,7 +279,10 @@ class RegistroPresupuestoForm(forms.ModelForm):
             'documentos_relacionados',
         ]
         widgets = {
+            'cliente': forms.Select(attrs={'class': 'form-select'}),
             'presupuesto': forms.TextInput(attrs={'class': 'form-control'}),
+            'tipo_trabajo': forms.Select(attrs={'class': 'form-select'}),
+            'ubicacion_obra': forms.TextInput(attrs={'class': 'form-control'}),
             'descripcion': forms.Textarea(attrs={'class': 'form-control'}),
             'solicitante': forms.TextInput(attrs={'class': 'form-control'}),
             'monto': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),

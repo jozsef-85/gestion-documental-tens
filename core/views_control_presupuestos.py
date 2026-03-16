@@ -55,7 +55,7 @@ def asegurar_trabajo_en_registro(registro):
 @login_required
 @model_access_required('core', 'registropresupuesto')
 def listar_presupuestos_gestion(request):
-    registros = inventario_presupuestos_queryset().prefetch_related('documentos', 'trabajo__asignaciones')
+    registros = inventario_presupuestos_queryset().select_related('cliente').prefetch_related('documentos', 'trabajo__asignaciones')
     inventario_actual = inventario_presupuestos_queryset()
     q = request.GET.get('q', '').strip()
     estado = request.GET.get('estado', '').strip()
@@ -66,6 +66,9 @@ def listar_presupuestos_gestion(request):
             | Q(descripcion__icontains=q)
             | Q(solicitante__icontains=q)
             | Q(nota_pedido__icontains=q)
+            | Q(cliente__nombre__icontains=q)
+            | Q(tipo_trabajo__icontains=q)
+            | Q(ubicacion_obra__icontains=q)
         )
 
     if estado == 'pendiente':
@@ -89,7 +92,7 @@ def listar_presupuestos_gestion(request):
 @login_required
 @model_access_required('core', 'registropresupuesto')
 def listar_presupuestos(request):
-    registros = inventario_presupuestos_queryset().prefetch_related(
+    registros = inventario_presupuestos_queryset().select_related('cliente').prefetch_related(
         'documentos',
         'trabajo__asignaciones',
         'trabajo__asignaciones__trabajador',
@@ -110,6 +113,9 @@ def listar_presupuestos(request):
             | Q(observacion_oc__icontains=q)
             | Q(factura__icontains=q)
             | Q(estado_recepcion__icontains=q)
+            | Q(cliente__nombre__icontains=q)
+            | Q(tipo_trabajo__icontains=q)
+            | Q(ubicacion_obra__icontains=q)
         )
 
     if carga_id.isdigit():
@@ -118,6 +124,7 @@ def listar_presupuestos(request):
             'carga',
             'carga__creado_por',
             'trabajo',
+            'cliente',
         ).prefetch_related(
             'documentos',
             'trabajo__asignaciones',
@@ -268,14 +275,14 @@ def subir_presupuesto(request):
 @model_access_required('core', 'registropresupuesto')
 def historial_presupuesto(request, registro_id):
     registro = get_object_or_404(
-        RegistroPresupuesto.objects.select_related('carga', 'carga__creado_por', 'trabajo').prefetch_related('documentos'),
+        RegistroPresupuesto.objects.select_related('carga', 'carga__creado_por', 'trabajo', 'cliente').prefetch_related('documentos'),
         id=registro_id,
     )
     if not registro.trabajo_id:
         asegurar_trabajo_en_registro(registro)
         registro.save(update_fields=['trabajo'])
 
-    historial = RegistroPresupuesto.objects.select_related('carga', 'carga__creado_por').prefetch_related('documentos').filter(
+    historial = RegistroPresupuesto.objects.select_related('carga', 'carga__creado_por', 'cliente').prefetch_related('documentos').filter(
         presupuesto=registro.presupuesto
     ).order_by('-carga__fecha_carga', '-id')
 
@@ -317,7 +324,7 @@ def historial_presupuesto(request, registro_id):
 @permission_required('core.change_registropresupuesto', raise_exception=True)
 def editar_presupuesto(request, registro_id):
     registro = get_object_or_404(
-        RegistroPresupuesto.objects.select_related('carga', 'carga__creado_por', 'trabajo').prefetch_related('documentos'),
+        RegistroPresupuesto.objects.select_related('carga', 'carga__creado_por', 'trabajo', 'cliente').prefetch_related('documentos'),
         id=registro_id,
     )
 

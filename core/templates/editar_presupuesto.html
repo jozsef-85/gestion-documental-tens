@@ -139,7 +139,7 @@
         <div class="budget-editor-hero">
             <span class="eyebrow mb-3">{% if modo_creacion %}Creacion{% else %}Edicion{% endif %}</span>
             <h1 class="page-title mb-2">{% if modo_creacion %}Nuevo registro de control{% else %}Editar presupuesto{% endif %}</h1>
-            <p class="muted-label mb-0">Organiza la informacion comercial, operacional y de cierre en secciones claras para actualizar el seguimiento con menos friccion.</p>
+            <p class="muted-label mb-0">Organiza cliente, obra, ejecucion y cierre del trabajo en secciones claras para seguir servicios electricos y faenas con menos friccion.</p>
         </div>
 
         <form method="post" novalidate>
@@ -153,9 +153,22 @@
                     <div class="budget-panel-title">Resumen comercial</div>
                     <div class="budget-fields">
                         <div class="budget-field span-4">
+                            <label class="form-label" for="{{ form.cliente.id_for_label }}">{{ form.cliente.label }}</label>
+                            {{ form.cliente }}
+                            {% if form.cliente.help_text %}<div class="budget-hint">{{ form.cliente.help_text }}</div>{% endif %}
+                            {% for error in form.cliente.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="budget-field span-4">
                             <label class="form-label" for="{{ form.presupuesto.id_for_label }}">{{ form.presupuesto.label }}</label>
                             {{ form.presupuesto }}
+                            {% if form.presupuesto.help_text %}<div class="budget-hint">{{ form.presupuesto.help_text }}</div>{% endif %}
                             {% for error in form.presupuesto.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="budget-field span-4">
+                            <label class="form-label" for="{{ form.tipo_trabajo.id_for_label }}">{{ form.tipo_trabajo.label }}</label>
+                            {{ form.tipo_trabajo }}
+                            {% if form.tipo_trabajo.help_text %}<div class="budget-hint">{{ form.tipo_trabajo.help_text }}</div>{% endif %}
+                            {% for error in form.tipo_trabajo.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
                         </div>
                         <div class="budget-field span-4">
                             <label class="form-label" for="{{ form.solicitante.id_for_label }}">{{ form.solicitante.label }}</label>
@@ -166,6 +179,12 @@
                             <label class="form-label" for="{{ form.monto.id_for_label }}">{{ form.monto.label }}</label>
                             {{ form.monto }}
                             {% for error in form.monto.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="budget-field span-4">
+                            <label class="form-label" for="{{ form.ubicacion_obra.id_for_label }}">{{ form.ubicacion_obra.label }}</label>
+                            {{ form.ubicacion_obra }}
+                            {% if form.ubicacion_obra.help_text %}<div class="budget-hint">{{ form.ubicacion_obra.help_text }}</div>{% endif %}
+                            {% for error in form.ubicacion_obra.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
                         </div>
                         <div class="budget-field span-4">
                             <label class="form-label" for="{{ form.fecha_texto.id_for_label }}">{{ form.fecha_texto.label }}</label>
@@ -212,7 +231,7 @@
                 </section>
 
                 <section class="budget-panel">
-                    <div class="budget-panel-title">Operacion y despacho</div>
+                    <div class="budget-panel-title">Operacion, visita y entrega</div>
                     <div class="budget-fields">
                         <div class="budget-field span-8">
                             <label class="form-label" for="{{ form.recepcion.id_for_label }}">{{ form.recepcion.label }}</label>
@@ -266,7 +285,7 @@
                             <label class="form-label" for="{{ form.documentos_relacionados.id_for_label }}">{{ form.documentos_relacionados.label }}</label>
                             {{ form.documentos_relacionados }}
                             {% if form.documentos_relacionados.help_text %}<div class="budget-hint">{{ form.documentos_relacionados.help_text }}</div>{% endif %}
-                            <div class="budget-hint">Puedes asociar respaldos tecnicos, comerciales o administrativos al mismo seguimiento.</div>
+                            <div class="budget-hint">Puedes asociar respaldos tecnicos, comerciales o administrativos, como fotos, informes, checklists o certificados.</div>
                             {% for error in form.documentos_relacionados.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
                         </div>
                     </div>
@@ -277,7 +296,7 @@
                 <div class="budget-notes">
                     <span class="budget-note-chip">Fechas aceptan formatos como 17/01/2025</span>
                     <span class="budget-note-chip">O.C. significa orden de compra</span>
-                    <span class="budget-note-chip">El estado O.C. queda estandarizado para seguimiento</span>
+                    <span class="budget-note-chip">Ubicacion sirve para distinguir obra, planta, local o faena</span>
                 </div>
                 <div class="d-flex flex-column flex-sm-row gap-3">
                     <button type="submit" class="btn btn-brand rounded-pill px-4">Guardar cambios</button>

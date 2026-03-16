@@ -7,7 +7,7 @@
 <section class="hero-panel p-4 p-lg-5 mb-4">
     <span class="eyebrow mb-3">Vista comercial</span>
     <h1 class="page-title mb-2">Gestión de presupuestos</h1>
-    <p class="mb-0 text-white-50">Seguimiento comercial rápido desde aceptación hasta cobro.</p>
+    <p class="mb-0 text-white-50">Seguimiento comercial rapido para servicios y obras desde aceptacion hasta cobro.</p>
 </section>
 
 <section class="row g-3 mb-4">
@@ -45,7 +45,7 @@
     <form method="get" class="row g-3 align-items-end mb-4">
         <div class="col-12 col-lg-8">
             <label class="form-label" for="q">Buscar</label>
-            <input class="form-control" id="q" type="text" name="q" value="{{ request.GET.q }}" placeholder="Presupuesto, descripción, solicitante o nota de pedido">
+            <input class="form-control" id="q" type="text" name="q" value="{{ request.GET.q }}" placeholder="Presupuesto, cliente, tipo de trabajo, ubicacion o nota de pedido">
         </div>
         <div class="col-12 col-lg-2">
             <label class="form-label" for="estado">Estado</label>
@@ -72,7 +72,7 @@
             <thead>
                 <tr>
                     <th>Presupuesto</th>
-                    <th>Solicitante</th>
+                    <th>Cliente / Obra</th>
                     <th>Nota de pedido</th>
                     <th>Estado</th>
                     <th>Monto</th>
@@ -83,7 +83,13 @@
                 {% for registro in registros %}
                     <tr>
                         <td class="fw-semibold">{{ registro.presupuesto }}</td>
-                        <td>{{ registro.solicitante|default:"Sin solicitante" }}</td>
+                        <td>
+                            <div class="fw-semibold">{{ registro.cliente.nombre|default:"Sin cliente" }}</div>
+                            <div class="muted-label">
+                                {{ registro.get_tipo_trabajo_display|default:"Sin clasificar" }}
+                                {% if registro.ubicacion_obra %} · {{ registro.ubicacion_obra }}{% endif %}
+                            </div>
+                        </td>
                         <td>{{ registro.nota_pedido|default:"Sin nota" }}</td>
                         <td>{{ registro.estado_seguimiento }}</td>
                         <td>{{ registro.monto|clp }}</td>

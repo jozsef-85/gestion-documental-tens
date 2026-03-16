@@ -12,6 +12,7 @@ from core.models import (
     AsignacionTrabajo,
     Auditoria,
     CargaPresupuesto,
+    Cliente,
     Departamento,
     Documento,
     PersonalTrabajo,
@@ -112,6 +113,40 @@ class SubirVersionViewTests(TestCase):
         response = self.client.get(reverse('subir_version', args=[self.documento.id]))
 
         self.assertEqual(response.status_code, 403)
+
+
+class SubirDocumentoViewTests(TestCase):
+    def setUp(self):
+        self.usuario = User.objects.create_user(username='documentador', password='secreta123')
+        permisos = Permission.objects.filter(codename__in=['add_documento', 'view_registropresupuesto'])
+        self.usuario.user_permissions.add(*permisos)
+        self.client.force_login(self.usuario)
+        self.cliente = Cliente.objects.create(nombre='Constructora Norte', creado_por=self.usuario)
+        self.carga = CargaPresupuesto.objects.create(
+            nombre='Carga documentos',
+            hoja='Hoja1',
+            total_registros=1,
+            creado_por=self.usuario,
+            archivo='presupuestos/documentos.xlsx',
+        )
+        self.registro = RegistroPresupuesto.objects.create(
+            carga=self.carga,
+            cliente=self.cliente,
+            fila_origen=1,
+            presupuesto='OBRA-001',
+            tipo_trabajo='instalacion',
+            ubicacion_obra='Edificio Centro',
+            descripcion='Instalacion de tablero general',
+        )
+
+    def test_subir_documento_prefija_registro_relacionado_desde_el_historial(self):
+        response = self.client.get(reverse('subir_documento'), {'registro_id': self.registro.id})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'OBRA-001')
+        self.assertContains(response, 'Constructora Norte')
+        self.assertEqual(response.context['registro_relacionado'], self.registro)
+        self.assertEqual(response.context['form']['presupuestos'].value(), [self.registro.id])
 
 
 class DashboardViewTests(TestCase):
@@ -253,6 +288,7 @@ class ControlPresupuestosViewTests(TestCase):
             area='Operaciones',
             activo=True,
         )
+        self.cliente = Cliente.objects.create(nombre='Constructora Sur')
 
     def test_listar_presupuestos_gestion_expone_resumen(self):
         with patch('core.views_control_presupuestos.render') as mocked_render:
@@ -274,6 +310,9 @@ class ControlPresupuestosViewTests(TestCase):
             reverse('editar_presupuesto', args=[self.registro_pendiente.id]),
             {
                 'presupuesto': 'PRES-PEND',
+                'cliente': self.cliente.id,
+                'tipo_trabajo': 'mantencion',
+                'ubicacion_obra': 'Faena San Pedro',
                 'descripcion': 'Pendiente actualizado',
                 'solicitante': 'Usuario Control',
                 'monto': '250000',
@@ -296,6 +335,9 @@ class ControlPresupuestosViewTests(TestCase):
         self.assertEqual(response.url, reverse('historial_presupuesto', args=[self.registro_pendiente.id]))
 
         self.registro_pendiente.refresh_from_db()
+        self.assertEqual(self.registro_pendiente.cliente, self.cliente)
+        self.assertEqual(self.registro_pendiente.tipo_trabajo, 'mantencion')
+        self.assertEqual(self.registro_pendiente.ubicacion_obra, 'Faena San Pedro')
         self.assertEqual(self.registro_pendiente.nota_pedido, 'OC-321')
         self.assertEqual(self.registro_pendiente.descripcion, 'Pendiente actualizado')
         self.assertEqual(self.registro_pendiente.estado_oc, 'En curso')

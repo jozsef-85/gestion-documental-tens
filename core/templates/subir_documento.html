@@ -184,6 +184,13 @@
                 {% for error in form.non_field_errors %}
                     <div class="alert alert-danger mb-0">{{ error }}</div>
                 {% endfor %}
+                {% if registro_relacionado %}
+                    <div class="alert alert-info mb-0">
+                        Este documento quedara inicialmente vinculado al trabajo
+                        <strong>{{ registro_relacionado.presupuesto }}</strong>
+                        {% if registro_relacionado.cliente %}del cliente <strong>{{ registro_relacionado.cliente.nombre }}</strong>{% endif %}.
+                    </div>
+                {% endif %}
 
                 <section class="document-panel">
                     <div class="document-panel-title">Datos principales</div>
@@ -261,6 +268,7 @@
                 <div class="document-notes">
                     <span class="document-note-chip">Usa nombres claros y faciles de buscar</span>
                     <span class="document-note-chip">Vincular presupuestos ayuda a encontrar respaldos rapido</span>
+                    <span class="document-note-chip">Puedes subir fotos, informes, checklists o certificados del trabajo</span>
                 </div>
                 <div class="d-flex flex-column flex-sm-row gap-3">
                     <button type="submit" class="btn btn-brand rounded-pill px-4">
@@ -282,7 +290,7 @@
             <ul>
                 <li>Usa titulos que cualquier persona reconozca sin abrir el archivo.</li>
                 <li>Elige el area responsable para que el documento no quede "sin dueño".</li>
-                <li>Vincula presupuestos cuando el archivo respalde un trabajo o cobro.</li>
+                <li>Vincula presupuestos cuando el archivo respalde un trabajo, visita tecnica, cierre o cobro.</li>
             </ul>
         </div>
 

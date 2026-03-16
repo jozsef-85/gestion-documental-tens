@@ -15,6 +15,8 @@ class RegistroPresupuestoFormTests(SimpleTestCase):
     def test_normaliza_fechas_texto_en_edicion(self):
         form = RegistroPresupuestoForm(data={
             'presupuesto': 'Presupuesto demo',
+            'tipo_trabajo': 'instalacion',
+            'ubicacion_obra': 'Obra demo',
             'descripcion': 'Servicio',
             'solicitante': 'Usuario',
             'monto': '150000',
@@ -38,6 +40,9 @@ class RegistroPresupuestoFormTests(SimpleTestCase):
 
         self.assertEqual(form.fields['estado_oc'].__class__.__name__, 'ChoiceField')
         self.assertIn(('En curso', 'En curso'), form.fields['estado_oc'].choices)
+        self.assertIn('cliente', form.fields)
+        self.assertIn('tipo_trabajo', form.fields)
+        self.assertIn('ubicacion_obra', form.fields)
 
 
 class DocumentoFormTests(SimpleTestCase):

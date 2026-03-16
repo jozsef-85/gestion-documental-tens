@@ -123,6 +123,15 @@ class CargaPresupuesto(models.Model):
 
 
 class RegistroPresupuesto(models.Model):
+    TIPOS_TRABAJO = [
+        ('instalacion', 'Instalacion electrica'),
+        ('mantencion', 'Mantencion'),
+        ('reparacion', 'Reparacion'),
+        ('certificacion', 'Certificacion'),
+        ('montaje', 'Montaje en obra'),
+        ('otro', 'Otro'),
+    ]
+
     ESTADOS_MANUALES = [
         ('', 'Automático según flujo'),
         ('pendiente', 'Pendiente de aprobación'),
@@ -132,6 +141,13 @@ class RegistroPresupuesto(models.Model):
     ]
 
     carga = models.ForeignKey(CargaPresupuesto, on_delete=models.CASCADE, related_name='registros')
+    cliente = models.ForeignKey(
+        Cliente,
+        on_delete=models.SET_NULL,
+        related_name='presupuestos',
+        blank=True,
+        null=True,
+    )
     trabajo = models.ForeignKey(
         TrabajoPresupuesto,
         on_delete=models.SET_NULL,
@@ -143,6 +159,8 @@ class RegistroPresupuesto(models.Model):
     fecha = models.DateField(blank=True, null=True)
     fecha_texto = models.CharField(max_length=120, blank=True)
     presupuesto = models.CharField(max_length=200)
+    tipo_trabajo = models.CharField(max_length=30, choices=TIPOS_TRABAJO, blank=True)
+    ubicacion_obra = models.CharField(max_length=255, blank=True)
     descripcion = models.TextField(blank=True)
     solicitante = models.CharField(max_length=200, blank=True)
     monto = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)

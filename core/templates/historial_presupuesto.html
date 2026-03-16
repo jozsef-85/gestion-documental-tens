@@ -14,6 +14,24 @@
     <div class="row g-3">
         <div class="col-12 col-md-6 col-xl-3">
             <div class="data-stat p-4 h-100">
+                <div class="muted-label">Cliente</div>
+                <div class="fw-semibold">{{ registro.cliente.nombre|default:"Sin cliente" }}</div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="data-stat p-4 h-100">
+                <div class="muted-label">Tipo de trabajo</div>
+                <div class="fw-semibold">{{ registro.get_tipo_trabajo_display|default:"Sin clasificar" }}</div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="data-stat p-4 h-100">
+                <div class="muted-label">Ubicacion</div>
+                <div class="fw-semibold">{{ registro.ubicacion_obra|default:"Sin ubicacion" }}</div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="data-stat p-4 h-100">
                 <div class="muted-label">Estado actual</div>
                 <div class="fw-semibold">{{ registro.estado_seguimiento }}</div>
             </div>
@@ -40,6 +58,12 @@
     <div class="d-flex flex-wrap gap-2 mt-4">
         {% if perms.core.change_registropresupuesto %}
             <a href="{% url 'editar_presupuesto' registro.id %}" class="btn btn-brand rounded-pill px-4">Editar</a>
+        {% endif %}
+        {% if perms.core.add_documento %}
+            <a href="{% url 'subir_documento' %}?registro_id={{ registro.id }}" class="btn btn-soft rounded-pill px-4">Subir respaldo del trabajo</a>
+        {% endif %}
+        {% if perms.core.view_documento %}
+            <a href="{% url 'listar_documentos' %}" class="btn btn-soft rounded-pill px-4">Ver documentos</a>
         {% endif %}
         <a href="{% url 'listar_presupuestos' %}" class="btn btn-soft rounded-pill px-4">Volver al seguimiento</a>
     </div>
@@ -114,7 +138,7 @@
     <div class="col-12 col-xl-5">
         <div class="surface-card p-4 p-lg-5 h-100">
             <h2 class="section-title mb-2">Vincular trabajador</h2>
-            <p class="footer-note mb-4">Usa este formulario cuando una persona participe en este trabajo segun el presupuesto.</p>
+            <p class="footer-note mb-4">Usa este formulario cuando una persona participe en una obra, visita tecnica, mantencion o montaje asociado a este presupuesto.</p>
 
             {% if perms.core.add_asignaciontrabajo %}
                 <form method="post" novalidate>
@@ -151,7 +175,15 @@
 </section>
 
 <section class="surface-card p-4 p-lg-5">
-    <h2 class="section-title mb-4">Historial</h2>
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+        <div>
+            <h2 class="section-title mb-1">Historial</h2>
+            <div class="footer-note">Aqui puedes revisar el avance del mismo presupuesto entre cargas, junto con respaldos tecnicos y estado de cierre.</div>
+        </div>
+        {% if perms.core.add_documento %}
+            <a href="{% url 'subir_documento' %}?registro_id={{ registro.id }}" class="btn btn-brand rounded-pill px-4">Agregar evidencia o informe</a>
+        {% endif %}
+    </div>
     <div class="table-responsive">
         <table class="table align-middle mb-0">
             <thead>

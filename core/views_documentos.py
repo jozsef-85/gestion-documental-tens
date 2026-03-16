@@ -4,7 +4,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import DocumentoForm, VersionDocumentoForm
-from .models import Departamento, Documento, TipoDocumento, VersionDocumento
+from .models import Departamento, Documento, RegistroPresupuesto, TipoDocumento, VersionDocumento
 from .services.access import model_access_required
 from .services.audit import registrar_auditoria
 
@@ -41,6 +41,7 @@ def listar_documentos(request):
 @login_required
 @permission_required('core.add_documento', raise_exception=True)
 def subir_documento(request):
+    registro_relacionado = None
     if request.method == 'POST':
         form = DocumentoForm(request.POST, request.FILES)
         if form.is_valid():
@@ -59,11 +60,19 @@ def subir_documento(request):
             messages.success(request, 'El documento fue creado correctamente.')
             return redirect('listar_documentos')
     else:
-        form = DocumentoForm()
+        registro_id = request.GET.get('registro_id', '').strip()
+        initial = {}
+        registro_relacionado = None
+        if registro_id.isdigit():
+            registro_relacionado = RegistroPresupuesto.objects.filter(id=int(registro_id)).first()
+            if registro_relacionado:
+                initial['presupuestos'] = [registro_relacionado.id]
+        form = DocumentoForm(initial=initial)
 
     return render(request, 'subir_documento.html', {
         'form': form,
         'es_edicion': False,
+        'registro_relacionado': registro_relacionado,
     })
 
 

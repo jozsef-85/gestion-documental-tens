@@ -209,7 +209,7 @@
 <section class="hero-panel p-4 p-lg-5 mb-4">
     <span class="eyebrow mb-3">Control operativo</span>
     <h1 class="page-title mb-2">Seguimiento de presupuestos</h1>
-    <p class="mb-0 text-white-50">Control detallado del flujo comercial, operativo y de cobro.</p>
+    <p class="mb-0 text-white-50">Control detallado del flujo comercial, operativo y de cobro para obras y servicios electricos.</p>
 </section>
 
 <section class="row g-3 mb-4">
@@ -248,7 +248,7 @@
     <form method="get" class="row g-3 align-items-end">
         <div class="col-12 col-lg-5">
             <label class="form-label" for="q">Buscar</label>
-            <input class="form-control" id="q" type="text" name="q" value="{{ request.GET.q }}" placeholder="Presupuesto, solicitante, O.C., factura o recepción">
+            <input class="form-control" id="q" type="text" name="q" value="{{ request.GET.q }}" placeholder="Presupuesto, cliente, ubicacion, solicitante, O.C. o factura">
         </div>
         <div class="col-12 col-lg-2">
             <label class="form-label" for="estado">Estado</label>
@@ -314,8 +314,20 @@
                         <td>
                             <div class="record-meta">
                                 <div>
-                                    <span class="record-detail-label">Solicitante</span>
+                                <span class="record-detail-label">Solicitante</span>
                                     {{ registro.solicitante|default:"Sin solicitante" }}
+                                </div>
+                                <div>
+                                    <span class="record-detail-label">Cliente</span>
+                                    {{ registro.cliente.nombre|default:"Sin cliente" }}
+                                </div>
+                                <div>
+                                    <span class="record-detail-label">Trabajo</span>
+                                    {{ registro.get_tipo_trabajo_display|default:"Sin clasificar" }}
+                                </div>
+                                <div>
+                                    <span class="record-detail-label">Ubicacion</span>
+                                    {{ registro.ubicacion_obra|default:"Sin ubicacion" }}
                                 </div>
                                 <div>
                                     <span class="record-detail-label">Nota de pedido</span>
