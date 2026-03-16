@@ -65,10 +65,6 @@ def listar_documentos(request):
         'tipos': TipoDocumento.objects.all(),
         'departamentos': Departamento.objects.all(),
         'consulta_activa': consulta_activa,
-        'total_documentos': Documento.objects.exclude(estado='eliminado').count(),
-        'total_departamentos': Departamento.objects.count(),
-        'total_tipos': TipoDocumento.objects.count(),
-        'total_versiones': VersionDocumento.objects.count(),
     })
 
 

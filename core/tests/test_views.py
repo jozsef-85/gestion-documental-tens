@@ -348,6 +348,8 @@ class ListadoClientesAccessTests(TestCase):
         response = self.client.get(reverse('listar_documentos'))
 
         self.assertContains(response, 'Aún no hay una consulta aplicada.')
+        self.assertNotContains(response, 'Total documentos')
+        self.assertNotContains(response, 'Versiones registradas')
         self.assertEqual(len(response.context['docs']), 0)
 
     def test_listar_documentos_oculta_confidencialidad_alta_a_lectores(self):
