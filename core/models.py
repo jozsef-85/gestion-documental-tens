@@ -43,6 +43,12 @@ class PersonalTrabajo(models.Model):
     email = models.EmailField(blank=True)
     telefono = models.CharField(max_length=50, blank=True)
     fecha_ingreso = models.DateField(blank=True, null=True)
+    certificado_fonasa = models.FileField(upload_to='personal/fonasa/', blank=True)
+    certificado_pago_afp = models.FileField(upload_to='personal/afp/', blank=True)
+    examen_altura_espacio_confinado = models.FileField(upload_to='personal/examenes/', blank=True)
+    afiliacion_mutualidad = models.FileField(upload_to='personal/mutualidad/', blank=True)
+    curriculum = models.FileField(upload_to='personal/curriculum/', blank=True)
+    certificado_antecedentes = models.FileField(upload_to='personal/antecedentes/', blank=True)
     activo = models.BooleanField(default=True)
     creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='personal_creado')
     fecha_creacion = models.DateTimeField(auto_now_add=True)
@@ -52,6 +58,25 @@ class PersonalTrabajo(models.Model):
 
     def __str__(self):
         return self.nombre
+
+    @property
+    def documentos_personal(self):
+        return [
+            ('Fonasa', bool(self.certificado_fonasa)),
+            ('AFP', bool(self.certificado_pago_afp)),
+            ('Examen altura y espacio confinado', bool(self.examen_altura_espacio_confinado)),
+            ('Mutualidad', bool(self.afiliacion_mutualidad)),
+            ('Curriculum', bool(self.curriculum)),
+            ('Antecedentes', bool(self.certificado_antecedentes)),
+        ]
+
+    @property
+    def total_documentos_personal(self):
+        return sum(1 for _, disponible in self.documentos_personal if disponible)
+
+    @property
+    def total_documentos_personal_faltantes(self):
+        return len(self.documentos_personal) - self.total_documentos_personal
 
 
 class TrabajoPresupuesto(models.Model):

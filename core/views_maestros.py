@@ -146,7 +146,7 @@ def listar_personal(request):
 @permission_required('core.add_personaltrabajo', raise_exception=True)
 def crear_personal(request):
     if request.method == 'POST':
-        form = PersonalTrabajoForm(request.POST)
+        form = PersonalTrabajoForm(request.POST, request.FILES)
         if form.is_valid():
             personal = form.save(commit=False)
             personal.creado_por = request.user
@@ -169,7 +169,7 @@ def editar_personal(request, personal_id):
     personal = get_object_or_404(PersonalTrabajo, id=personal_id)
 
     if request.method == 'POST':
-        form = PersonalTrabajoForm(request.POST, instance=personal)
+        form = PersonalTrabajoForm(request.POST, request.FILES, instance=personal)
         if form.is_valid():
             personal = form.save()
             registrar_auditoria(request, 'Edicion de personal', 'PersonalTrabajo', personal.id, f'Personal actualizado: {personal.nombre}')

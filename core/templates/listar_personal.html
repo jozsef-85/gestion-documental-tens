@@ -77,6 +77,7 @@
                     <th>Cargo</th>
                     <th>Área</th>
                     <th>Trabajos activos</th>
+                    <th>Respaldos</th>
                     <th>Email</th>
                     <th>Estado</th>
                     <th class="text-end">Acciones</th>
@@ -89,6 +90,16 @@
                         <td>{{ item.cargo }}</td>
                         <td>{{ item.area|default:"Sin área" }}</td>
                         <td>{{ item.total_trabajos_activos }}</td>
+                        <td>
+                            <div class="fw-semibold">{{ item.total_documentos_personal }} / 6</div>
+                            <div class="footer-note">
+                                {% if item.total_documentos_personal_faltantes %}
+                                    Faltan {{ item.total_documentos_personal_faltantes }} respaldo{{ item.total_documentos_personal_faltantes|pluralize }}
+                                {% else %}
+                                    Documentacion completa
+                                {% endif %}
+                            </div>
+                        </td>
                         <td>{{ item.email|default:"Sin email" }}</td>
                         <td>
                             {% if item.activo %}
@@ -108,7 +119,7 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="7" class="text-center muted-label py-4">
+                        <td colspan="8" class="text-center muted-label py-4">
                             {% if consulta_activa %}
                                 No hay registros de personal para mostrar.
                             {% else %}

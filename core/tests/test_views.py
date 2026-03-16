@@ -430,6 +430,59 @@ class ListadoClientesAccessTests(TestCase):
         self.assertFalse(response.context['consulta_activa'])
 
 
+class PersonalDocumentosViewTests(TestCase):
+    def setUp(self):
+        self.temp_media = tempfile.TemporaryDirectory()
+        self.override = override_settings(MEDIA_ROOT=self.temp_media.name)
+        self.override.enable()
+
+        self.usuario = User.objects.create_user(username='rrhh_docs', password='secreta123')
+        permisos = Permission.objects.filter(codename__in=['add_personaltrabajo', 'view_personaltrabajo'])
+        self.usuario.user_permissions.add(*permisos)
+        self.client.force_login(self.usuario)
+
+    def tearDown(self):
+        self.override.disable()
+        self.temp_media.cleanup()
+
+    def test_crear_personal_permite_subir_documentos_de_respaldo(self):
+        response = self.client.post(
+            reverse('crear_personal'),
+            {
+                'nombre': 'Luis Toro',
+                'cargo': 'Electricista',
+                'area': 'Operaciones',
+                'email': 'luis@example.com',
+                'telefono': '987654321',
+                'fecha_ingreso': '2026-03-01',
+                'certificado_fonasa': SimpleUploadedFile('fonasa.pdf', b'fonasa', content_type='application/pdf'),
+                'certificado_pago_afp': SimpleUploadedFile('afp.pdf', b'afp', content_type='application/pdf'),
+                'activo': 'True',
+            },
+        )
+
+        self.assertRedirects(response, reverse('listar_personal'))
+        trabajador = PersonalTrabajo.objects.get(nombre='Luis Toro')
+        self.assertTrue(bool(trabajador.certificado_fonasa))
+        self.assertTrue(bool(trabajador.certificado_pago_afp))
+        self.assertEqual(trabajador.total_documentos_personal, 2)
+
+    def test_listar_personal_muestra_estado_de_respaldos(self):
+        PersonalTrabajo.objects.create(
+            nombre='Ana Soto',
+            cargo='Supervisora',
+            area='Terreno',
+            certificado_fonasa='personal/fonasa/ana.pdf',
+            curriculum='personal/curriculum/ana.pdf',
+        )
+
+        response = self.client.get(reverse('listar_personal'), {'q': 'Ana'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '2 / 6')
+        self.assertContains(response, 'Faltan 4 respaldos')
+
+
 class ControlPresupuestosViewTests(TestCase):
     def setUp(self):
         self.usuario = User.objects.create_user(username='presupuestos', password='secreta123')

@@ -8,17 +8,34 @@
     <h1 class="page-title mb-2">{% if modo_creacion %}Nuevo registro de personal{% else %}Editar personal{% endif %}</h1>
     <p class="muted-label mb-4">Mantén actualizado el maestro interno de cargos y responsables.</p>
 
-    <form method="post" novalidate>
+    <form method="post" enctype="multipart/form-data" novalidate>
         {% csrf_token %}
-        {% for field in form %}
-            <div class="mb-3">
-                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% for error in field.errors %}
-                    <div class="text-danger small mt-1">{{ error }}</div>
-                {% endfor %}
-            </div>
-        {% endfor %}
+        <div class="row g-3">
+            {% for field in form %}
+                {% if forloop.counter0 == 0 %}
+                    <div class="col-12 mt-2">
+                        <p class="section-title mb-1">Datos del trabajador</p>
+                        <p class="footer-note mb-0">Mantén actualizada la informacion base y el estado del registro.</p>
+                    </div>
+                {% endif %}
+                {% if forloop.counter0 == 6 %}
+                    <div class="col-12 mt-4">
+                        <p class="section-title mb-1">Documentacion de respaldo</p>
+                        <p class="footer-note mb-0">Adjunta los respaldos laborales y de seguridad requeridos para terreno.</p>
+                    </div>
+                {% endif %}
+                <div class="col-12 {% if field.name == 'activo' %}col-md-4{% elif field.name == 'fecha_ingreso' %}col-md-4{% elif field.field.widget.input_type == 'file' %}col-md-6{% else %}col-md-6{% endif %}">
+                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <div class="footer-note mt-1">{{ field.help_text }}</div>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
         {% for error in form.non_field_errors %}
             <div class="alert alert-danger">{{ error }}</div>
         {% endfor %}
