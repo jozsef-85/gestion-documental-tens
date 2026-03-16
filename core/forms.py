@@ -353,6 +353,7 @@ class PersonalTrabajoForm(forms.ModelForm):
             'nombre',
             'cargo',
             'area',
+            'activo',
             'email',
             'telefono',
             'fecha_ingreso',
@@ -362,21 +363,20 @@ class PersonalTrabajoForm(forms.ModelForm):
             'afiliacion_mutualidad',
             'curriculum',
             'certificado_antecedentes',
-            'activo',
         ]
         widgets = {
-            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
-            'cargo': forms.TextInput(attrs={'class': 'form-control'}),
-            'area': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'telefono': forms.TextInput(attrs={'class': 'form-control'}),
+            'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Juan Perez Soto'}),
+            'cargo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Electricista, Supervisor, Ayudante'}),
+            'area': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Operaciones, Terreno, Administracion'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'correo@empresa.cl'}),
+            'telefono': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: +56 9 1234 5678'}),
             'fecha_ingreso': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'certificado_fonasa': forms.ClearableFileInput(attrs={'class': 'form-control'}),
-            'certificado_pago_afp': forms.ClearableFileInput(attrs={'class': 'form-control'}),
-            'examen_altura_espacio_confinado': forms.ClearableFileInput(attrs={'class': 'form-control'}),
-            'afiliacion_mutualidad': forms.ClearableFileInput(attrs={'class': 'form-control'}),
-            'curriculum': forms.ClearableFileInput(attrs={'class': 'form-control'}),
-            'certificado_antecedentes': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'certificado_fonasa': forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.pdf,.jpg,.jpeg,.png'}),
+            'certificado_pago_afp': forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.pdf,.jpg,.jpeg,.png'}),
+            'examen_altura_espacio_confinado': forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.pdf,.jpg,.jpeg,.png'}),
+            'afiliacion_mutualidad': forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.pdf,.jpg,.jpeg,.png'}),
+            'curriculum': forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.pdf,.doc,.docx'}),
+            'certificado_antecedentes': forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.pdf,.jpg,.jpeg,.png'}),
             'activo': forms.Select(choices=[(True, 'Activo'), (False, 'Inactivo')], attrs={'class': 'form-select'}),
         }
 
@@ -394,12 +394,16 @@ class PersonalTrabajoForm(forms.ModelForm):
         self.fields['nombre'].help_text = 'Nombre completo del trabajador o trabajadora.'
         self.fields['cargo'].help_text = 'Cargo o especialidad principal dentro de la empresa.'
         self.fields['area'].help_text = 'Area interna, por ejemplo Operaciones, Terreno o Administracion.'
-        self.fields['certificado_fonasa'].help_text = 'Sube el certificado vigente de afiliacion a Fonasa.'
-        self.fields['certificado_pago_afp'].help_text = 'Adjunta respaldo de pago o certificado previsional AFP.'
-        self.fields['examen_altura_espacio_confinado'].help_text = 'Util para trabajos electricos en altura o espacios confinados.'
-        self.fields['afiliacion_mutualidad'].help_text = 'Respaldo de afiliacion o cobertura de mutualidad.'
-        self.fields['curriculum'].help_text = 'CV actualizado del trabajador.'
-        self.fields['certificado_antecedentes'].help_text = 'Certificado de antecedentes vigente.'
+        self.fields['activo'].help_text = 'Puedes dejar el trabajador activo o inactivo sin afectar su documentacion.'
+        self.fields['email'].help_text = 'Opcional, pero ayuda para coordinacion y comunicacion interna.'
+        self.fields['telefono'].help_text = 'Usa telefono o celular de contacto directo.'
+        self.fields['fecha_ingreso'].help_text = 'Fecha de ingreso a la empresa o al registro interno.'
+        self.fields['certificado_fonasa'].help_text = 'Formato sugerido: PDF o imagen legible. Respaldo previsional vigente.'
+        self.fields['certificado_pago_afp'].help_text = 'Formato sugerido: PDF o imagen. Adjunta respaldo o certificado AFP.'
+        self.fields['examen_altura_espacio_confinado'].help_text = 'Opcional segun faena. Util para trabajos electricos en altura o espacios confinados.'
+        self.fields['afiliacion_mutualidad'].help_text = 'Formato sugerido: PDF o imagen. Respaldo de cobertura en mutualidad.'
+        self.fields['curriculum'].help_text = 'Puedes subir CV en PDF, DOC o DOCX.'
+        self.fields['certificado_antecedentes'].help_text = 'Formato sugerido: PDF o imagen vigente.'
 
 
 class AsignacionTrabajoForm(forms.ModelForm):
