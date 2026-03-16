@@ -79,9 +79,9 @@ def filtrar_cobranzas_queryset(params, queryset=None):
         registros = registros.filter(cliente_id=int(cliente_id))
 
     if email_estado == 'con_email':
-        registros = registros.exclude(cliente__email='')
+        registros = registros.exclude(cliente_id__isnull=True).exclude(Q(cliente__email='') | Q(cliente__email__isnull=True))
     elif email_estado == 'sin_email':
-        registros = registros.filter(Q(cliente__email='') | Q(cliente__email__isnull=True))
+        registros = registros.filter(Q(cliente_id__isnull=True) | Q(cliente__email='') | Q(cliente__email__isnull=True))
 
     return registros
 

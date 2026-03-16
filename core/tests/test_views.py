@@ -656,6 +656,18 @@ class ControlPresupuestosViewTests(TestCase):
         self.assertIn('attachment; filename="consolidado_cobranzas.csv"', response['Content-Disposition'])
         self.assertIn('PRES-REAL', response.content.decode('utf-8-sig'))
 
+    def test_listar_cobranzas_filtra_con_email_sin_mostrar_registros_sin_correo(self):
+        self.cliente.email = ''
+        self.cliente.save(update_fields=['email'])
+
+        response = self.client.get(reverse('listar_cobranzas'), {'email_estado': 'con_email'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['consulta_activa'])
+        self.assertEqual(response.context['resumen']['total_registros'], 0)
+        self.assertNotContains(response, 'PRES-REAL')
+        self.assertContains(response, 'No hay facturas pendientes con los filtros actuales.')
+
     @patch('core.views_control_presupuestos.enviar_resumen_operador')
     def test_listar_cobranzas_permite_enviar_resumen_interno(self, mocked_enviar):
         mocked_enviar.return_value = {
