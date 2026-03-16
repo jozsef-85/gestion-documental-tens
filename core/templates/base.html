@@ -293,7 +293,7 @@
                             <a class="nav-link {% if request.resolver_match.url_name == 'listar_personal' or request.resolver_match.url_name == 'crear_personal' or request.resolver_match.url_name == 'editar_personal' or request.resolver_match.url_name == 'eliminar_personal' %}active{% endif %}" href="{% url 'listar_personal' %}">Personal</a>
                         </li>
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'listar_presupuestos_gestion' or request.resolver_match.url_name == 'listar_presupuestos' or request.resolver_match.url_name == 'subir_presupuesto' or request.resolver_match.url_name == 'crear_presupuesto' or request.resolver_match.url_name == 'editar_presupuesto' or request.resolver_match.url_name == 'historial_presupuesto' or request.resolver_match.url_name == 'eliminar_presupuesto' or request.resolver_match.url_name == 'listar_documentos' or request.resolver_match.url_name == 'historial_versiones' or request.resolver_match.url_name == 'editar_documento' or request.resolver_match.url_name == 'eliminar_documento' or request.resolver_match.url_name == 'subir_documento' or request.resolver_match.url_name == 'subir_version' %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'listar_presupuestos_gestion' or request.resolver_match.url_name == 'listar_presupuestos' or request.resolver_match.url_name == 'listar_cobranzas' or request.resolver_match.url_name == 'subir_presupuesto' or request.resolver_match.url_name == 'crear_presupuesto' or request.resolver_match.url_name == 'editar_presupuesto' or request.resolver_match.url_name == 'historial_presupuesto' or request.resolver_match.url_name == 'eliminar_presupuesto' or request.resolver_match.url_name == 'listar_documentos' or request.resolver_match.url_name == 'historial_versiones' or request.resolver_match.url_name == 'editar_documento' or request.resolver_match.url_name == 'eliminar_documento' or request.resolver_match.url_name == 'subir_documento' or request.resolver_match.url_name == 'subir_version' %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 Operación
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
@@ -307,6 +307,12 @@
                                     <a class="dropdown-item {% if request.resolver_match.url_name == 'listar_presupuestos' or request.resolver_match.url_name == 'editar_presupuesto' or request.resolver_match.url_name == 'historial_presupuesto' or request.resolver_match.url_name == 'eliminar_presupuesto' %}active{% endif %}" href="{% url 'listar_presupuestos' %}">
                                         Seguimiento
                                         <span class="menu-note">Estado del trabajo, factura y pago</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'listar_cobranzas' %}active{% endif %}" href="{% url 'listar_cobranzas' %}">
+                                        Cobranza
+                                        <span class="menu-note">Facturas pendientes y correos de cobro</span>
                                     </a>
                                 </li>
                                 {% if perms.core.add_cargapresupuesto %}

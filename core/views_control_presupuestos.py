@@ -21,6 +21,12 @@ from .selectors.presupuestos import (
 )
 from .services.access import model_access_required
 from .services.audit import registrar_auditoria
+from .services.cobranzas import (
+    construir_resumen_cobranzas,
+    enviar_recordatorios_clientes,
+    enviar_resumen_operador,
+    obtener_facturas_pendientes_queryset,
+)
 
 
 def asegurar_trabajos_presupuesto(presupuestos):
@@ -50,6 +56,92 @@ def asegurar_trabajo_en_registro(registro):
     trabajo = asegurar_trabajos_presupuesto([registro.presupuesto]).get((registro.presupuesto or '').strip())
     registro.trabajo = trabajo
     return trabajo
+
+
+def filtrar_cobranzas_queryset(params, queryset=None):
+    registros = queryset or obtener_facturas_pendientes_queryset()
+    q = params.get('q', '').strip()
+    cliente_id = params.get('cliente', '').strip()
+    email_estado = params.get('email_estado', '').strip()
+
+    if q:
+        registros = registros.filter(
+            Q(presupuesto__icontains=q)
+            | Q(factura__icontains=q)
+            | Q(cliente__nombre__icontains=q)
+            | Q(cliente__contacto__icontains=q)
+        )
+
+    if cliente_id.isdigit():
+        registros = registros.filter(cliente_id=int(cliente_id))
+
+    if email_estado == 'con_email':
+        registros = registros.exclude(cliente__email='')
+    elif email_estado == 'sin_email':
+        registros = registros.filter(Q(cliente__email='') | Q(cliente__email__isnull=True))
+
+    return registros
+
+
+@login_required
+@model_access_required('core', 'registropresupuesto')
+def listar_cobranzas(request):
+    base_queryset = obtener_facturas_pendientes_queryset()
+    registros = filtrar_cobranzas_queryset(request.POST if request.method == 'POST' else request.GET, base_queryset)
+    registros = list(registros)
+    resumen = construir_resumen_cobranzas(registros)
+    clientes_ids = base_queryset.exclude(cliente_id__isnull=True).values_list('cliente_id', flat=True).distinct()
+    clientes = Cliente.objects.filter(id__in=clientes_ids).order_by('nombre')
+
+    if request.method == 'POST':
+        if not request.user.has_perm('core.change_registropresupuesto') and not request.user.is_superuser:
+            raise PermissionDenied
+
+        accion = request.POST.get('accion', '').strip()
+        query = request.POST.urlencode()
+        query = '&'.join(
+            parte for parte in query.split('&')
+            if not parte.startswith('csrfmiddlewaretoken=') and not parte.startswith('accion=')
+        )
+        if not registros:
+            messages.warning(request, 'No hay facturas pendientes para procesar con los filtros actuales.')
+            return redirect(f"{request.path}?{query}" if query else request.path)
+
+        try:
+            if accion == 'resumen':
+                resultado = enviar_resumen_operador(registros)
+                if resultado['motivo'] == 'sin_destinatarios':
+                    messages.error(request, 'No hay correos configurados para el operador de cobranza.')
+                else:
+                    registrar_auditoria(
+                        request,
+                        accion='Envio de resumen de cobranza',
+                        entidad='Cobranza',
+                        detalle=f"Se envio resumen interno para {resultado['total_registros']} factura(s) pendiente(s).",
+                    )
+                    messages.success(request, 'Se envió el resumen interno de cobranza correctamente.')
+            elif accion == 'clientes':
+                enviados = enviar_recordatorios_clientes(registros)
+                registrar_auditoria(
+                    request,
+                    accion='Envio de recordatorios de cobranza',
+                    entidad='Cobranza',
+                    detalle=f"Se procesaron {len(enviados)} correo(s) a clientes desde la vista de cobranza.",
+                )
+                messages.success(request, f'Se procesaron {len(enviados)} recordatorio(s) a clientes con email.')
+            else:
+                messages.error(request, 'La acción solicitada no es válida.')
+        except Exception as exc:
+            messages.error(request, f'No fue posible enviar correos de cobranza: {exc}')
+
+        return redirect(f"{request.path}?{query}" if query else request.path)
+
+    return render(request, 'listar_cobranzas.html', {
+        'registros': registros,
+        'clientes': clientes,
+        'resumen': resumen,
+        'items_cobranza': resumen['items'],
+    })
 
 
 @login_required

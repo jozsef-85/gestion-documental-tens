@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% load moneda %}
+
+{% block title %}Cobranza | Gestión Documental{% endblock %}
+
+{% block content %}
+<section class="hero-panel p-4 p-lg-5 mb-4">
+    <span class="eyebrow mb-3">Cobranza</span>
+    <h1 class="page-title mb-2">Gestión de cobranza</h1>
+    <p class="mb-0 text-white-50">Revisa facturas pendientes de pago y envía correos al equipo interno o a clientes desde un solo lugar.</p>
+</section>
+
+<section class="row g-3 mb-4">
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="data-stat p-4 h-100">
+            <div class="muted-label">Facturas pendientes</div>
+            <div class="value">{{ resumen.total_registros }}</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="data-stat p-4 h-100">
+            <div class="muted-label">Monto pendiente</div>
+            <div class="value" style="font-size: 1.5rem;">{{ resumen.total_monto|clp }}</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="data-stat p-4 h-100">
+            <div class="muted-label">Con email</div>
+            <div class="value">{{ resumen.total_con_email }}</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="data-stat p-4 h-100">
+            <div class="muted-label">Sin email</div>
+            <div class="value">{{ resumen.total_sin_email }}</div>
+        </div>
+    </div>
+</section>
+
+<section class="surface-card p-4 p-lg-5 mb-4">
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <span class="badge badge-soft rounded-pill">Esta vista solo considera registros facturados y aún no pagados</span>
+        <span class="badge badge-soft rounded-pill">Usa filtros antes de enviar correos para acotar el alcance</span>
+    </div>
+
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-12 col-lg-5">
+            <label class="form-label" for="q">Buscar</label>
+            <input class="form-control" id="q" type="text" name="q" value="{{ request.GET.q }}" placeholder="Cliente, presupuesto, factura o contacto">
+        </div>
+        <div class="col-12 col-md-6 col-lg-3">
+            <label class="form-label" for="cliente">Cliente</label>
+            <select class="form-select" id="cliente" name="cliente">
+                <option value="">Todos</option>
+                {% for cliente in clientes %}
+                    <option value="{{ cliente.id }}" {% if request.GET.cliente == cliente.id|stringformat:"s" %}selected{% endif %}>{{ cliente.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-12 col-md-6 col-lg-2">
+            <label class="form-label" for="email_estado">Email</label>
+            <select class="form-select" id="email_estado" name="email_estado">
+                <option value="">Todos</option>
+                <option value="con_email" {% if request.GET.email_estado == 'con_email' %}selected{% endif %}>Con email</option>
+                <option value="sin_email" {% if request.GET.email_estado == 'sin_email' %}selected{% endif %}>Sin email</option>
+            </select>
+        </div>
+        <div class="col-12 col-md-6 col-lg-1 d-grid">
+            <button type="submit" class="btn btn-brand rounded-pill">Filtrar</button>
+        </div>
+        <div class="col-12 col-md-6 col-lg-1 d-grid">
+            <a href="{% url 'listar_cobranzas' %}" class="btn btn-soft rounded-pill">Limpiar</a>
+        </div>
+    </form>
+</section>
+
+<section class="surface-card p-4 p-lg-5">
+    <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3 mb-4">
+        <div>
+            <p class="section-title mb-1">Pendientes por cobrar</p>
+            <div class="footer-note">
+                {% if resumen.total_registros %}
+                    {{ resumen.total_registros }} registro(s) listos para gestión de cobranza.
+                {% else %}
+                    No hay facturas pendientes con los filtros actuales.
+                {% endif %}
+            </div>
+        </div>
+        <div class="d-flex flex-column flex-md-row gap-2">
+            {% if perms.core.change_registropresupuesto %}
+                <form method="post" class="mb-0">
+                    {% csrf_token %}
+                    <input type="hidden" name="accion" value="resumen">
+                    <input type="hidden" name="q" value="{{ request.GET.q }}">
+                    <input type="hidden" name="cliente" value="{{ request.GET.cliente }}">
+                    <input type="hidden" name="email_estado" value="{{ request.GET.email_estado }}">
+                    <button type="submit" class="btn btn-brand rounded-pill" {% if not resumen.total_registros %}disabled{% endif %}>Enviar resumen interno</button>
+                </form>
+                <form method="post" class="mb-0">
+                    {% csrf_token %}
+                    <input type="hidden" name="accion" value="clientes">
+                    <input type="hidden" name="q" value="{{ request.GET.q }}">
+                    <input type="hidden" name="cliente" value="{{ request.GET.cliente }}">
+                    <input type="hidden" name="email_estado" value="{{ request.GET.email_estado }}">
+                    <button type="submit" class="btn btn-soft rounded-pill" {% if not resumen.total_con_email %}disabled{% endif %}>Enviar recordatorios</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Presupuesto</th>
+                    <th>Factura</th>
+                    <th>Fecha facturación</th>
+                    <th>Días pendiente</th>
+                    <th>Monto</th>
+                    <th>Email</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items_cobranza %}
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">{{ item.cliente_nombre }}</div>
+                            <div class="muted-label">{{ item.registro.cliente.contacto|default:"Sin contacto" }}</div>
+                        </td>
+                        <td class="fw-semibold">{{ item.registro.presupuesto }}</td>
+                        <td>{{ item.registro.factura|default:"Sin factura" }}</td>
+                        <td>
+                            {% if item.registro.fecha_facturacion_texto %}
+                                {{ item.registro.fecha_facturacion_texto }}
+                            {% elif item.registro.fecha_facturacion %}
+                                {{ item.registro.fecha_facturacion|date:"d/m/Y" }}
+                            {% else %}
+                                <span class="muted-label">Sin fecha</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.dias_pendiente|default:"Sin fecha" }}</td>
+                        <td>{{ item.monto|clp }}</td>
+                        <td>
+                            {% if item.cliente_email %}
+                                {{ item.cliente_email }}
+                            {% else %}
+                                <span class="badge text-bg-secondary rounded-pill">Sin email</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'historial_presupuesto' item.registro.id %}" class="btn btn-soft btn-sm rounded-pill">Historial</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center muted-label py-4">No hay facturas pendientes para mostrar.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

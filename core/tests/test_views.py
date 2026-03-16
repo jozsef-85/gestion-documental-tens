@@ -463,6 +463,13 @@ class ControlPresupuestosViewTests(TestCase):
         )
         self.cliente = Cliente.objects.create(nombre='Constructora Sur')
         self.cliente_alt = Cliente.objects.create(nombre='Electro Minera')
+        self.cliente.email = 'pagos@constructora-sur.cl'
+        self.cliente.save(update_fields=['email'])
+        self.registro_en_proceso.cliente = self.cliente_alt
+        self.registro_en_proceso.save(update_fields=['cliente'])
+        self.registro_realizado.cliente = self.cliente
+        self.registro_realizado.fecha_facturacion_texto = '12/03/2026'
+        self.registro_realizado.save(update_fields=['cliente', 'fecha_facturacion_texto'])
 
     def test_listar_presupuestos_gestion_espera_consulta_antes_de_listar(self):
         response = self.client.get(reverse('listar_presupuestos_gestion'))
@@ -609,6 +616,70 @@ class ControlPresupuestosViewTests(TestCase):
         self.assertContains(response, 'PRES-FACT')
         self.assertNotContains(response, 'PRES-PAG')
 
+    def test_listar_cobranzas_muestra_facturas_pendientes(self):
+        RegistroPresupuesto.objects.create(
+            carga=self.carga,
+            cliente=self.cliente_alt,
+            fila_origen=7,
+            presupuesto='PRES-PAGADO',
+            descripcion='Pagado',
+            nota_pedido='OC-555',
+            factura='FAC-555',
+            fecha_facturacion_texto='10/03/2026',
+            fecha_pago_texto='15/03/2026',
+            monto='250000',
+        )
+
+        response = self.client.get(reverse('listar_cobranzas'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Gestión de cobranza')
+        self.assertContains(response, 'PRES-REAL')
+        self.assertNotContains(response, 'PRES-PAGADO')
+        self.assertEqual(response.context['resumen']['total_registros'], 1)
+
+    @patch('core.views_control_presupuestos.enviar_resumen_operador')
+    def test_listar_cobranzas_permite_enviar_resumen_interno(self, mocked_enviar):
+        mocked_enviar.return_value = {
+            'motivo': 'ok',
+            'total_registros': 1,
+            'destinatarios': ['cobranzas@sysnergia.test'],
+        }
+
+        response = self.client.post(
+            reverse('listar_cobranzas'),
+            {
+                'accion': 'resumen',
+                'q': 'PRES-REAL',
+                'cliente': self.cliente.id,
+                'email_estado': 'con_email',
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(mocked_enviar.called)
+        self.assertContains(response, 'Se envió el resumen interno de cobranza correctamente.')
+
+    @patch('core.views_control_presupuestos.enviar_recordatorios_clientes')
+    def test_listar_cobranzas_permite_enviar_recordatorios(self, mocked_enviar):
+        mocked_enviar.return_value = [{'cliente': self.cliente.nombre, 'email': self.cliente.email, 'cantidad_registros': 1}]
+
+        response = self.client.post(
+            reverse('listar_cobranzas'),
+            {
+                'accion': 'clientes',
+                'q': 'PRES-REAL',
+                'cliente': self.cliente.id,
+                'email_estado': 'con_email',
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(mocked_enviar.called)
+        self.assertContains(response, 'Se procesaron 1 recordatorio(s) a clientes con email.')
+
     def test_listar_presupuestos_no_carga_registros_sin_consulta(self):
         response = self.client.get(reverse('listar_presupuestos'))
 
@@ -696,6 +767,7 @@ class TemplateSmokeTests(TestCase):
             reverse('listar_personal'),
             reverse('listar_presupuestos_gestion'),
             reverse('listar_presupuestos'),
+            reverse('listar_cobranzas'),
             reverse('historial_presupuesto', args=[self.registro.id]),
             reverse('listar_documentos'),
         ]
