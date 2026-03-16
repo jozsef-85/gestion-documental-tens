@@ -251,6 +251,95 @@ class ListadoClientesAccessTests(TestCase):
         response = self.client.get(reverse('listar_documentos'))
 
         self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context['consulta_activa'])
+
+    def test_listar_documentos_no_carga_resultados_sin_consulta(self):
+        usuario = User.objects.create_user(username='consulta_documentos', password='secreta123')
+        permiso = Permission.objects.get(codename='view_documento')
+        usuario.user_permissions.add(permiso)
+        self.client.force_login(usuario)
+
+        response = self.client.get(reverse('listar_documentos'))
+
+        self.assertContains(response, 'Aún no hay una consulta aplicada.')
+        self.assertEqual(len(response.context['docs']), 0)
+
+    def test_listar_documentos_oculta_confidencialidad_alta_a_lectores(self):
+        usuario = User.objects.create_user(username='lector_simple', password='secreta123')
+        permiso = Permission.objects.get(codename='view_documento')
+        usuario.user_permissions.add(permiso)
+        departamento = Departamento.objects.create(nombre='Operaciones docs')
+        tipo = TipoDocumento.objects.create(nombre='Informe tecnico')
+        creador = User.objects.create_user(username='creador_docs', password='secreta123')
+        Documento.objects.create(
+            titulo='Informe publico',
+            tipo_documento=tipo,
+            departamento=departamento,
+            archivo_actual='documentos/publico.pdf',
+            nivel_confidencialidad='media',
+            creado_por=creador,
+        )
+        Documento.objects.create(
+            titulo='Contrato sensible',
+            tipo_documento=tipo,
+            departamento=departamento,
+            archivo_actual='documentos/sensible.pdf',
+            nivel_confidencialidad='alta',
+            creado_por=creador,
+        )
+        self.client.force_login(usuario)
+
+        response = self.client.get(reverse('listar_documentos'), {'confidencialidad': 'media'})
+
+        self.assertContains(response, 'Informe publico')
+        self.assertNotContains(response, 'Contrato sensible')
+
+    def test_historial_versiones_restringe_documento_alto_a_lector(self):
+        usuario = User.objects.create_user(username='lector_historial', password='secreta123')
+        permiso = Permission.objects.get(codename='view_documento')
+        usuario.user_permissions.add(permiso)
+        departamento = Departamento.objects.create(nombre='Calidad docs')
+        tipo = TipoDocumento.objects.create(nombre='Contrato')
+        creador = User.objects.create_user(username='creador_alto', password='secreta123')
+        documento = Documento.objects.create(
+            titulo='Convenio reservado',
+            tipo_documento=tipo,
+            departamento=departamento,
+            archivo_actual='documentos/reservado.pdf',
+            nivel_confidencialidad='alta',
+            creado_por=creador,
+        )
+        self.client.force_login(usuario)
+
+        response = self.client.get(reverse('historial_versiones', args=[documento.id]))
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_listar_clientes_no_carga_resultados_sin_consulta(self):
+        usuario = User.objects.create_user(username='lector_clientes', password='secreta123')
+        permiso = Permission.objects.get(codename='view_cliente')
+        usuario.user_permissions.add(permiso)
+        Cliente.objects.create(nombre='Cliente demo')
+        self.client.force_login(usuario)
+
+        response = self.client.get(reverse('listar_clientes'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Aún no hay una consulta aplicada.')
+        self.assertFalse(response.context['consulta_activa'])
+
+    def test_listar_personal_no_carga_resultados_sin_consulta(self):
+        usuario = User.objects.create_user(username='lector_personal', password='secreta123')
+        permiso = Permission.objects.get(codename='view_personaltrabajo')
+        usuario.user_permissions.add(permiso)
+        PersonalTrabajo.objects.create(nombre='Pedro Soto', cargo='Tecnico')
+        self.client.force_login(usuario)
+
+        response = self.client.get(reverse('listar_personal'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Aún no hay una consulta aplicada.')
+        self.assertFalse(response.context['consulta_activa'])
 
 
 class ControlPresupuestosViewTests(TestCase):

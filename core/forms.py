@@ -107,7 +107,7 @@ class DocumentoForm(forms.ModelForm):
         self.fields['departamento'].help_text = 'Area responsable o dueña del documento.'
         self.fields['archivo_actual'].help_text = 'Formatos permitidos: PDF, Office, texto, CSV e imagenes. Maximo 15 MB.'
         self.fields['estado'].help_text = 'Activo aparece en el repositorio principal. Archivado se conserva sin destacar.'
-        self.fields['nivel_confidencialidad'].help_text = 'Define que tan restringido debe considerarse el archivo.'
+        self.fields['nivel_confidencialidad'].help_text = 'Define que tan restringido debe considerarse el archivo. Alta queda visible solo para administradores, editores y creador.'
         self.fields['presupuestos'].help_text = 'Relaciona este archivo con uno o mas seguimientos para encontrar fotos, informes, certificados o respaldos mas rapido.'
 
     def clean_archivo_actual(self):

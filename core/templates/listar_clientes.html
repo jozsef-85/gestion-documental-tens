@@ -40,6 +40,9 @@
                 <div class="col-12 col-md-2 d-grid">
                     <button type="submit" class="btn btn-brand rounded-pill">Filtrar</button>
                 </div>
+                <div class="col-12 col-md-2 d-grid">
+                    <a href="{% url 'listar_clientes' %}" class="btn btn-soft rounded-pill">Limpiar</a>
+                </div>
             </form>
         </div>
     </div>
@@ -49,7 +52,11 @@
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
         <div>
             <p class="section-title mb-1">Listado</p>
-            <div class="footer-note">Resultados ordenados por nombre comercial.</div>
+            {% if consulta_activa %}
+                <div class="footer-note">Resultados ordenados por nombre comercial.</div>
+            {% else %}
+                <div class="footer-note">Esta pantalla funciona como consulta. Aplica filtros para cargar resultados.</div>
+            {% endif %}
         </div>
         {% if perms.core.add_cliente %}
             <a href="{% url 'crear_cliente' %}" class="btn btn-brand rounded-pill px-4">Nuevo cliente</a>
@@ -93,7 +100,13 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center muted-label py-4">No hay clientes para mostrar.</td>
+                        <td colspan="6" class="text-center muted-label py-4">
+                            {% if consulta_activa %}
+                                No hay clientes para mostrar.
+                            {% else %}
+                                Aún no hay una consulta aplicada. Busca por nombre, RUT, contacto o estado para ver resultados.
+                            {% endif %}
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>

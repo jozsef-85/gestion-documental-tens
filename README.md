@@ -2,6 +2,7 @@
 
 ## Documentación útil
 
+- [DEPLOY.md](DEPLOY.md): flujo recomendado de despliegue y operación para este entorno.
 - [SECURITY.md](SECURITY.md): checklist operativa de seguridad basada en OWASP para este proyecto.
 
 ## Logs en producción

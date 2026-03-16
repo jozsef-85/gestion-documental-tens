@@ -15,22 +15,27 @@ def listar_clientes(request):
     clientes = Cliente.objects.order_by('nombre')
     q = request.GET.get('q', '').strip()
     estado = request.GET.get('estado', '').strip()
+    consulta_activa = any([q, estado])
 
-    if q:
-        clientes = clientes.filter(
-            Q(nombre__icontains=q)
-            | Q(rut__icontains=q)
-            | Q(contacto__icontains=q)
-            | Q(email__icontains=q)
-        )
+    if consulta_activa:
+        if q:
+            clientes = clientes.filter(
+                Q(nombre__icontains=q)
+                | Q(rut__icontains=q)
+                | Q(contacto__icontains=q)
+                | Q(email__icontains=q)
+            )
 
-    if estado == 'activos':
-        clientes = clientes.filter(activo=True)
-    elif estado == 'inactivos':
-        clientes = clientes.filter(activo=False)
+        if estado == 'activos':
+            clientes = clientes.filter(activo=True)
+        elif estado == 'inactivos':
+            clientes = clientes.filter(activo=False)
+    else:
+        clientes = Cliente.objects.none()
 
     return render(request, 'listar_clientes.html', {
         'clientes': clientes,
+        'consulta_activa': consulta_activa,
         'total_clientes': Cliente.objects.count(),
         'total_activos': Cliente.objects.filter(activo=True).count(),
     })
@@ -110,22 +115,27 @@ def listar_personal(request):
     ).order_by('nombre')
     q = request.GET.get('q', '').strip()
     estado = request.GET.get('estado', '').strip()
+    consulta_activa = any([q, estado])
 
-    if q:
-        personal = personal.filter(
-            Q(nombre__icontains=q)
-            | Q(cargo__icontains=q)
-            | Q(area__icontains=q)
-            | Q(email__icontains=q)
-        )
+    if consulta_activa:
+        if q:
+            personal = personal.filter(
+                Q(nombre__icontains=q)
+                | Q(cargo__icontains=q)
+                | Q(area__icontains=q)
+                | Q(email__icontains=q)
+            )
 
-    if estado == 'activos':
-        personal = personal.filter(activo=True)
-    elif estado == 'inactivos':
-        personal = personal.filter(activo=False)
+        if estado == 'activos':
+            personal = personal.filter(activo=True)
+        elif estado == 'inactivos':
+            personal = personal.filter(activo=False)
+    else:
+        personal = PersonalTrabajo.objects.none()
 
     return render(request, 'listar_personal.html', {
         'personal': personal,
+        'consulta_activa': consulta_activa,
         'total_personal': PersonalTrabajo.objects.count(),
         'total_activos': PersonalTrabajo.objects.filter(activo=True).count(),
         'total_con_trabajos_activos': PersonalTrabajo.objects.filter(asignaciones__estado='activo').distinct().count(),

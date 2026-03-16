@@ -1,25 +1,44 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
+from django.db.models import Q
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import DocumentoForm, VersionDocumentoForm
 from .models import Departamento, Documento, RegistroPresupuesto, TipoDocumento, VersionDocumento
-from .services.access import model_access_required
+from .services.access import (
+    filtrar_documentos_por_confidencialidad,
+    model_access_required,
+    validar_acceso_documento,
+)
 from .services.audit import registrar_auditoria
 
 
 @login_required
 @model_access_required('core', 'documento')
 def listar_documentos(request):
-    docs = Documento.objects.exclude(estado='eliminado').prefetch_related('presupuestos').order_by('-fecha_creacion')
+    docs = Documento.objects.exclude(estado='eliminado').prefetch_related('presupuestos')
+    docs = filtrar_documentos_por_confidencialidad(docs, request.user)
 
-    q = request.GET.get('q')
-    tipo = request.GET.get('tipo')
-    departamento = request.GET.get('departamento')
+    q = request.GET.get('q', '').strip()
+    tipo = request.GET.get('tipo', '').strip()
+    departamento = request.GET.get('departamento', '').strip()
+    confidencialidad = request.GET.get('confidencialidad', '').strip()
+    estado = request.GET.get('estado', '').strip()
+    presupuesto = request.GET.get('presupuesto', '').strip()
+    consulta_activa = any([q, tipo, departamento, confidencialidad, estado, presupuesto])
 
     if q:
-        docs = docs.filter(titulo__icontains=q)
+        docs = docs.filter(
+            Q(titulo__icontains=q)
+            | Q(descripcion__icontains=q)
+            | Q(tipo_documento__nombre__icontains=q)
+            | Q(departamento__nombre__icontains=q)
+            | Q(presupuestos__presupuesto__icontains=q)
+        )
+
+    if presupuesto:
+        docs = docs.filter(presupuestos__presupuesto__icontains=presupuesto)
 
     if tipo:
         docs = docs.filter(tipo_documento_id=tipo)
@@ -27,10 +46,22 @@ def listar_documentos(request):
     if departamento:
         docs = docs.filter(departamento_id=departamento)
 
+    if confidencialidad:
+        docs = docs.filter(nivel_confidencialidad=confidencialidad)
+
+    if estado:
+        docs = docs.filter(estado=estado)
+
+    docs = docs.order_by('-fecha_creacion').distinct()
+
+    if not consulta_activa:
+        docs = Documento.objects.none()
+
     return render(request, 'listar_documentos.html', {
         'docs': docs,
         'tipos': TipoDocumento.objects.all(),
         'departamentos': Departamento.objects.all(),
+        'consulta_activa': consulta_activa,
         'total_documentos': Documento.objects.exclude(estado='eliminado').count(),
         'total_departamentos': Departamento.objects.count(),
         'total_tipos': TipoDocumento.objects.count(),
@@ -83,6 +114,7 @@ def editar_documento(request, documento_id):
         Documento.objects.exclude(estado='eliminado').prefetch_related('presupuestos'),
         id=documento_id,
     )
+    validar_acceso_documento(request, documento)
 
     if request.method == 'POST':
         form = DocumentoForm(request.POST, request.FILES, instance=documento)
@@ -114,6 +146,7 @@ def eliminar_documento(request, documento_id):
         Documento.objects.exclude(estado='eliminado').prefetch_related('presupuestos'),
         id=documento_id,
     )
+    validar_acceso_documento(request, documento)
 
     if request.method == 'POST':
         documento.estado = 'eliminado'
@@ -146,6 +179,7 @@ def subir_version(request, documento_id):
         Documento.objects.exclude(estado='eliminado').prefetch_related('presupuestos'),
         id=documento_id,
     )
+    validar_acceso_documento(request, documento)
 
     if request.method == 'POST':
         form = VersionDocumentoForm(request.POST, request.FILES)
@@ -186,6 +220,7 @@ def subir_version(request, documento_id):
 @model_access_required('core', 'documento')
 def historial_versiones(request, documento_id):
     documento = get_object_or_404(Documento.objects.prefetch_related('presupuestos'), id=documento_id)
+    validar_acceso_documento(request, documento)
     versiones = documento.versiones.all().order_by('-fecha_subida')
 
     return render(request, 'historial_versiones.html', {
