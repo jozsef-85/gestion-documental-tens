@@ -68,7 +68,7 @@
                     </div>
 
                     <div class="d-flex flex-wrap gap-2">
-                        <a href="{{ v.archivo.url }}" class="btn btn-brand btn-sm rounded-pill" download>Descargar versión</a>
+                        <a href="{% url 'descargar_version_documento' v.id %}" class="btn btn-brand btn-sm rounded-pill">Descargar versión</a>
                         {% if v.numero_version == documento.version_actual %}
                             <span class="btn btn-soft btn-sm rounded-pill disabled" aria-disabled="true">Versión vigente</span>
                         {% endif %}

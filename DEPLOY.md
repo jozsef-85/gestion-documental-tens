@@ -66,6 +66,7 @@ No recargar primero.
 - `Seguimiento de presupuestos` quedó pensado como consulta; no debe mezclar alta masiva o importación.
 - `Documentos`, `Clientes` y `Personal` también priorizan consulta con filtros antes de cargar listados.
 - Documentos con confidencialidad `alta` quedan visibles solo para administradores, editores o creador del archivo.
+- En producción no se debe publicar `/media/` como ruta abierta para documentos sensibles; las descargas documentales deben pasar por vistas protegidas.
 
 ## Checklist rápido post-deploy
 

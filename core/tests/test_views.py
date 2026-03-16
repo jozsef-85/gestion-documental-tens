@@ -149,6 +149,81 @@ class SubirDocumentoViewTests(TestCase):
         self.assertEqual(response.context['form']['presupuestos'].value(), [self.registro.id])
 
 
+class DocumentoDownloadAccessTests(TestCase):
+    def setUp(self):
+        self.temp_media = tempfile.TemporaryDirectory()
+        self.override = override_settings(MEDIA_ROOT=self.temp_media.name)
+        self.override.enable()
+
+        self.editor = User.objects.create_user(username='editor_download', password='secreta123')
+        permisos_editor = Permission.objects.filter(codename__in=['view_documento', 'change_documento', 'add_versiondocumento'])
+        self.editor.user_permissions.add(*permisos_editor)
+
+        self.lector = User.objects.create_user(username='lector_download', password='secreta123')
+        permiso_view = Permission.objects.get(codename='view_documento')
+        self.lector.user_permissions.add(permiso_view)
+
+        self.departamento = Departamento.objects.create(nombre='Documentos protegidos')
+        self.tipo = TipoDocumento.objects.create(nombre='Informe protegido')
+        self.documento_publico = Documento.objects.create(
+            titulo='Checklist obra',
+            tipo_documento=self.tipo,
+            departamento=self.departamento,
+            archivo_actual=SimpleUploadedFile('checklist.pdf', b'pdf-checklist', content_type='application/pdf'),
+            nivel_confidencialidad='media',
+            creado_por=self.editor,
+        )
+        self.documento_reservado = Documento.objects.create(
+            titulo='Contrato reservado',
+            tipo_documento=self.tipo,
+            departamento=self.departamento,
+            archivo_actual=SimpleUploadedFile('contrato.pdf', b'pdf-contrato', content_type='application/pdf'),
+            nivel_confidencialidad='alta',
+            creado_por=self.editor,
+        )
+
+    def tearDown(self):
+        self.override.disable()
+        self.temp_media.cleanup()
+
+    def test_descargar_documento_entrega_archivo_protegido(self):
+        self.client.force_login(self.editor)
+
+        response = self.client.get(reverse('descargar_documento', args=[self.documento_publico.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(b''.join(response.streaming_content), b'pdf-checklist')
+        self.assertTrue(
+            Auditoria.objects.filter(
+                entidad='Documento',
+                entidad_id=self.documento_publico.id,
+                accion='Descarga de documento',
+            ).exists()
+        )
+
+    def test_descargar_documento_alto_restringe_a_lector(self):
+        self.client.force_login(self.lector)
+
+        response = self.client.get(reverse('descargar_documento', args=[self.documento_reservado.id]))
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_descargar_version_requiere_acceso_al_documento(self):
+        self.client.force_login(self.editor)
+        archivo = SimpleUploadedFile('version-2.pdf', b'pdf-version-2', content_type='application/pdf')
+        self.client.post(reverse('subir_version', args=[self.documento_reservado.id]), {
+            'numero_version': '2.0',
+            'archivo': archivo,
+            'comentario': 'Version firmada',
+        })
+        version = self.documento_reservado.versiones.get()
+
+        self.client.force_login(self.lector)
+        response = self.client.get(reverse('descargar_version_documento', args=[version.id]))
+
+        self.assertEqual(response.status_code, 403)
+
+
 class DashboardViewTests(TestCase):
     def setUp(self):
         self.usuario = User.objects.create_user(username='dashboard', password='secreta123')

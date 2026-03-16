@@ -1,4 +1,6 @@
 from .views_documentos import (
+    descargar_documento,
+    descargar_version_documento,
     editar_documento,
     eliminar_documento,
     historial_versiones,
@@ -31,6 +33,8 @@ __all__ = [
     'crear_cliente',
     'crear_personal',
     'crear_presupuesto',
+    'descargar_documento',
+    'descargar_version_documento',
     'dashboard',
     'editar_cliente',
     'editar_documento',

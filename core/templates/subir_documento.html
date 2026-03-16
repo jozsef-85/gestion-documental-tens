@@ -231,7 +231,7 @@
                             </label>
                             {{ form.archivo_actual }}
                             {% if es_edicion and documento %}
-                                <div class="document-help">Archivo actual: <a href="{{ documento.archivo_actual.url }}">{{ documento.archivo_actual.name|default:documento.titulo }}</a></div>
+                                <div class="document-help">Archivo actual: <a href="{% url 'descargar_documento' documento.id %}">{{ documento.archivo_actual.name|default:documento.titulo }}</a></div>
                             {% endif %}
                             {% if form.archivo_actual.help_text %}<div class="document-help">{{ form.archivo_actual.help_text }}</div>{% endif %}
                             {% for error in form.archivo_actual.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}

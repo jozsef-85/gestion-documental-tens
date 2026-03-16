@@ -1,7 +1,10 @@
+import os
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
-from django.db.models import Q
 from django.db import transaction
+from django.db.models import Q
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import DocumentoForm, VersionDocumentoForm
@@ -227,3 +230,49 @@ def historial_versiones(request, documento_id):
         'documento': documento,
         'versiones': versiones,
     })
+
+
+@login_required
+@model_access_required('core', 'documento')
+def descargar_documento(request, documento_id):
+    documento = get_object_or_404(
+        Documento.objects.exclude(estado='eliminado').prefetch_related('presupuestos'),
+        id=documento_id,
+    )
+    validar_acceso_documento(request, documento)
+
+    if not documento.archivo_actual:
+        raise Http404('El documento no tiene un archivo disponible.')
+
+    registrar_auditoria(
+        request,
+        accion='Descarga de documento',
+        entidad='Documento',
+        entidad_id=documento.id,
+        detalle=f'Se descargó el documento {documento.titulo}',
+    )
+    nombre_archivo = os.path.basename(documento.archivo_actual.name) or f'documento-{documento.id}'
+    return FileResponse(documento.archivo_actual.open('rb'), as_attachment=True, filename=nombre_archivo)
+
+
+@login_required
+@model_access_required('core', 'documento')
+def descargar_version_documento(request, version_id):
+    version = get_object_or_404(
+        VersionDocumento.objects.select_related('documento'),
+        id=version_id,
+    )
+    validar_acceso_documento(request, version.documento)
+
+    if not version.archivo:
+        raise Http404('La versión no tiene un archivo disponible.')
+
+    registrar_auditoria(
+        request,
+        accion='Descarga de versión',
+        entidad='Documento',
+        entidad_id=version.documento.id,
+        detalle=f'Se descargó la versión {version.numero_version} del documento {version.documento.titulo}',
+    )
+    nombre_archivo = os.path.basename(version.archivo.name) or f'version-{version.id}'
+    return FileResponse(version.archivo.open('rb'), as_attachment=True, filename=nombre_archivo)
