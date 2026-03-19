@@ -8,6 +8,7 @@
 ```bash
 /opt/gestion_documental/venv/bin/python manage.py check
 /opt/gestion_documental/venv/bin/python manage.py test
+./scripts/manage.sh check
 ```
 
 3. Guardar versión en Git:
@@ -35,7 +36,14 @@ git push origin <tag>
 6. Recargar Gunicorn:
 
 ```bash
-pkill -HUP -f '/opt/gestion_documental/venv/bin/gunicorn --workers 3 --bind 127.0.0.1:8000 config.wsgi:application'
+pkill -HUP -f '/opt/gestion_documental/venv/bin/python3 /opt/gestion_documental/venv/bin/gunicorn --workers 3 --bind 127.0.0.1:8000 config.wsgi:application'
+./scripts/refresh_app.sh
+```
+
+Opcional si hay migraciones pendientes:
+
+```bash
+RUN_MIGRATIONS=1 ./scripts/refresh_app.sh
 ```
 
 7. Verificar servicio:
@@ -64,7 +72,7 @@ No recargar primero.
 ## Operación diaria
 
 - `Seguimiento de presupuestos` quedó pensado como consulta; no debe mezclar alta masiva o importación.
-- `Documentos`, `Clientes` y `Personal` también priorizan consulta con filtros antes de cargar listados.
+- `Documentos` prioriza consulta con filtros; `Clientes` y `Personal` muestran hasta 10 registros recientes al entrar y luego permiten ampliar con filtros o `Todos`.
 - Documentos con confidencialidad `alta` quedan visibles solo para administradores, editores o creador del archivo.
 - En producción no se debe publicar `/media/` como ruta abierta para documentos sensibles; las descargas documentales deben pasar por vistas protegidas.
 - Las alertas de cobranza usan SMTP configurable por `.env` y el comando `python manage.py enviar_alertas_cobro`.

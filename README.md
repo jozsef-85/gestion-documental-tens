@@ -65,6 +65,22 @@ Para recalentar la caché de indicadores sin depender del primer request del das
 python manage.py refresh_indicadores
 ```
 
+## Sesiones y acceso
+
+La configuración base deja la sesión alineada con una política mínima de seguridad operativa:
+
+- cierre automático al cerrar el navegador
+- expiración por inactividad de 30 minutos
+- renovación del vencimiento en cada request autenticado
+
+Variable configurable:
+
+```bash
+DJANGO_SESSION_IDLE_TIMEOUT=1800
+```
+
+Valor expresado en segundos. Si el área de seguridad exige una ventana distinta, se ajusta por entorno sin tocar código.
+
 ## Docker
 
 El proyecto queda preparado para construir imagen y ejecutarse con `docker compose`.

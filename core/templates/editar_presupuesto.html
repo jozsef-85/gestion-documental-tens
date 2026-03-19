@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load moneda %}
 
 {% block title %}{% if modo_creacion %}Nuevo presupuesto{% else %}Editar presupuesto{% endif %} | Gestión Documental{% endblock %}
 
@@ -138,64 +139,62 @@
     <article class="surface-card budget-editor-card">
         <div class="budget-editor-hero">
             <span class="eyebrow mb-3">{% if modo_creacion %}Creacion{% else %}Edicion{% endif %}</span>
-            <h1 class="page-title mb-2">{% if modo_creacion %}Nuevo registro de control{% else %}Editar presupuesto{% endif %}</h1>
+            <h1 class="page-title mb-2">{% if modo_creacion %}Nuevo presupuesto{% else %}Editar presupuesto{% endif %}</h1>
             <p class="muted-label mb-0">Organiza cliente, obra, ejecucion y cierre del trabajo en secciones claras para seguir servicios electricos y faenas con menos friccion.</p>
         </div>
 
         <form method="post" novalidate>
             {% csrf_token %}
             <div class="budget-editor-grid">
-                {% for error in form.non_field_errors %}
-                    <div class="alert alert-danger mb-0">{{ error }}</div>
-                {% endfor %}
+                {% include "includes/form_error_summary.html" with form=form %}
 
                 <section class="budget-panel">
                     <div class="budget-panel-title">Resumen comercial</div>
                     <div class="budget-fields">
                         <div class="budget-field span-4">
                             <label class="form-label" for="{{ form.cliente.id_for_label }}">{{ form.cliente.label }}</label>
-                            {{ form.cliente }}
-                            {% if form.cliente.help_text %}<div class="budget-hint">{{ form.cliente.help_text }}</div>{% endif %}
-                            {% for error in form.cliente.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.cliente|render_field_a11y }}
+                            {% if form.cliente.help_text %}<div class="budget-hint" id="{{ form.cliente|field_help_id }}">{{ form.cliente.help_text }}</div>{% endif %}
+                            {% if form.cliente.errors %}<div class="text-danger small mt-1" id="{{ form.cliente|field_error_id }}" role="alert">{% for error in form.cliente.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                         <div class="budget-field span-4">
                             <label class="form-label" for="{{ form.presupuesto.id_for_label }}">{{ form.presupuesto.label }}</label>
-                            {{ form.presupuesto }}
-                            {% if form.presupuesto.help_text %}<div class="budget-hint">{{ form.presupuesto.help_text }}</div>{% endif %}
-                            {% for error in form.presupuesto.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.presupuesto|render_field_a11y }}
+                            {% if form.presupuesto.help_text %}<div class="budget-hint" id="{{ form.presupuesto|field_help_id }}">{{ form.presupuesto.help_text }}</div>{% endif %}
+                            {% if form.presupuesto.errors %}<div class="text-danger small mt-1" id="{{ form.presupuesto|field_error_id }}" role="alert">{% for error in form.presupuesto.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                         <div class="budget-field span-4">
                             <label class="form-label" for="{{ form.tipo_trabajo.id_for_label }}">{{ form.tipo_trabajo.label }}</label>
-                            {{ form.tipo_trabajo }}
-                            {% if form.tipo_trabajo.help_text %}<div class="budget-hint">{{ form.tipo_trabajo.help_text }}</div>{% endif %}
-                            {% for error in form.tipo_trabajo.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.tipo_trabajo|render_field_a11y }}
+                            {% if form.tipo_trabajo.help_text %}<div class="budget-hint" id="{{ form.tipo_trabajo|field_help_id }}">{{ form.tipo_trabajo.help_text }}</div>{% endif %}
+                            {% if form.tipo_trabajo.errors %}<div class="text-danger small mt-1" id="{{ form.tipo_trabajo|field_error_id }}" role="alert">{% for error in form.tipo_trabajo.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                         <div class="budget-field span-4">
                             <label class="form-label" for="{{ form.solicitante.id_for_label }}">{{ form.solicitante.label }}</label>
-                            {{ form.solicitante }}
-                            {% for error in form.solicitante.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.solicitante|render_field_a11y }}
+                            {% if form.solicitante.errors %}<div class="text-danger small mt-1" id="{{ form.solicitante|field_error_id }}" role="alert">{% for error in form.solicitante.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                         <div class="budget-field span-4">
                             <label class="form-label" for="{{ form.monto.id_for_label }}">{{ form.monto.label }}</label>
-                            {{ form.monto }}
-                            {% for error in form.monto.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.monto|render_field_a11y }}
+                            {% if form.monto.errors %}<div class="text-danger small mt-1" id="{{ form.monto|field_error_id }}" role="alert">{% for error in form.monto.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                         <div class="budget-field span-4">
                             <label class="form-label" for="{{ form.ubicacion_obra.id_for_label }}">{{ form.ubicacion_obra.label }}</label>
-                            {{ form.ubicacion_obra }}
-                            {% if form.ubicacion_obra.help_text %}<div class="budget-hint">{{ form.ubicacion_obra.help_text }}</div>{% endif %}
-                            {% for error in form.ubicacion_obra.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.ubicacion_obra|render_field_a11y }}
+                            {% if form.ubicacion_obra.help_text %}<div class="budget-hint" id="{{ form.ubicacion_obra|field_help_id }}">{{ form.ubicacion_obra.help_text }}</div>{% endif %}
+                            {% if form.ubicacion_obra.errors %}<div class="text-danger small mt-1" id="{{ form.ubicacion_obra|field_error_id }}" role="alert">{% for error in form.ubicacion_obra.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                         <div class="budget-field span-4">
                             <label class="form-label" for="{{ form.fecha_texto.id_for_label }}">{{ form.fecha_texto.label }}</label>
-                            {{ form.fecha_texto }}
-                            {% if form.fecha_texto.help_text %}<div class="budget-hint">{{ form.fecha_texto.help_text }}</div>{% endif %}
-                            {% for error in form.fecha_texto.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.fecha_texto|render_field_a11y }}
+                            {% if form.fecha_texto.help_text %}<div class="budget-hint" id="{{ form.fecha_texto|field_help_id }}">{{ form.fecha_texto.help_text }}</div>{% endif %}
+                            {% if form.fecha_texto.errors %}<div class="text-danger small mt-1" id="{{ form.fecha_texto|field_error_id }}" role="alert">{% for error in form.fecha_texto.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                         <div class="budget-field span-8">
                             <label class="form-label" for="{{ form.descripcion.id_for_label }}">{{ form.descripcion.label }}</label>
-                            {{ form.descripcion }}
-                            {% for error in form.descripcion.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.descripcion|render_field_a11y }}
+                            {% if form.descripcion.errors %}<div class="text-danger small mt-1" id="{{ form.descripcion|field_error_id }}" role="alert">{% for error in form.descripcion.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                     </div>
                 </section>
@@ -205,27 +204,27 @@
                     <div class="budget-fields">
                         <div class="budget-field span-4">
                             <label class="form-label" for="{{ form.nota_pedido.id_for_label }}">{{ form.nota_pedido.label }}</label>
-                            {{ form.nota_pedido }}
-                            {% if form.nota_pedido.help_text %}<div class="budget-hint">{{ form.nota_pedido.help_text }}</div>{% endif %}
-                            {% for error in form.nota_pedido.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.nota_pedido|render_field_a11y }}
+                            {% if form.nota_pedido.help_text %}<div class="budget-hint" id="{{ form.nota_pedido|field_help_id }}">{{ form.nota_pedido.help_text }}</div>{% endif %}
+                            {% if form.nota_pedido.errors %}<div class="text-danger small mt-1" id="{{ form.nota_pedido|field_error_id }}" role="alert">{% for error in form.nota_pedido.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                         <div class="budget-field span-4">
                             <label class="form-label" for="{{ form.estado_oc.id_for_label }}">{{ form.estado_oc.label }}</label>
-                            {{ form.estado_oc }}
-                            {% if form.estado_oc.help_text %}<div class="budget-hint">{{ form.estado_oc.help_text }}</div>{% endif %}
+                            {{ form.estado_oc|render_field_a11y }}
+                            {% if form.estado_oc.help_text %}<div class="budget-hint" id="{{ form.estado_oc|field_help_id }}">{{ form.estado_oc.help_text }}</div>{% endif %}
                             <div class="budget-hint">Estados disponibles: No Aprobado, Aprobado, En curso y Terminado.</div>
-                            {% for error in form.estado_oc.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {% if form.estado_oc.errors %}<div class="text-danger small mt-1" id="{{ form.estado_oc|field_error_id }}" role="alert">{% for error in form.estado_oc.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                         <div class="budget-field span-4">
                             <label class="form-label" for="{{ form.estado_manual.id_for_label }}">{{ form.estado_manual.label }}</label>
-                            {{ form.estado_manual }}
-                            {% if form.estado_manual.help_text %}<div class="budget-hint">{{ form.estado_manual.help_text }}</div>{% endif %}
-                            {% for error in form.estado_manual.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.estado_manual|render_field_a11y }}
+                            {% if form.estado_manual.help_text %}<div class="budget-hint" id="{{ form.estado_manual|field_help_id }}">{{ form.estado_manual.help_text }}</div>{% endif %}
+                            {% if form.estado_manual.errors %}<div class="text-danger small mt-1" id="{{ form.estado_manual|field_error_id }}" role="alert">{% for error in form.estado_manual.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                         <div class="budget-field">
                             <label class="form-label" for="{{ form.observacion_oc.id_for_label }}">{{ form.observacion_oc.label }}</label>
-                            {{ form.observacion_oc }}
-                            {% for error in form.observacion_oc.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.observacion_oc|render_field_a11y }}
+                            {% if form.observacion_oc.errors %}<div class="text-danger small mt-1" id="{{ form.observacion_oc|field_error_id }}" role="alert">{% for error in form.observacion_oc.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                     </div>
                 </section>
@@ -235,19 +234,19 @@
                     <div class="budget-fields">
                         <div class="budget-field span-8">
                             <label class="form-label" for="{{ form.recepcion.id_for_label }}">{{ form.recepcion.label }}</label>
-                            {{ form.recepcion }}
-                            {% if form.recepcion.help_text %}<div class="budget-hint">{{ form.recepcion.help_text }}</div>{% endif %}
-                            {% for error in form.recepcion.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.recepcion|render_field_a11y }}
+                            {% if form.recepcion.help_text %}<div class="budget-hint" id="{{ form.recepcion|field_help_id }}">{{ form.recepcion.help_text }}</div>{% endif %}
+                            {% if form.recepcion.errors %}<div class="text-danger small mt-1" id="{{ form.recepcion|field_error_id }}" role="alert">{% for error in form.recepcion.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                         <div class="budget-field span-4">
                             <label class="form-label" for="{{ form.estado_recepcion.id_for_label }}">{{ form.estado_recepcion.label }}</label>
-                            {{ form.estado_recepcion }}
-                            {% for error in form.estado_recepcion.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.estado_recepcion|render_field_a11y }}
+                            {% if form.estado_recepcion.errors %}<div class="text-danger small mt-1" id="{{ form.estado_recepcion|field_error_id }}" role="alert">{% for error in form.estado_recepcion.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                         <div class="budget-field span-4">
                             <label class="form-label" for="{{ form.guia_despacho.id_for_label }}">{{ form.guia_despacho.label }}</label>
-                            {{ form.guia_despacho }}
-                            {% for error in form.guia_despacho.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.guia_despacho|render_field_a11y }}
+                            {% if form.guia_despacho.errors %}<div class="text-danger small mt-1" id="{{ form.guia_despacho|field_error_id }}" role="alert">{% for error in form.guia_despacho.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                     </div>
                 </section>
@@ -257,23 +256,23 @@
                     <div class="budget-fields">
                         <div class="budget-field span-4">
                             <label class="form-label" for="{{ form.factura.id_for_label }}">{{ form.factura.label }}</label>
-                            {{ form.factura }}
-                            {% for error in form.factura.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.factura|render_field_a11y }}
+                            {% if form.factura.errors %}<div class="text-danger small mt-1" id="{{ form.factura|field_error_id }}" role="alert">{% for error in form.factura.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                         <div class="budget-field span-4">
                             <label class="form-label" for="{{ form.fecha_facturacion_texto.id_for_label }}">{{ form.fecha_facturacion_texto.label }}</label>
-                            {{ form.fecha_facturacion_texto }}
-                            {% for error in form.fecha_facturacion_texto.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.fecha_facturacion_texto|render_field_a11y }}
+                            {% if form.fecha_facturacion_texto.errors %}<div class="text-danger small mt-1" id="{{ form.fecha_facturacion_texto|field_error_id }}" role="alert">{% for error in form.fecha_facturacion_texto.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                         <div class="budget-field span-4">
                             <label class="form-label" for="{{ form.fecha_pago_texto.id_for_label }}">{{ form.fecha_pago_texto.label }}</label>
-                            {{ form.fecha_pago_texto }}
-                            {% for error in form.fecha_pago_texto.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.fecha_pago_texto|render_field_a11y }}
+                            {% if form.fecha_pago_texto.errors %}<div class="text-danger small mt-1" id="{{ form.fecha_pago_texto|field_error_id }}" role="alert">{% for error in form.fecha_pago_texto.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                         <div class="budget-field">
                             <label class="form-label" for="{{ form.observaciones.id_for_label }}">{{ form.observaciones.label }}</label>
-                            {{ form.observaciones }}
-                            {% for error in form.observaciones.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.observaciones|render_field_a11y }}
+                            {% if form.observaciones.errors %}<div class="text-danger small mt-1" id="{{ form.observaciones|field_error_id }}" role="alert">{% for error in form.observaciones.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                     </div>
                 </section>
@@ -283,10 +282,10 @@
                     <div class="budget-fields">
                         <div class="budget-field">
                             <label class="form-label" for="{{ form.documentos_relacionados.id_for_label }}">{{ form.documentos_relacionados.label }}</label>
-                            {{ form.documentos_relacionados }}
-                            {% if form.documentos_relacionados.help_text %}<div class="budget-hint">{{ form.documentos_relacionados.help_text }}</div>{% endif %}
+                            {{ form.documentos_relacionados|render_field_a11y }}
+                            {% if form.documentos_relacionados.help_text %}<div class="budget-hint" id="{{ form.documentos_relacionados|field_help_id }}">{{ form.documentos_relacionados.help_text }}</div>{% endif %}
                             <div class="budget-hint">Puedes asociar respaldos tecnicos, comerciales o administrativos, como fotos, informes, checklists o certificados.</div>
-                            {% for error in form.documentos_relacionados.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {% if form.documentos_relacionados.errors %}<div class="text-danger small mt-1" id="{{ form.documentos_relacionados|field_error_id }}" role="alert">{% for error in form.documentos_relacionados.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                     </div>
                 </section>
@@ -299,7 +298,7 @@
                     <span class="budget-note-chip">Ubicacion sirve para distinguir obra, planta, local o faena</span>
                 </div>
                 <div class="d-flex flex-column flex-sm-row gap-3">
-                    <button type="submit" class="btn btn-brand rounded-pill px-4">Guardar cambios</button>
+                    <button type="submit" class="btn btn-brand rounded-pill px-4" data-loading-text="{% if modo_creacion %}Guardando presupuesto...{% else %}Guardando cambios...{% endif %}">{% if modo_creacion %}Guardar presupuesto{% else %}Guardar cambios{% endif %}</button>
                     <a href="{% url 'listar_presupuestos' %}" class="btn btn-soft rounded-pill px-4">Cancelar</a>
                 </div>
             </div>

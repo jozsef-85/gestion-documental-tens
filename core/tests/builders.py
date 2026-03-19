@@ -2,7 +2,12 @@ from io import BytesIO
 from zipfile import ZipFile
 
 
-def construir_xlsx_prueba(*, encabezado_presupuesto='PRESUPUESTO', encabezado_monto='ORDEN DE COMPRA'):
+def construir_xlsx_prueba(
+    *,
+    encabezado_presupuesto='PRESUPUESTO',
+    encabezado_monto='MONTO',
+    encabezado_nota_pedido='NOTA DE PEDIDO',
+):
     workbook_xml = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
               xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
@@ -27,7 +32,7 @@ def construir_xlsx_prueba(*, encabezado_presupuesto='PRESUPUESTO', encabezado_mo
         <si><t>DESCRIPCION</t></si>
         <si><t>SOLICITANTE</t></si>
         <si><t>{encabezado_monto}</t></si>
-        <si><t>NOTA DE PEDIDO</t></si>
+        <si><t>{encabezado_nota_pedido}</t></si>
         <si><t>FACTURA</t></si>
         <si><t>FECHA DE PAGO</t></si>
         <si><t>ESTADO O.C</t></si>

@@ -1,0 +1,11 @@
+{% if form.errors %}
+    <div class="alert alert-danger rounded-4 mb-4 form-error-summary" role="alert" aria-live="assertive" tabindex="-1">
+        {% if form.non_field_errors %}
+            {% for error in form.non_field_errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
+        {% else %}
+            Revisa los campos marcados y corrige los datos antes de continuar.
+        {% endif %}
+    </div>
+{% endif %}

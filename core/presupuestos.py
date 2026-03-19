@@ -29,7 +29,7 @@ HEADER_MAP = {
     'SOLICITANTE': 'solicitante',
     'VALOR': 'monto',
     'MONTO': 'monto',
-    'ORDEN DE COMPRA': 'monto',
+    'ORDEN DE COMPRA': 'nota_pedido',
     'NOTA DE PEDIDO': 'nota_pedido',
     'NOTA DE PEDIDO O.C': 'nota_pedido',
     'ESTADO O.C': 'estado_oc',

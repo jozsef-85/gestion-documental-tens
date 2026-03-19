@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load moneda %}
 
 {% block title %}Subir planilla | Gestión Documental{% endblock %}
 
@@ -103,42 +104,43 @@
         <h1 class="page-title mb-2">Subir planilla de presupuestos</h1>
         <p class="muted-label mb-4">Carga una planilla Excel para actualizar el control comercial sin perder trazabilidad de cada importación.</p>
 
-        {% if form.non_field_errors %}
-            <div class="alert alert-danger rounded-4 mb-4">
-                {% for error in form.non_field_errors %}
-                    <div>{{ error }}</div>
-                {% endfor %}
-            </div>
-        {% endif %}
-
         <form method="post" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
+            {% include "includes/form_error_summary.html" with form=form %}
 
             <div class="mb-4">
                 <label class="form-label fw-semibold" for="{{ form.nombre.id_for_label }}">{{ form.nombre.label }}</label>
-                {{ form.nombre }}
-                <div class="upload-help mt-2">Puedes dejarlo vacío y usaremos el nombre del archivo cargado.</div>
-                {% for error in form.nombre.errors %}
-                    <div class="text-danger small mt-2 field-error">{{ error }}</div>
-                {% endfor %}
+                {{ form.nombre|render_field_a11y }}
+                <div class="upload-help mt-2" id="{{ form.nombre|field_help_id }}">Puedes dejarlo vacío y usaremos el nombre del archivo cargado.</div>
+                {% if form.nombre.errors %}
+                    <div class="text-danger small mt-2 field-error" id="{{ form.nombre|field_error_id }}" role="alert">
+                        {% for error in form.nombre.errors %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
 
             <div class="mb-4">
                 <label class="form-label fw-semibold" for="{{ form.archivo.id_for_label }}">{{ form.archivo.label }}</label>
                 <div class="upload-file-wrap">
-                    {{ form.archivo }}
-                    <div class="upload-help mt-3">
+                    {{ form.archivo|render_field_a11y }}
+                    <div class="upload-help mt-3" id="{{ form.archivo|field_help_id }}">
                         Formatos permitidos: `.xls` y `.xlsx`. Tamaño máximo: 10 MB.
                     </div>
                 </div>
-                {% for error in form.archivo.errors %}
-                    <div class="text-danger small mt-2 field-error">{{ error }}</div>
-                {% endfor %}
+                {% if form.archivo.errors %}
+                    <div class="text-danger small mt-2 field-error" id="{{ form.archivo|field_error_id }}" role="alert">
+                        {% for error in form.archivo.errors %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
 
             <div class="d-flex flex-column flex-sm-row gap-3 mt-4">
-                <button type="submit" class="btn btn-brand rounded-pill px-4">Importar planilla</button>
-                <a href="{% url 'listar_presupuestos' %}" class="btn btn-soft rounded-pill px-4">Cancelar</a>
+                <button type="submit" class="btn btn-brand rounded-pill px-4" data-loading-text="Importando planilla...">Importar planilla</button>
+                <a href="{% url cancelar_url %}" class="btn btn-soft rounded-pill px-4">{{ cancelar_label }}</a>
             </div>
         </form>
     </article>

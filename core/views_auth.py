@@ -92,3 +92,8 @@ class RateLimitedLoginView(LoginView):
             )
             form.add_error(None, self.get_rate_limit_message())
         return self.form_invalid(form)
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        self.request.session.modified = True
+        return response

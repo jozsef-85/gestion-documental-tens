@@ -61,6 +61,29 @@ def asegurar_trabajo_en_registro(registro):
     return trabajo
 
 
+def asegurar_trabajos_en_registros(registros):
+    registros = list(registros)
+    faltantes = [
+        registro
+        for registro in registros
+        if not registro.trabajo_id and (registro.presupuesto or '').strip()
+    ]
+    if not faltantes:
+        return registros
+
+    trabajos = asegurar_trabajos_presupuesto([registro.presupuesto for registro in faltantes])
+    actualizables = []
+    for registro in faltantes:
+        trabajo = trabajos.get((registro.presupuesto or '').strip())
+        if trabajo:
+            registro.trabajo = trabajo
+            actualizables.append(registro)
+
+    if actualizables:
+        RegistroPresupuesto.objects.bulk_update(actualizables, ['trabajo'])
+    return registros
+
+
 def filtrar_cobranzas_queryset(params, queryset=None):
     registros = queryset or obtener_facturas_pendientes_queryset()
     q = params.get('q', '').strip()
@@ -164,11 +187,12 @@ def listar_cobranzas(request):
 @login_required
 @model_access_required('core', 'registropresupuesto')
 def descargar_consolidado_cobranzas(request):
-    if not _consulta_cobranzas_activa(request.GET):
-        messages.warning(request, 'Aplica al menos un filtro antes de descargar el consolidado de cobranza.')
-        return redirect('listar_cobranzas')
-
-    registros = list(filtrar_cobranzas_queryset(request.GET, obtener_facturas_pendientes_queryset()))
+    base_queryset = obtener_facturas_pendientes_queryset()
+    registros = list(
+        filtrar_cobranzas_queryset(request.GET, base_queryset)
+        if _consulta_cobranzas_activa(request.GET)
+        else base_queryset
+    )
     response = HttpResponse(content_type='text/csv; charset=utf-8')
     response['Content-Disposition'] = 'attachment; filename="consolidado_cobranzas.csv"'
     response.write('\ufeff')
@@ -236,10 +260,12 @@ def listar_presupuestos_gestion(request):
         registros = registros.filter(q_estado_presupuesto('en_proceso'))
 
     registros = registros.order_by('-carga__fecha_carga', 'presupuesto')
+    total_filtrados = registros.count()
+    registros = asegurar_trabajos_en_registros(registros[:60])
 
     return render(request, 'listar_presupuestos_gestion.html', {
-        'registros': registros[:60],
-        'total_filtrados': registros.count(),
+        'registros': registros,
+        'total_filtrados': total_filtrados,
         'consulta_activa': True,
     })
 
@@ -360,6 +386,7 @@ def listar_presupuestos(request):
     total_filtrados = registros.count()
     paginator = Paginator(registros, 20)
     page_obj = paginator.get_page(request.GET.get('page'))
+    page_obj.object_list = asegurar_trabajos_en_registros(page_obj.object_list)
 
     return render(request, 'listar_presupuestos.html', {
         'registros': page_obj.object_list,
@@ -424,6 +451,9 @@ def crear_presupuesto(request):
 @login_required
 @permission_required('core.add_cargapresupuesto', raise_exception=True)
 def subir_presupuesto(request):
+    cancelar_url = 'listar_presupuestos' if request.user.has_perm('core.view_registropresupuesto') else 'subir_presupuesto'
+    cancelar_label = 'Cancelar' if request.user.has_perm('core.view_registropresupuesto') else 'Seguir en importación'
+
     if request.method == 'POST':
         form = CargaPresupuestoForm(request.POST, request.FILES)
         if form.is_valid():
@@ -481,11 +511,17 @@ def subir_presupuesto(request):
                     detalle=f'Se importaron {len(resultado.registros)} registros desde {archivo.name}',
                 )
                 messages.success(request, f'Se importaron {len(resultado.registros)} registros desde la planilla.')
-                return redirect('listar_presupuestos')
+                if request.user.has_perm('core.view_registropresupuesto'):
+                    return redirect('listar_presupuestos')
+                return redirect('subir_presupuesto')
     else:
         form = CargaPresupuestoForm()
 
-    return render(request, 'subir_presupuesto.html', {'form': form})
+    return render(request, 'subir_presupuesto.html', {
+        'form': form,
+        'cancelar_url': cancelar_url,
+        'cancelar_label': cancelar_label,
+    })
 
 
 @login_required

@@ -1,11 +1,14 @@
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, TestCase
 
 from core.forms import (
     CargaPresupuestoForm,
+    ClienteForm,
     DocumentoForm,
     MAX_DOCUMENT_UPLOAD_SIZE,
+    MAX_PERSONAL_UPLOAD_SIZE,
     MAX_SPREADSHEET_UPLOAD_SIZE,
+    PersonalTrabajoForm,
     RegistroPresupuestoForm,
     VersionDocumentoForm,
 )
@@ -43,6 +46,29 @@ class RegistroPresupuestoFormTests(SimpleTestCase):
         self.assertIn('cliente', form.fields)
         self.assertIn('tipo_trabajo', form.fields)
         self.assertIn('ubicacion_obra', form.fields)
+
+    def test_rechaza_monto_negativo(self):
+        form = RegistroPresupuestoForm(data={
+            'presupuesto': 'Presupuesto demo',
+            'tipo_trabajo': 'instalacion',
+            'ubicacion_obra': 'Obra demo',
+            'descripcion': 'Servicio',
+            'solicitante': 'Usuario',
+            'monto': '-1',
+            'fecha_texto': '17/01/2025',
+            'nota_pedido': '',
+            'estado_oc': '',
+            'recepcion': '',
+            'guia_despacho': '',
+            'factura': '',
+            'fecha_facturacion_texto': '',
+            'fecha_pago_texto': '',
+            'estado_manual': '',
+            'observaciones': '',
+        })
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('no puede ser negativo', form.errors['monto'][0])
 
 
 class DocumentoFormTests(SimpleTestCase):
@@ -113,3 +139,67 @@ class CargaPresupuestoFormTests(SimpleTestCase):
 
         self.assertFalse(form.is_valid())
         self.assertIn('tamaño máximo permitido', form.errors['archivo'][0])
+
+
+class ClienteFormTests(TestCase):
+    def test_normaliza_rut_vacio_a_none(self):
+        form = ClienteForm(data={
+            'nombre': 'Cliente demo',
+            'rut': '   ',
+            'contacto': 'Maria',
+            'email': 'maria@example.com',
+            'telefono': '+56 9 1111 2222',
+            'direccion': 'Av. Siempre Viva 123',
+            'activo': 'True',
+        })
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertIsNone(form.cleaned_data['rut'])
+
+
+class PersonalTrabajoFormTests(TestCase):
+    def test_rechaza_respaldo_personal_con_extension_no_permitida(self):
+        archivo = SimpleUploadedFile(
+            'fonasa.exe',
+            b'fake-binary',
+            content_type='application/octet-stream',
+        )
+
+        form = PersonalTrabajoForm(
+            data={
+                'nombre': 'Luis Toro',
+                'cargo': 'Electricista',
+                'area': 'Operaciones',
+                'email': '',
+                'telefono': '',
+                'fecha_ingreso': '',
+                'activo': 'True',
+            },
+            files={'certificado_fonasa': archivo},
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('formatos permitidos', form.errors['certificado_fonasa'][0])
+
+    def test_rechaza_curriculum_demasiado_grande(self):
+        archivo = SimpleUploadedFile(
+            'cv.pdf',
+            b'a' * (MAX_PERSONAL_UPLOAD_SIZE + 1),
+            content_type='application/pdf',
+        )
+
+        form = PersonalTrabajoForm(
+            data={
+                'nombre': 'Luis Toro',
+                'cargo': 'Electricista',
+                'area': 'Operaciones',
+                'email': '',
+                'telefono': '',
+                'fecha_ingreso': '',
+                'activo': 'True',
+            },
+            files={'curriculum': archivo},
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('tamaño máximo permitido', form.errors['curriculum'][0])

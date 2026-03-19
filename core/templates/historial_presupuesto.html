@@ -50,8 +50,18 @@
         </div>
         <div class="col-12 col-md-6 col-xl-3">
             <div class="data-stat p-4 h-100">
-                <div class="muted-label">Personal vinculado</div>
+                <div class="muted-label">Equipo asignado</div>
                 <div class="fw-semibold">{{ asignaciones|length }}</div>
+                {% if asignaciones %}
+                    <div class="footer-note mt-2">
+                        {% for asignacion in asignaciones|slice:":2" %}
+                            {{ asignacion.trabajador.nombre }}{% if asignacion.rol %} · {{ asignacion.rol }}{% endif %}{% if not forloop.last %}<br>{% endif %}
+                        {% endfor %}
+                        {% if asignaciones|length > 2 %}
+                            <div>+ {{ asignaciones|length|add:"-2" }} más</div>
+                        {% endif %}
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -59,13 +69,10 @@
         {% if perms.core.change_registropresupuesto %}
             <a href="{% url 'editar_presupuesto' registro.id %}" class="btn btn-brand rounded-pill px-4">Editar</a>
         {% endif %}
-        {% if perms.core.add_documento %}
-            <a href="{% url 'subir_documento' %}?registro_id={{ registro.id }}" class="btn btn-soft rounded-pill px-4">Subir respaldo del trabajo</a>
-        {% endif %}
         {% if perms.core.view_documento %}
-            <a href="{% url 'listar_documentos' %}" class="btn btn-soft rounded-pill px-4">Ver documentos</a>
+            <a href="{% url 'listar_documentos' %}?presupuesto={{ registro.presupuesto|urlencode }}" class="btn btn-soft rounded-pill px-4">Documentos del trabajo</a>
         {% endif %}
-        <a href="{% url 'listar_presupuestos' %}" class="btn btn-soft rounded-pill px-4">Volver al seguimiento</a>
+        <a href="{% url 'listar_presupuestos' %}?q={{ registro.presupuesto|urlencode }}" class="btn btn-soft rounded-pill px-4">Volver al seguimiento</a>
     </div>
 </section>
 
@@ -74,7 +81,7 @@
         <div class="surface-card p-4 p-lg-5 h-100">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h2 class="section-title mb-1">Personal asignado</h2>
+                    <h2 class="section-title mb-1">Equipo asignado</h2>
                     <div class="footer-note">Este equipo queda vinculado al trabajo aunque existan nuevas cargas del mismo presupuesto.</div>
                 </div>
             </div>
@@ -143,25 +150,27 @@
             {% if perms.core.add_asignaciontrabajo %}
                 <form method="post" novalidate>
                     {% csrf_token %}
-                    {% for error in asignacion_form.non_field_errors %}
-                        <div class="alert alert-danger">{{ error }}</div>
-                    {% endfor %}
+                    {% include "includes/form_error_summary.html" with form=asignacion_form %}
 
                     {% for field in asignacion_form %}
                         <div class="mb-3">
                             <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                            {{ field }}
+                            {{ field|render_field_a11y }}
                             {% if field.help_text %}
-                                <div class="form-text">{{ field.help_text }}</div>
+                                <div class="form-text" id="{{ field|field_help_id }}">{{ field.help_text }}</div>
                             {% endif %}
-                            {% for error in field.errors %}
-                                <div class="text-danger small mt-1">{{ error }}</div>
-                            {% endfor %}
+                            {% if field.errors %}
+                                <div class="text-danger small mt-1" id="{{ field|field_error_id }}" role="alert">
+                                    {% for error in field.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
                     {% endfor %}
 
                     <div class="d-flex flex-column flex-sm-row gap-3 mt-4">
-                        <button type="submit" class="btn btn-brand rounded-pill px-4">Vincular trabajador</button>
+                        <button type="submit" class="btn btn-brand rounded-pill px-4" data-loading-text="Vinculando trabajador...">Vincular trabajador</button>
                         <a href="{% url 'listar_personal' %}" class="btn btn-soft rounded-pill px-4">Ver personal</a>
                     </div>
                 </form>
@@ -178,28 +187,29 @@
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
         <div>
             <h2 class="section-title mb-1">Historial</h2>
-            <div class="footer-note">Aqui puedes revisar el avance del mismo presupuesto entre cargas, junto con respaldos tecnicos y estado de cierre.</div>
+            <div class="footer-note" id="historial-presupuesto-ayuda" aria-live="polite">Aqui puedes revisar el avance del mismo presupuesto entre cargas, junto con respaldos tecnicos y estado de cierre.</div>
         </div>
-        {% if perms.core.add_documento %}
-            <a href="{% url 'subir_documento' %}?registro_id={{ registro.id }}" class="btn btn-brand rounded-pill px-4">Agregar evidencia o informe</a>
+        {% if perms.core.view_documento %}
+            <a href="{% url 'listar_documentos' %}?presupuesto={{ registro.presupuesto|urlencode }}" class="btn btn-brand rounded-pill px-4">Gestionar documentos del trabajo</a>
         {% endif %}
     </div>
     <div class="table-responsive">
-        <table class="table align-middle mb-0">
+        <table class="table align-middle mb-0" aria-describedby="historial-presupuesto-ayuda">
+            <caption class="visually-hidden">Historial de cargas del presupuesto con fecha, estado, factura, pago y monto.</caption>
             <thead>
                 <tr>
-                    <th>Carga</th>
-                    <th>Fecha</th>
-                    <th>Estado</th>
-                    <th>Factura</th>
-                    <th>Pago</th>
-                    <th>Monto</th>
+                    <th scope="col">Carga</th>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col">Factura</th>
+                    <th scope="col">Pago</th>
+                    <th scope="col">Monto</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in historial %}
                     <tr>
-                        <td>{{ item.carga.nombre }}</td>
+                        <th scope="row">{{ item.carga.nombre }}</th>
                         <td>{{ item.carga.fecha_carga|date:"d/m/Y H:i" }}</td>
                         <td>{{ item.estado_seguimiento }}</td>
                         <td>{{ item.factura|default:"Sin factura" }}</td>
@@ -208,7 +218,9 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center muted-label py-4">No hay historial disponible.</td>
+                        <td colspan="6" class="text-center muted-label py-4">
+                            <div role="status" aria-live="polite">No hay historial disponible todavía para este presupuesto.</div>
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>

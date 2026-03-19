@@ -36,6 +36,17 @@ class PresupuestosParserTests(SimpleTestCase):
 
         self.assertEqual(resultado.registros[0].monto, Decimal('2572978'))
 
+    def test_acepta_orden_de_compra_como_alias_de_nota_de_pedido(self):
+        archivo = construir_xlsx_prueba(
+            encabezado_monto='MONTO',
+            encabezado_nota_pedido='ORDEN DE COMPRA',
+        )
+
+        resultado = parsear_planilla_presupuestos(archivo)
+
+        self.assertEqual(resultado.registros[0].nota_pedido, 'OC-001')
+        self.assertEqual(resultado.registros[0].monto, Decimal('2572978'))
+
     def test_acepta_encabezado_n_presupuesto_como_alias(self):
         archivo = construir_xlsx_prueba(encabezado_presupuesto='N° PRESUPUESTO')
 

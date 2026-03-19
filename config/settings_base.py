@@ -154,6 +154,10 @@ COBRANZA_APP_URL = config('DJANGO_COBRANZA_APP_URL', default='')
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
+SESSION_IDLE_TIMEOUT = config('DJANGO_SESSION_IDLE_TIMEOUT', default=1800, cast=int)
+SESSION_COOKIE_AGE = SESSION_IDLE_TIMEOUT
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_SAVE_EVERY_REQUEST = True
 CSRF_FAILURE_VIEW = 'core.views_errors.csrf_failure'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

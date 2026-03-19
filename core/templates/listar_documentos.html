@@ -15,9 +15,6 @@
             <p class="section-title mb-1">Búsqueda y filtros</p>
             <div class="footer-note">Consulta el repositorio por titulo, presupuesto relacionado, tipo, area, estado o confidencialidad.</div>
         </div>
-        {% if perms.core.add_documento %}
-            <a href="{% url 'subir_documento' %}" class="btn btn-brand rounded-pill px-4">Nuevo documento</a>
-        {% endif %}
     </div>
 
     <form method="get" class="row g-3 align-items-end">
@@ -80,21 +77,21 @@
         <div>
             <p class="section-title mb-1">Repositorio activo</p>
             {% if consulta_activa %}
-                <div class="footer-note">{{ docs|length }} documento(s) visibles con su versión actual.</div>
+                <div class="footer-note" id="documentos-listado-ayuda" aria-live="polite">{{ docs|length }} documento(s) visibles con su versión actual.</div>
             {% else %}
-                <div class="footer-note">Esta pantalla funciona como consulta. Usa los filtros para cargar resultados.</div>
+                <div class="footer-note" id="documentos-listado-ayuda" aria-live="polite">Esta pantalla funciona como consulta. Usa los filtros para cargar resultados y continuar la gestión documental desde aquí.</div>
             {% endif %}
         </div>
     </div>
 
     {% if consulta_activa %}
-    <div class="row g-3">
+    <div class="row g-3" aria-describedby="documentos-listado-ayuda">
         {% for doc in docs %}
             <div class="col-12 col-xl-6">
-                <article class="document-card p-4 h-100">
+                <article class="document-card p-4 h-100" aria-labelledby="documento-{{ doc.id }}-titulo">
                     <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3">
                         <div>
-                            <h2 class="h5 mb-1">{{ doc.titulo }}</h2>
+                            <h2 class="h5 mb-1" id="documento-{{ doc.id }}-titulo">{{ doc.titulo }}</h2>
                             <div class="muted-label">{{ doc.tipo_documento }} · {{ doc.departamento }}</div>
                         </div>
                         <div class="d-flex flex-wrap gap-2 align-self-start">
@@ -126,30 +123,30 @@
                     </div>
 
                     <div class="d-flex flex-wrap gap-2">
-                        <a href="{% url 'descargar_documento' doc.id %}" class="btn btn-brand btn-sm rounded-pill">Descargar</a>
+                        <a href="{% url 'descargar_documento' doc.id %}" class="btn btn-brand btn-sm rounded-pill" aria-label="Descargar documento {{ doc.titulo }}">Descargar</a>
                         {% if perms.core.add_versiondocumento %}
-                            <a href="{% url 'subir_version' doc.id %}" class="btn btn-soft btn-sm rounded-pill">Agregar versión</a>
+                            <a href="{% url 'subir_version' doc.id %}" class="btn btn-soft btn-sm rounded-pill" aria-label="Agregar versión al documento {{ doc.titulo }}">Agregar versión</a>
                         {% endif %}
-                        <a href="{% url 'historial_versiones' doc.id %}" class="btn btn-soft btn-sm rounded-pill">Historial</a>
+                        <a href="{% url 'historial_versiones' doc.id %}" class="btn btn-soft btn-sm rounded-pill" aria-label="Ver historial de versiones del documento {{ doc.titulo }}">Historial</a>
                         {% if perms.core.change_documento %}
-                            <a href="{% url 'editar_documento' doc.id %}" class="btn btn-soft btn-sm rounded-pill">Editar</a>
+                            <a href="{% url 'editar_documento' doc.id %}" class="btn btn-soft btn-sm rounded-pill" aria-label="Editar documento {{ doc.titulo }}">Editar</a>
                         {% endif %}
                         {% if perms.core.delete_documento %}
-                            <a href="{% url 'eliminar_documento' doc.id %}" class="btn btn-outline-danger btn-sm rounded-pill">Eliminar</a>
+                            <a href="{% url 'eliminar_documento' doc.id %}" class="btn btn-outline-danger btn-sm rounded-pill" aria-label="Eliminar documento {{ doc.titulo }}">Eliminar</a>
                         {% endif %}
                     </div>
                 </article>
             </div>
         {% empty %}
             <div class="col-12">
-                <div class="document-card p-4 text-center muted-label">
-                    No hay documentos que coincidan con la consulta.
+                <div class="document-card p-4 text-center muted-label" role="status" aria-live="polite">
+                    No hay documentos que coincidan con la consulta. Prueba con otro presupuesto, tipo, área o limpia los filtros.
                 </div>
             </div>
         {% endfor %}
     </div>
     {% else %}
-        <div class="document-card p-4 text-center muted-label">
+        <div class="document-card p-4 text-center muted-label" role="status" aria-live="polite">
             Aún no hay una consulta aplicada. Puedes buscar por presupuesto, tipo, área o confidencialidad para revisar fotos, informes, checklists y certificados.
         </div>
     {% endif %}

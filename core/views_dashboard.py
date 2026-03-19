@@ -35,14 +35,14 @@ def dashboard(request):
             'titulo': 'Pendientes por cobrar',
             'detalle': 'Trabajos aceptados o realizados que aún no pasan a estado pagado.',
             'url': f"{reverse('listar_presupuestos')}?estado=por_cobrar",
-            'cta': 'Ver detalle',
+            'cta': 'Ver seguimiento',
         },
         {
             'titulo': 'Trabajos pagados',
             'cantidad': resumen['total_pagados'],
             'detalle': 'Trabajos cerrados con pago registrado.',
             'url': f"{reverse('listar_presupuestos')}?estado=pagado",
-            'cta': 'Abrir listado',
+            'cta': 'Ver pagados',
         },
     ]
 

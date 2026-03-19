@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load moneda %}
 
 {% block title %}{% if es_edicion %}Editar documento{% else %}Nuevo documento{% endif %} | Gestión Documental{% endblock %}
 
@@ -181,9 +182,7 @@
         <form method="post" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
             <div class="document-body">
-                {% for error in form.non_field_errors %}
-                    <div class="alert alert-danger mb-0">{{ error }}</div>
-                {% endfor %}
+                {% include "includes/form_error_summary.html" with form=form %}
                 {% if registro_relacionado %}
                     <div class="alert alert-info mb-0">
                         Este documento quedara inicialmente vinculado al trabajo
@@ -197,27 +196,27 @@
                     <div class="document-grid">
                         <div class="document-field">
                             <label class="form-label" for="{{ form.titulo.id_for_label }}">{{ form.titulo.label }}</label>
-                            {{ form.titulo }}
-                            {% if form.titulo.help_text %}<div class="document-help">{{ form.titulo.help_text }}</div>{% endif %}
-                            {% for error in form.titulo.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.titulo|render_field_a11y }}
+                            {% if form.titulo.help_text %}<div class="document-help" id="{{ form.titulo|field_help_id }}">{{ form.titulo.help_text }}</div>{% endif %}
+                            {% if form.titulo.errors %}<div class="text-danger small mt-1" id="{{ form.titulo|field_error_id }}" role="alert">{% for error in form.titulo.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                         <div class="document-field">
                             <label class="form-label" for="{{ form.descripcion.id_for_label }}">{{ form.descripcion.label }}</label>
-                            {{ form.descripcion }}
-                            {% if form.descripcion.help_text %}<div class="document-help">{{ form.descripcion.help_text }}</div>{% endif %}
-                            {% for error in form.descripcion.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.descripcion|render_field_a11y }}
+                            {% if form.descripcion.help_text %}<div class="document-help" id="{{ form.descripcion|field_help_id }}">{{ form.descripcion.help_text }}</div>{% endif %}
+                            {% if form.descripcion.errors %}<div class="text-danger small mt-1" id="{{ form.descripcion|field_error_id }}" role="alert">{% for error in form.descripcion.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                         <div class="document-field span-6">
                             <label class="form-label" for="{{ form.tipo_documento.id_for_label }}">{{ form.tipo_documento.label }}</label>
-                            {{ form.tipo_documento }}
-                            {% if form.tipo_documento.help_text %}<div class="document-help">{{ form.tipo_documento.help_text }}</div>{% endif %}
-                            {% for error in form.tipo_documento.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.tipo_documento|render_field_a11y }}
+                            {% if form.tipo_documento.help_text %}<div class="document-help" id="{{ form.tipo_documento|field_help_id }}">{{ form.tipo_documento.help_text }}</div>{% endif %}
+                            {% if form.tipo_documento.errors %}<div class="text-danger small mt-1" id="{{ form.tipo_documento|field_error_id }}" role="alert">{% for error in form.tipo_documento.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                         <div class="document-field span-6">
                             <label class="form-label" for="{{ form.departamento.id_for_label }}">{{ form.departamento.label }}</label>
-                            {{ form.departamento }}
-                            {% if form.departamento.help_text %}<div class="document-help">{{ form.departamento.help_text }}</div>{% endif %}
-                            {% for error in form.departamento.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.departamento|render_field_a11y }}
+                            {% if form.departamento.help_text %}<div class="document-help" id="{{ form.departamento|field_help_id }}">{{ form.departamento.help_text }}</div>{% endif %}
+                            {% if form.departamento.errors %}<div class="text-danger small mt-1" id="{{ form.departamento|field_error_id }}" role="alert">{% for error in form.departamento.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                     </div>
                 </section>
@@ -227,26 +226,31 @@
                     <div class="document-grid">
                         <div class="document-field">
                             <label class="form-label" for="{{ form.archivo_actual.id_for_label }}">
-                                {% if es_edicion %}Reemplazar archivo{% else %}Archivo{% endif %}
+                                {% if es_edicion %}Archivo actual{% else %}Archivo{% endif %}
                             </label>
-                            {{ form.archivo_actual }}
                             {% if es_edicion and documento %}
+                                <div class="alert alert-info mb-3">
+                                    El archivo no se reemplaza desde esta pantalla para no perder trazabilidad.
+                                    Usa <a href="{% url 'subir_version' documento.id %}">Agregar versión</a> si necesitas subir una nueva revision.
+                                </div>
                                 <div class="document-help">Archivo actual: <a href="{% url 'descargar_documento' documento.id %}">{{ documento.archivo_actual.name|default:documento.titulo }}</a></div>
+                            {% else %}
+                                {{ form.archivo_actual|render_field_a11y }}
                             {% endif %}
-                            {% if form.archivo_actual.help_text %}<div class="document-help">{{ form.archivo_actual.help_text }}</div>{% endif %}
-                            {% for error in form.archivo_actual.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {% if form.archivo_actual.help_text %}<div class="document-help" id="{{ form.archivo_actual|field_help_id }}">{{ form.archivo_actual.help_text }}</div>{% endif %}
+                            {% if form.archivo_actual.errors %}<div class="text-danger small mt-1" id="{{ form.archivo_actual|field_error_id }}" role="alert">{% for error in form.archivo_actual.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                         <div class="document-field span-6">
                             <label class="form-label" for="{{ form.estado.id_for_label }}">{{ form.estado.label }}</label>
-                            {{ form.estado }}
-                            {% if form.estado.help_text %}<div class="document-help">{{ form.estado.help_text }}</div>{% endif %}
-                            {% for error in form.estado.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.estado|render_field_a11y }}
+                            {% if form.estado.help_text %}<div class="document-help" id="{{ form.estado|field_help_id }}">{{ form.estado.help_text }}</div>{% endif %}
+                            {% if form.estado.errors %}<div class="text-danger small mt-1" id="{{ form.estado|field_error_id }}" role="alert">{% for error in form.estado.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                         <div class="document-field span-6">
                             <label class="form-label" for="{{ form.nivel_confidencialidad.id_for_label }}">{{ form.nivel_confidencialidad.label }}</label>
-                            {{ form.nivel_confidencialidad }}
-                            {% if form.nivel_confidencialidad.help_text %}<div class="document-help">{{ form.nivel_confidencialidad.help_text }}</div>{% endif %}
-                            {% for error in form.nivel_confidencialidad.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.nivel_confidencialidad|render_field_a11y }}
+                            {% if form.nivel_confidencialidad.help_text %}<div class="document-help" id="{{ form.nivel_confidencialidad|field_help_id }}">{{ form.nivel_confidencialidad.help_text }}</div>{% endif %}
+                            {% if form.nivel_confidencialidad.errors %}<div class="text-danger small mt-1" id="{{ form.nivel_confidencialidad|field_error_id }}" role="alert">{% for error in form.nivel_confidencialidad.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                     </div>
                 </section>
@@ -256,9 +260,9 @@
                     <div class="document-grid">
                         <div class="document-field">
                             <label class="form-label" for="{{ form.presupuestos.id_for_label }}">{{ form.presupuestos.label }}</label>
-                            {{ form.presupuestos }}
-                            {% if form.presupuestos.help_text %}<div class="document-help">{{ form.presupuestos.help_text }}</div>{% endif %}
-                            {% for error in form.presupuestos.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            {{ form.presupuestos|render_field_a11y }}
+                            {% if form.presupuestos.help_text %}<div class="document-help" id="{{ form.presupuestos|field_help_id }}">{{ form.presupuestos.help_text }}</div>{% endif %}
+                            {% if form.presupuestos.errors %}<div class="text-danger small mt-1" id="{{ form.presupuestos|field_error_id }}" role="alert">{% for error in form.presupuestos.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
                         </div>
                     </div>
                 </section>
@@ -271,10 +275,10 @@
                     <span class="document-note-chip">Puedes subir fotos, informes, checklists o certificados del trabajo</span>
                 </div>
                 <div class="d-flex flex-column flex-sm-row gap-3">
-                    <button type="submit" class="btn btn-brand rounded-pill px-4">
+                    <button type="submit" class="btn btn-brand rounded-pill px-4" data-loading-text="{% if es_edicion %}Guardando cambios...{% else %}Guardando documento...{% endif %}">
                         {% if es_edicion %}Guardar cambios{% else %}Guardar documento{% endif %}
                     </button>
-                    <a href="{% url 'listar_documentos' %}" class="btn btn-soft rounded-pill px-4">Volver al repositorio</a>
+                    <a href="{% url cancelar_url %}" class="btn btn-soft rounded-pill px-4">{{ cancelar_label }}</a>
                 </div>
             </div>
         </form>

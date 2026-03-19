@@ -18,6 +18,7 @@ urlpatterns = [
     path('personal/nuevo/', views.crear_personal, name='crear_personal'),
     path('personal/editar/<int:personal_id>/', views.editar_personal, name='editar_personal'),
     path('personal/eliminar/<int:personal_id>/', views.eliminar_personal, name='eliminar_personal'),
+    path('personal/documentos/<int:personal_id>/<str:campo>/', views.descargar_documento_personal, name='descargar_documento_personal'),
     path('gestion/presupuestos/', views.listar_presupuestos_gestion, name='listar_presupuestos_gestion'),
     path('presupuestos/', views.listar_presupuestos, name='listar_presupuestos'),
     path('cobranzas/', views.listar_cobranzas, name='listar_cobranzas'),
@@ -27,7 +28,8 @@ urlpatterns = [
     path('presupuestos/historial/<int:registro_id>/', views.historial_presupuesto, name='historial_presupuesto'),
     path('presupuestos/editar/<int:registro_id>/', views.editar_presupuesto, name='editar_presupuesto'),
     path('presupuestos/eliminar/<int:registro_id>/', views.eliminar_presupuesto, name='eliminar_presupuesto'),
-    path('subir/', views.subir_documento, name='subir_documento'),
+    path('at/subir/', views.subir_documento, name='subir_documento'),
+    path('subir/', views.subir_documento, name='subir_documento_legacy'),
     path('version/<int:documento_id>/', views.subir_version, name='subir_version'),
     path('historial/<int:documento_id>/', views.historial_versiones, name='historial_versiones'),
 ]

@@ -16,7 +16,7 @@
             --brand-ice: #f3f7fa;
             --brand-line: #d7e2ea;
             --brand-text: #173042;
-            --brand-muted: #617789;
+            --brand-muted: #4d6476;
         }
 
         html {
@@ -68,6 +68,11 @@
             color: rgba(255, 255, 255, 0.82);
             border-radius: 999px;
             padding-inline: 1rem;
+        }
+
+        .nav-pills button.nav-link {
+            border: 0;
+            background: transparent;
         }
 
         .nav-pills .nav-link:hover,
@@ -183,27 +188,27 @@
         }
 
         .badge-soft {
-            background: #eaf3f8;
-            color: var(--brand-blue);
-            border: 1px solid #d7e7f0;
+            background: #dfeef6;
+            color: #153f5c;
+            border: 1px solid #bfd6e3;
         }
 
         .badge-confidencialidad-alta {
-            background: #fbe8e6;
-            color: #9e2f25;
-            border: 1px solid #f4c9c5;
+            background: #fbe5e2;
+            color: #7d241b;
+            border: 1px solid #efc1bc;
         }
 
         .badge-confidencialidad-media {
-            background: #fff3dd;
-            color: #8b621c;
-            border: 1px solid #f1dfb8;
+            background: #fff1d9;
+            color: #6f4a08;
+            border: 1px solid #ebd29b;
         }
 
         .badge-confidencialidad-baja {
-            background: #e6f5ec;
-            color: #1f6a43;
-            border: 1px solid #c8e7d5;
+            background: #e5f4ea;
+            color: #1d5c3e;
+            border: 1px solid #bdddc8;
         }
 
         .form-control,
@@ -247,9 +252,46 @@
             color: #174e73;
         }
 
+        .alert {
+            border-width: 1px;
+            border-radius: 1rem;
+        }
+
+        .alert-info {
+            background: #eaf4fb;
+            border-color: #bdd7eb;
+            color: #103d5c;
+        }
+
+        .alert-success {
+            background: #e8f6ee;
+            border-color: #bfe0cc;
+            color: #1f5e3f;
+        }
+
+        .alert-warning {
+            background: #fff4df;
+            border-color: #ebd29b;
+            color: #714c0d;
+        }
+
+        .alert-danger {
+            background: #fdeceb;
+            border-color: #efc1bc;
+            color: #7d241b;
+        }
+
         .footer-note {
             color: var(--brand-muted);
             font-size: 0.92rem;
+        }
+
+        .app-navbar .text-white-50 {
+            color: rgba(255, 255, 255, 0.8) !important;
+        }
+
+        .hero-panel .text-white-50 {
+            color: rgba(255, 255, 255, 0.9) !important;
         }
 
         @media (max-width: 991.98px) {
@@ -268,7 +310,7 @@
 <body class="{% block body_class %}{% endblock %}">
     <nav class="navbar navbar-expand-lg app-navbar sticky-top" data-bs-theme="dark">
         <div class="container py-2">
-            <a class="brand-lockup" href="{% if request.user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'login' %}{% endif %}">
+            <a class="brand-lockup" href="{% if request.user.is_authenticated %}{% if perms.core.view_registropresupuesto %}{% url 'dashboard' %}{% elif perms.core.view_documento %}{% url 'listar_documentos' %}{% elif perms.core.view_cliente %}{% url 'listar_clientes' %}{% elif perms.core.view_personaltrabajo %}{% url 'listar_personal' %}{% elif perms.core.add_cargapresupuesto %}{% url 'subir_presupuesto' %}{% else %}{% url 'login' %}{% endif %}{% else %}{% url 'login' %}{% endif %}">
                 <span class="brand-mark">GD</span>
                 <span>
                     <span class="d-block fw-semibold">Gestión Documental</span>
@@ -283,20 +325,28 @@
             <div class="collapse navbar-collapse" id="appNavbar">
                 {% if request.user.is_authenticated %}
                     <ul class="navbar-nav nav nav-pills ms-auto me-lg-3 gap-2 mt-3 mt-lg-0">
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">Inicio</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'listar_clientes' or request.resolver_match.url_name == 'crear_cliente' or request.resolver_match.url_name == 'editar_cliente' or request.resolver_match.url_name == 'eliminar_cliente' %}active{% endif %}" href="{% url 'listar_clientes' %}">Clientes</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'listar_personal' or request.resolver_match.url_name == 'crear_personal' or request.resolver_match.url_name == 'editar_personal' or request.resolver_match.url_name == 'eliminar_personal' %}active{% endif %}" href="{% url 'listar_personal' %}">Personal</a>
-                        </li>
+                        {% if perms.core.view_registropresupuesto %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">Inicio</a>
+                            </li>
+                        {% endif %}
+                        {% if perms.core.view_cliente %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'listar_clientes' or request.resolver_match.url_name == 'crear_cliente' or request.resolver_match.url_name == 'editar_cliente' or request.resolver_match.url_name == 'eliminar_cliente' %}active{% endif %}" href="{% url 'listar_clientes' %}">Clientes</a>
+                            </li>
+                        {% endif %}
+                        {% if perms.core.view_personaltrabajo %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'listar_personal' or request.resolver_match.url_name == 'crear_personal' or request.resolver_match.url_name == 'editar_personal' or request.resolver_match.url_name == 'eliminar_personal' %}active{% endif %}" href="{% url 'listar_personal' %}">Personal</a>
+                            </li>
+                        {% endif %}
+                        {% if perms.core.view_registropresupuesto or perms.core.view_documento or perms.core.add_cargapresupuesto %}
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'listar_presupuestos_gestion' or request.resolver_match.url_name == 'listar_presupuestos' or request.resolver_match.url_name == 'listar_cobranzas' or request.resolver_match.url_name == 'subir_presupuesto' or request.resolver_match.url_name == 'crear_presupuesto' or request.resolver_match.url_name == 'editar_presupuesto' or request.resolver_match.url_name == 'historial_presupuesto' or request.resolver_match.url_name == 'eliminar_presupuesto' or request.resolver_match.url_name == 'listar_documentos' or request.resolver_match.url_name == 'historial_versiones' or request.resolver_match.url_name == 'editar_documento' or request.resolver_match.url_name == 'eliminar_documento' or request.resolver_match.url_name == 'subir_documento' or request.resolver_match.url_name == 'subir_version' %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <button class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'listar_presupuestos_gestion' or request.resolver_match.url_name == 'listar_presupuestos' or request.resolver_match.url_name == 'listar_cobranzas' or request.resolver_match.url_name == 'subir_presupuesto' or request.resolver_match.url_name == 'crear_presupuesto' or request.resolver_match.url_name == 'editar_presupuesto' or request.resolver_match.url_name == 'historial_presupuesto' or request.resolver_match.url_name == 'eliminar_presupuesto' or request.resolver_match.url_name == 'listar_documentos' or request.resolver_match.url_name == 'historial_versiones' or request.resolver_match.url_name == 'editar_documento' or request.resolver_match.url_name == 'eliminar_documento' or request.resolver_match.url_name == 'subir_documento' or request.resolver_match.url_name == 'subir_version' %}active{% endif %}" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 Operación
-                            </a>
+                            </button>
                             <ul class="dropdown-menu dropdown-menu-end">
+                                {% if perms.core.view_registropresupuesto %}
                                 <li>
                                     <a class="dropdown-item {% if request.resolver_match.url_name == 'listar_presupuestos_gestion' or request.resolver_match.url_name == 'crear_presupuesto' %}active{% endif %}" href="{% url 'listar_presupuestos_gestion' %}">
                                         Presupuestos
@@ -315,6 +365,7 @@
                                         <span class="menu-note">Facturas pendientes y correos de cobro</span>
                                     </a>
                                 </li>
+                                {% endif %}
                                 {% if perms.core.add_cargapresupuesto %}
                                     <li>
                                         <a class="dropdown-item {% if request.resolver_match.url_name == 'subir_presupuesto' %}active{% endif %}" href="{% url 'subir_presupuesto' %}">
@@ -323,22 +374,17 @@
                                         </a>
                                     </li>
                                 {% endif %}
-                                {% if perms.core.add_documento %}
+                                {% if perms.core.view_documento %}
                                     <li>
-                                        <a class="dropdown-item {% if request.resolver_match.url_name == 'subir_documento' or request.resolver_match.url_name == 'subir_version' %}active{% endif %}" href="{% url 'subir_documento' %}">
-                                            Nuevo documento
-                                            <span class="menu-note">Agregar un archivo al repositorio</span>
+                                        <a class="dropdown-item {% if request.resolver_match.url_name == 'listar_documentos' or request.resolver_match.url_name == 'historial_versiones' or request.resolver_match.url_name == 'editar_documento' or request.resolver_match.url_name == 'eliminar_documento' or request.resolver_match.url_name == 'subir_documento' or request.resolver_match.url_name == 'subir_version' %}active{% endif %}" href="{% url 'listar_documentos' %}">
+                                            Documentos
+                                            <span class="menu-note">Repositorio, versiones y descargas</span>
                                         </a>
                                     </li>
                                 {% endif %}
-                                <li>
-                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'listar_documentos' or request.resolver_match.url_name == 'historial_versiones' or request.resolver_match.url_name == 'editar_documento' or request.resolver_match.url_name == 'eliminar_documento' or request.resolver_match.url_name == 'subir_documento' or request.resolver_match.url_name == 'subir_version' %}active{% endif %}" href="{% url 'listar_documentos' %}">
-                                        Documentos
-                                        <span class="menu-note">Repositorio, versiones y descargas</span>
-                                    </a>
-                                </li>
                             </ul>
                         </li>
+                        {% endif %}
                     </ul>
 
 	                    <div class="d-flex flex-column flex-lg-row align-items-lg-center gap-3 mt-3 mt-lg-0">
@@ -369,7 +415,7 @@
         {% if messages %}
             <div class="mb-4">
                 {% for message in messages %}
-                    <div class="alert alert-{{ message.tags|default:'info' }} mb-2" role="alert">{{ message }}</div>
+                    <div class="alert {% if 'error' in message.tags %}alert-danger{% elif 'success' in message.tags %}alert-success{% elif 'warning' in message.tags %}alert-warning{% else %}alert-info{% endif %} mb-2" role="alert" aria-live="polite">{{ message }}</div>
                 {% endfor %}
             </div>
         {% endif %}
@@ -378,5 +424,74 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const postForms = document.querySelectorAll('form');
+            const formErrorSummary = document.querySelector('.form-error-summary');
+
+            if (formErrorSummary) {
+                const firstInvalidField = document.querySelector('[aria-invalid="true"]');
+                if (firstInvalidField) {
+                    firstInvalidField.focus();
+                } else {
+                    formErrorSummary.focus();
+                }
+            }
+
+            function resetFormState(form) {
+                delete form.dataset.submitting;
+                form.removeAttribute('aria-busy');
+                form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(function (button) {
+                    button.disabled = false;
+                    button.removeAttribute('aria-disabled');
+                    if (button.dataset.originalHtml !== undefined) {
+                        button.innerHTML = button.dataset.originalHtml;
+                    }
+                    if (button.dataset.originalValue !== undefined) {
+                        button.value = button.dataset.originalValue;
+                    }
+                });
+            }
+
+            postForms.forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    const method = (form.getAttribute('method') || 'get').toUpperCase();
+                    if (method !== 'POST' || form.dataset.skipLoading === 'true') {
+                        return;
+                    }
+
+                    if (form.dataset.submitting === 'true') {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    form.dataset.submitting = 'true';
+                    form.setAttribute('aria-busy', 'true');
+
+                    form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(function (button) {
+                        if (button.disabled) {
+                            return;
+                        }
+
+                        button.disabled = true;
+                        button.setAttribute('aria-disabled', 'true');
+
+                        const loadingText = button.dataset.loadingText || 'Procesando...';
+                        if (button.tagName === 'BUTTON') {
+                            button.dataset.originalHtml = button.innerHTML;
+                            button.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>' + loadingText;
+                        } else {
+                            button.dataset.originalValue = button.value;
+                            button.value = loadingText;
+                        }
+                    });
+                });
+            });
+
+            window.addEventListener('pageshow', function () {
+                postForms.forEach(resetFormState);
+            });
+        });
+    </script>
 </body>
 </html>

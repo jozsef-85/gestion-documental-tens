@@ -6,6 +6,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 
 from .forms import DocumentoForm, VersionDocumentoForm
 from .models import Departamento, Documento, RegistroPresupuesto, TipoDocumento, VersionDocumento
@@ -15,6 +16,13 @@ from .services.access import (
     validar_acceso_documento,
 )
 from .services.audit import registrar_auditoria
+
+
+def _url_documentos_contextual(registro_relacionado=None):
+    destino = reverse('listar_documentos')
+    if registro_relacionado and registro_relacionado.presupuesto:
+        return f'{destino}?presupuesto={registro_relacionado.presupuesto}'
+    return destino
 
 
 @login_required
@@ -71,39 +79,16 @@ def listar_documentos(request):
 @login_required
 @permission_required('core.add_documento', raise_exception=True)
 def subir_documento(request):
+    registro_id = request.GET.get('registro_id', '').strip()
     registro_relacionado = None
-    if request.method == 'POST':
-        form = DocumentoForm(request.POST, request.FILES)
-        if form.is_valid():
-            doc = form.save(commit=False)
-            doc.creado_por = request.user
-            doc.save()
-            form.save_m2m()
+    if registro_id.isdigit():
+        registro_relacionado = RegistroPresupuesto.objects.filter(id=int(registro_id)).first()
 
-            registrar_auditoria(
-                request,
-                accion='Creación de documento',
-                entidad='Documento',
-                entidad_id=doc.id,
-                detalle=f'Documento creado: {doc.titulo}',
-            )
-            messages.success(request, 'El documento fue creado correctamente.')
-            return redirect('listar_documentos')
-    else:
-        registro_id = request.GET.get('registro_id', '').strip()
-        initial = {}
-        registro_relacionado = None
-        if registro_id.isdigit():
-            registro_relacionado = RegistroPresupuesto.objects.filter(id=int(registro_id)).first()
-            if registro_relacionado:
-                initial['presupuestos'] = [registro_relacionado.id]
-        form = DocumentoForm(initial=initial)
-
-    return render(request, 'subir_documento.html', {
-        'form': form,
-        'es_edicion': False,
-        'registro_relacionado': registro_relacionado,
-    })
+    messages.info(
+        request,
+        'La carga directa de documentos se gestiona ahora desde el módulo Documentos.'
+    )
+    return redirect(_url_documentos_contextual(registro_relacionado))
 
 
 @login_required
@@ -135,6 +120,8 @@ def editar_documento(request, documento_id):
         'form': form,
         'documento': documento,
         'es_edicion': True,
+        'cancelar_url': 'listar_documentos',
+        'cancelar_label': 'Volver al repositorio',
     })
 
 
@@ -157,7 +144,7 @@ def eliminar_documento(request, documento_id):
             entidad_id=documento.id,
             detalle=f'Documento marcado como eliminado: {documento.titulo}',
         )
-        messages.success(request, 'El documento fue marcado como eliminado.')
+        messages.success(request, 'El documento fue retirado del repositorio y su historial quedó disponible para auditoría.')
         return redirect('listar_documentos')
 
     return render(request, 'confirmar_eliminacion.html', {
@@ -181,7 +168,7 @@ def subir_version(request, documento_id):
     validar_acceso_documento(request, documento)
 
     if request.method == 'POST':
-        form = VersionDocumentoForm(request.POST, request.FILES)
+        form = VersionDocumentoForm(request.POST, request.FILES, documento=documento)
         if form.is_valid():
             with transaction.atomic():
                 version = VersionDocumento.objects.create(

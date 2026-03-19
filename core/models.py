@@ -128,6 +128,14 @@ class VersionDocumento(models.Model):
     subido_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     fecha_subida = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['documento', 'numero_version'],
+                name='versiondoc_documento_numero_unique',
+            ),
+        ]
+
     def __str__(self):
         return f'{self.documento.titulo} - v{self.numero_version}'
 

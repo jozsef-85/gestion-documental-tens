@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load moneda %}
 
 {% block title %}Nueva versión | Gestión Documental{% endblock %}
 
@@ -25,26 +26,27 @@
 
             <form method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
-
-                {% for error in form.non_field_errors %}
-                    <div class="alert alert-danger">{{ error }}</div>
-                {% endfor %}
+                {% include "includes/form_error_summary.html" with form=form %}
 
                 {% for field in form %}
                     <div class="mb-4">
                         <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                        {{ field }}
+                        {{ field|render_field_a11y }}
                         {% if field.help_text %}
-                            <div class="form-text">{{ field.help_text }}</div>
+                            <div class="form-text" id="{{ field|field_help_id }}">{{ field.help_text }}</div>
                         {% endif %}
-                        {% for error in field.errors %}
-                            <div class="text-danger small mt-2">{{ error }}</div>
-                        {% endfor %}
+                        {% if field.errors %}
+                            <div class="text-danger small mt-2" id="{{ field|field_error_id }}" role="alert">
+                                {% for error in field.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
                     </div>
                 {% endfor %}
 
                 <div class="d-flex flex-column flex-sm-row gap-3 mt-4">
-                    <button type="submit" class="btn btn-brand rounded-pill px-4">Guardar nueva versión</button>
+                    <button type="submit" class="btn btn-brand rounded-pill px-4" data-loading-text="Guardando versión...">Guardar nueva versión</button>
                     <a href="{% url 'historial_versiones' documento.id %}" class="btn btn-soft rounded-pill px-4">Ver historial</a>
                     <a href="{% url 'listar_documentos' %}" class="btn btn-soft rounded-pill px-4">Volver al repositorio</a>
                 </div>

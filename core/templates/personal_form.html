@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load moneda %}
 
 {% block title %}{% if modo_creacion %}Nuevo personal{% else %}Editar personal{% endif %} | Gestión Documental{% endblock %}
 
@@ -10,6 +11,7 @@
 
     <form method="post" enctype="multipart/form-data" novalidate>
         {% csrf_token %}
+        {% include "includes/form_error_summary.html" with form=form %}
         <div class="row g-3">
             <div class="col-12">
                 <p class="section-title mb-1">Datos del trabajador</p>
@@ -18,59 +20,87 @@
 
             <div class="col-12 col-md-6">
                 <label class="form-label" for="{{ form.nombre.id_for_label }}">{{ form.nombre.label }}</label>
-                {{ form.nombre }}
-                <div class="footer-note mt-1">{{ form.nombre.help_text }}</div>
-                {% for error in form.nombre.errors %}
-                    <div class="text-danger small mt-1">{{ error }}</div>
-                {% endfor %}
+                {{ form.nombre|render_field_a11y }}
+                <div class="footer-note mt-1" id="{{ form.nombre|field_help_id }}">{{ form.nombre.help_text }}</div>
+                {% if form.nombre.errors %}
+                    <div class="text-danger small mt-1" id="{{ form.nombre|field_error_id }}" role="alert">
+                        {% for error in form.nombre.errors %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
             <div class="col-12 col-md-6">
                 <label class="form-label" for="{{ form.cargo.id_for_label }}">{{ form.cargo.label }}</label>
-                {{ form.cargo }}
-                <div class="footer-note mt-1">{{ form.cargo.help_text }}</div>
-                {% for error in form.cargo.errors %}
-                    <div class="text-danger small mt-1">{{ error }}</div>
-                {% endfor %}
+                {{ form.cargo|render_field_a11y }}
+                <div class="footer-note mt-1" id="{{ form.cargo|field_help_id }}">{{ form.cargo.help_text }}</div>
+                {% if form.cargo.errors %}
+                    <div class="text-danger small mt-1" id="{{ form.cargo|field_error_id }}" role="alert">
+                        {% for error in form.cargo.errors %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
             <div class="col-12 col-md-6">
                 <label class="form-label" for="{{ form.area.id_for_label }}">{{ form.area.label }}</label>
-                {{ form.area }}
-                <div class="footer-note mt-1">{{ form.area.help_text }}</div>
-                {% for error in form.area.errors %}
-                    <div class="text-danger small mt-1">{{ error }}</div>
-                {% endfor %}
+                {{ form.area|render_field_a11y }}
+                <div class="footer-note mt-1" id="{{ form.area|field_help_id }}">{{ form.area.help_text }}</div>
+                {% if form.area.errors %}
+                    <div class="text-danger small mt-1" id="{{ form.area|field_error_id }}" role="alert">
+                        {% for error in form.area.errors %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
             <div class="col-12 col-md-3">
                 <label class="form-label" for="{{ form.activo.id_for_label }}">{{ form.activo.label }}</label>
-                {{ form.activo }}
-                <div class="footer-note mt-1">{{ form.activo.help_text }}</div>
-                {% for error in form.activo.errors %}
-                    <div class="text-danger small mt-1">{{ error }}</div>
-                {% endfor %}
+                {{ form.activo|render_field_a11y }}
+                <div class="footer-note mt-1" id="{{ form.activo|field_help_id }}">{{ form.activo.help_text }}</div>
+                {% if form.activo.errors %}
+                    <div class="text-danger small mt-1" id="{{ form.activo|field_error_id }}" role="alert">
+                        {% for error in form.activo.errors %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
             <div class="col-12 col-md-3">
                 <label class="form-label" for="{{ form.fecha_ingreso.id_for_label }}">{{ form.fecha_ingreso.label }}</label>
-                {{ form.fecha_ingreso }}
-                <div class="footer-note mt-1">{{ form.fecha_ingreso.help_text }}</div>
-                {% for error in form.fecha_ingreso.errors %}
-                    <div class="text-danger small mt-1">{{ error }}</div>
-                {% endfor %}
+                {{ form.fecha_ingreso|render_field_a11y }}
+                <div class="footer-note mt-1" id="{{ form.fecha_ingreso|field_help_id }}">{{ form.fecha_ingreso.help_text }}</div>
+                {% if form.fecha_ingreso.errors %}
+                    <div class="text-danger small mt-1" id="{{ form.fecha_ingreso|field_error_id }}" role="alert">
+                        {% for error in form.fecha_ingreso.errors %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
             <div class="col-12 col-md-6">
                 <label class="form-label" for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
-                {{ form.email }}
-                <div class="footer-note mt-1">{{ form.email.help_text }}</div>
-                {% for error in form.email.errors %}
-                    <div class="text-danger small mt-1">{{ error }}</div>
-                {% endfor %}
+                {{ form.email|render_field_a11y }}
+                <div class="footer-note mt-1" id="{{ form.email|field_help_id }}">{{ form.email.help_text }}</div>
+                {% if form.email.errors %}
+                    <div class="text-danger small mt-1" id="{{ form.email|field_error_id }}" role="alert">
+                        {% for error in form.email.errors %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
             <div class="col-12 col-md-6">
                 <label class="form-label" for="{{ form.telefono.id_for_label }}">{{ form.telefono.label }}</label>
-                {{ form.telefono }}
-                <div class="footer-note mt-1">{{ form.telefono.help_text }}</div>
-                {% for error in form.telefono.errors %}
-                    <div class="text-danger small mt-1">{{ error }}</div>
-                {% endfor %}
+                {{ form.telefono|render_field_a11y }}
+                <div class="footer-note mt-1" id="{{ form.telefono|field_help_id }}">{{ form.telefono.help_text }}</div>
+                {% if form.telefono.errors %}
+                    <div class="text-danger small mt-1" id="{{ form.telefono|field_error_id }}" role="alert">
+                        {% for error in form.telefono.errors %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
         </div>
 
@@ -78,7 +108,7 @@
             <div class="d-flex flex-column flex-lg-row justify-content-between gap-2 align-items-lg-center mb-3">
                 <div>
                     <p class="section-title mb-1">Documentacion de respaldo</p>
-                    <p class="footer-note mb-0">Sube los archivos cuando los tengas. El sistema permite completar esta ficha por etapas.</p>
+                    <p class="footer-note mb-0">Sube los archivos cuando los tengas. El sistema permite completar esta ficha por etapas y validar cada respaldo al momento de adjuntarlo.</p>
                 </div>
                 <div class="footer-note">Formatos sugeridos: PDF, JPG o PNG. Curriculum tambien puede ir en DOC o DOCX.</div>
             </div>
@@ -89,44 +119,56 @@
                     <div class="mb-3">
                         <label class="form-label" for="{{ form.certificado_fonasa.id_for_label }}">
                             {{ form.certificado_fonasa.label }}
-                            <span class="badge badge-soft rounded-pill ms-2">Obligatorio</span>
+                            <span class="badge badge-soft rounded-pill ms-2">Carpeta completa</span>
                         </label>
-                        {{ form.certificado_fonasa }}
+                        {{ form.certificado_fonasa|render_field_a11y }}
                         {% if personal_item and personal_item.certificado_fonasa %}
-                            <div class="footer-note mt-1">Archivo actual: <a href="{{ personal_item.certificado_fonasa.url }}" target="_blank" rel="noopener">Ver respaldo</a></div>
+                            <div class="footer-note mt-1">Archivo actual: <a href="{% url 'descargar_documento_personal' personal_item.id 'certificado_fonasa' %}">Ver respaldo</a></div>
                         {% endif %}
-                        <div class="footer-note mt-1">{{ form.certificado_fonasa.help_text }}</div>
-                        {% for error in form.certificado_fonasa.errors %}
-                            <div class="text-danger small mt-1">{{ error }}</div>
-                        {% endfor %}
+                        <div class="footer-note mt-1" id="{{ form.certificado_fonasa|field_help_id }}">{{ form.certificado_fonasa.help_text }}</div>
+                        {% if form.certificado_fonasa.errors %}
+                            <div class="text-danger small mt-1" id="{{ form.certificado_fonasa|field_error_id }}" role="alert">
+                                {% for error in form.certificado_fonasa.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="{{ form.certificado_pago_afp.id_for_label }}">
                             {{ form.certificado_pago_afp.label }}
-                            <span class="badge badge-soft rounded-pill ms-2">Obligatorio</span>
+                            <span class="badge badge-soft rounded-pill ms-2">Carpeta completa</span>
                         </label>
-                        {{ form.certificado_pago_afp }}
+                        {{ form.certificado_pago_afp|render_field_a11y }}
                         {% if personal_item and personal_item.certificado_pago_afp %}
-                            <div class="footer-note mt-1">Archivo actual: <a href="{{ personal_item.certificado_pago_afp.url }}" target="_blank" rel="noopener">Ver respaldo</a></div>
+                            <div class="footer-note mt-1">Archivo actual: <a href="{% url 'descargar_documento_personal' personal_item.id 'certificado_pago_afp' %}">Ver respaldo</a></div>
                         {% endif %}
-                        <div class="footer-note mt-1">{{ form.certificado_pago_afp.help_text }}</div>
-                        {% for error in form.certificado_pago_afp.errors %}
-                            <div class="text-danger small mt-1">{{ error }}</div>
-                        {% endfor %}
+                        <div class="footer-note mt-1" id="{{ form.certificado_pago_afp|field_help_id }}">{{ form.certificado_pago_afp.help_text }}</div>
+                        {% if form.certificado_pago_afp.errors %}
+                            <div class="text-danger small mt-1" id="{{ form.certificado_pago_afp|field_error_id }}" role="alert">
+                                {% for error in form.certificado_pago_afp.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
                     </div>
                     <div class="mb-0">
                         <label class="form-label" for="{{ form.afiliacion_mutualidad.id_for_label }}">
                             {{ form.afiliacion_mutualidad.label }}
-                            <span class="badge badge-soft rounded-pill ms-2">Obligatorio</span>
+                            <span class="badge badge-soft rounded-pill ms-2">Carpeta completa</span>
                         </label>
-                        {{ form.afiliacion_mutualidad }}
+                        {{ form.afiliacion_mutualidad|render_field_a11y }}
                         {% if personal_item and personal_item.afiliacion_mutualidad %}
-                            <div class="footer-note mt-1">Archivo actual: <a href="{{ personal_item.afiliacion_mutualidad.url }}" target="_blank" rel="noopener">Ver respaldo</a></div>
+                            <div class="footer-note mt-1">Archivo actual: <a href="{% url 'descargar_documento_personal' personal_item.id 'afiliacion_mutualidad' %}">Ver respaldo</a></div>
                         {% endif %}
-                        <div class="footer-note mt-1">{{ form.afiliacion_mutualidad.help_text }}</div>
-                        {% for error in form.afiliacion_mutualidad.errors %}
-                            <div class="text-danger small mt-1">{{ error }}</div>
-                        {% endfor %}
+                        <div class="footer-note mt-1" id="{{ form.afiliacion_mutualidad|field_help_id }}">{{ form.afiliacion_mutualidad.help_text }}</div>
+                        {% if form.afiliacion_mutualidad.errors %}
+                            <div class="text-danger small mt-1" id="{{ form.afiliacion_mutualidad|field_error_id }}" role="alert">
+                                {% for error in form.afiliacion_mutualidad.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -137,14 +179,18 @@
                             {{ form.examen_altura_espacio_confinado.label }}
                             <span class="badge text-bg-secondary rounded-pill ms-2">Opcional</span>
                         </label>
-                        {{ form.examen_altura_espacio_confinado }}
+                        {{ form.examen_altura_espacio_confinado|render_field_a11y }}
                         {% if personal_item and personal_item.examen_altura_espacio_confinado %}
-                            <div class="footer-note mt-1">Archivo actual: <a href="{{ personal_item.examen_altura_espacio_confinado.url }}" target="_blank" rel="noopener">Ver respaldo</a></div>
+                            <div class="footer-note mt-1">Archivo actual: <a href="{% url 'descargar_documento_personal' personal_item.id 'examen_altura_espacio_confinado' %}">Ver respaldo</a></div>
                         {% endif %}
-                        <div class="footer-note mt-1">{{ form.examen_altura_espacio_confinado.help_text }}</div>
-                        {% for error in form.examen_altura_espacio_confinado.errors %}
-                            <div class="text-danger small mt-1">{{ error }}</div>
-                        {% endfor %}
+                        <div class="footer-note mt-1" id="{{ form.examen_altura_espacio_confinado|field_help_id }}">{{ form.examen_altura_espacio_confinado.help_text }}</div>
+                        {% if form.examen_altura_espacio_confinado.errors %}
+                            <div class="text-danger small mt-1" id="{{ form.examen_altura_espacio_confinado|field_error_id }}" role="alert">
+                                {% for error in form.examen_altura_espacio_confinado.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -153,39 +199,44 @@
                     <div class="mb-3">
                         <label class="form-label" for="{{ form.curriculum.id_for_label }}">
                             {{ form.curriculum.label }}
-                            <span class="badge badge-soft rounded-pill ms-2">Obligatorio</span>
+                            <span class="badge badge-soft rounded-pill ms-2">Carpeta completa</span>
                         </label>
-                        {{ form.curriculum }}
+                        {{ form.curriculum|render_field_a11y }}
                         {% if personal_item and personal_item.curriculum %}
-                            <div class="footer-note mt-1">Archivo actual: <a href="{{ personal_item.curriculum.url }}" target="_blank" rel="noopener">Ver respaldo</a></div>
+                            <div class="footer-note mt-1">Archivo actual: <a href="{% url 'descargar_documento_personal' personal_item.id 'curriculum' %}">Ver respaldo</a></div>
                         {% endif %}
-                        <div class="footer-note mt-1">{{ form.curriculum.help_text }}</div>
-                        {% for error in form.curriculum.errors %}
-                            <div class="text-danger small mt-1">{{ error }}</div>
-                        {% endfor %}
+                        <div class="footer-note mt-1" id="{{ form.curriculum|field_help_id }}">{{ form.curriculum.help_text }}</div>
+                        {% if form.curriculum.errors %}
+                            <div class="text-danger small mt-1" id="{{ form.curriculum|field_error_id }}" role="alert">
+                                {% for error in form.curriculum.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
                     </div>
                     <div class="mb-0">
                         <label class="form-label" for="{{ form.certificado_antecedentes.id_for_label }}">
                             {{ form.certificado_antecedentes.label }}
-                            <span class="badge badge-soft rounded-pill ms-2">Obligatorio</span>
+                            <span class="badge badge-soft rounded-pill ms-2">Carpeta completa</span>
                         </label>
-                        {{ form.certificado_antecedentes }}
+                        {{ form.certificado_antecedentes|render_field_a11y }}
                         {% if personal_item and personal_item.certificado_antecedentes %}
-                            <div class="footer-note mt-1">Archivo actual: <a href="{{ personal_item.certificado_antecedentes.url }}" target="_blank" rel="noopener">Ver respaldo</a></div>
+                            <div class="footer-note mt-1">Archivo actual: <a href="{% url 'descargar_documento_personal' personal_item.id 'certificado_antecedentes' %}">Ver respaldo</a></div>
                         {% endif %}
-                        <div class="footer-note mt-1">{{ form.certificado_antecedentes.help_text }}</div>
-                        {% for error in form.certificado_antecedentes.errors %}
-                            <div class="text-danger small mt-1">{{ error }}</div>
-                        {% endfor %}
+                        <div class="footer-note mt-1" id="{{ form.certificado_antecedentes|field_help_id }}">{{ form.certificado_antecedentes.help_text }}</div>
+                        {% if form.certificado_antecedentes.errors %}
+                            <div class="text-danger small mt-1" id="{{ form.certificado_antecedentes|field_error_id }}" role="alert">
+                                {% for error in form.certificado_antecedentes.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
-        {% for error in form.non_field_errors %}
-            <div class="alert alert-danger">{{ error }}</div>
-        {% endfor %}
         <div class="d-flex flex-column flex-sm-row gap-3 mt-4">
-            <button type="submit" class="btn btn-brand rounded-pill px-4">Guardar</button>
+            <button type="submit" class="btn btn-brand rounded-pill px-4" data-loading-text="Guardando ficha...">Guardar ficha</button>
             <a href="{% url 'listar_personal' %}" class="btn btn-soft rounded-pill px-4">Cancelar</a>
         </div>
     </form>

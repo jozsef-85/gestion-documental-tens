@@ -16,8 +16,25 @@
         </p>
     {% endif %}
     <div class="d-flex flex-column flex-sm-row gap-3">
-        <a href="{% url 'dashboard' %}" class="btn btn-brand rounded-pill px-4">Volver al dashboard</a>
-        <a href="{% url 'login' %}" class="btn btn-soft rounded-pill px-4">Iniciar sesión</a>
+        {% if request.user.is_authenticated %}
+            {% if perms.core.view_registropresupuesto %}
+                <a href="{% url 'dashboard' %}" class="btn btn-brand rounded-pill px-4">Volver al inicio</a>
+            {% elif perms.core.view_documento %}
+                <a href="{% url 'listar_documentos' %}" class="btn btn-brand rounded-pill px-4">Ir a documentos</a>
+            {% elif perms.core.view_cliente %}
+                <a href="{% url 'listar_clientes' %}" class="btn btn-brand rounded-pill px-4">Ir a clientes</a>
+            {% elif perms.core.view_personaltrabajo %}
+                <a href="{% url 'listar_personal' %}" class="btn btn-brand rounded-pill px-4">Ir a personal</a>
+            {% elif perms.core.add_cargapresupuesto %}
+                <a href="{% url 'subir_presupuesto' %}" class="btn btn-brand rounded-pill px-4">Importar planilla</a>
+            {% endif %}
+            <form action="{% url 'logout' %}" method="post" class="mb-0">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-soft rounded-pill px-4">Cerrar sesión</button>
+            </form>
+        {% else %}
+            <a href="{% url 'login' %}" class="btn btn-brand rounded-pill px-4">Iniciar sesión</a>
+        {% endif %}
     </div>
 </section>
 {% endblock %}

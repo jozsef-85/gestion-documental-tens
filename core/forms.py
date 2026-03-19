@@ -10,6 +10,7 @@ security_logger = logging.getLogger('security')
 
 MAX_DOCUMENT_UPLOAD_SIZE = 15 * 1024 * 1024
 MAX_SPREADSHEET_UPLOAD_SIZE = 10 * 1024 * 1024
+MAX_PERSONAL_UPLOAD_SIZE = 10 * 1024 * 1024
 
 ALLOWED_DOCUMENT_EXTENSIONS = {
     '.pdf',
@@ -44,6 +45,25 @@ ALLOWED_SPREADSHEET_CONTENT_TYPES = {
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'application/octet-stream',
 }
+ALLOWED_PERSONAL_CERTIFICATE_EXTENSIONS = {'.pdf', '.jpg', '.jpeg', '.png'}
+ALLOWED_PERSONAL_CERTIFICATE_CONTENT_TYPES = {
+    'application/pdf',
+    'image/jpeg',
+    'image/png',
+}
+ALLOWED_CURRICULUM_EXTENSIONS = {'.pdf', '.doc', '.docx'}
+ALLOWED_CURRICULUM_CONTENT_TYPES = {
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+}
+
+
+def clean_optional_text(value, *, empty_to_none=False):
+    texto = str(value or '').strip()
+    if not texto:
+        return None if empty_to_none else ''
+    return texto
 
 
 def validate_uploaded_file(archivo, *, allowed_extensions, allowed_content_types, max_size, label):
@@ -101,17 +121,28 @@ class DocumentoForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['presupuestos'].queryset = RegistroPresupuesto.objects.select_related('carga').order_by('-carga__fecha_carga', 'presupuesto')
         self.fields['estado'].choices = [choice for choice in self.fields['estado'].choices if choice[0] != 'eliminado']
+        self.fields['archivo_actual'].required = not bool(self.instance.pk)
         self.fields['titulo'].help_text = 'Usa un nombre facil de reconocer, por ejemplo contrato, informe o respaldo.'
         self.fields['descripcion'].help_text = 'Explica brevemente para que sirve el documento o que contiene.'
         self.fields['tipo_documento'].help_text = 'Selecciona la categoria que mejor describe el archivo.'
         self.fields['departamento'].help_text = 'Area responsable o dueña del documento.'
-        self.fields['archivo_actual'].help_text = 'Formatos permitidos: PDF, Office, texto, CSV e imagenes. Maximo 15 MB.'
+        if self.instance.pk:
+            self.fields['archivo_actual'].help_text = 'El archivo actual se conserva. Para reemplazarlo sin perder trazabilidad, usa "Agregar versión".'
+        else:
+            self.fields['archivo_actual'].help_text = 'Formatos permitidos: PDF, Office, texto, CSV e imagenes. Maximo 15 MB.'
         self.fields['estado'].help_text = 'Activo aparece en el repositorio principal. Archivado se conserva sin destacar.'
         self.fields['nivel_confidencialidad'].help_text = 'Define que tan restringido debe considerarse el archivo. Alta queda visible solo para administradores, editores y creador.'
         self.fields['presupuestos'].help_text = 'Relaciona este archivo con uno o mas seguimientos para encontrar fotos, informes, certificados o respaldos mas rapido.'
 
     def clean_archivo_actual(self):
-        archivo = self.cleaned_data['archivo_actual']
+        archivo = self.cleaned_data.get('archivo_actual')
+        if self.instance.pk:
+            if self.files.get('archivo_actual'):
+                raise forms.ValidationError(
+                    'Para reemplazar el archivo usa "Agregar versión" y asi mantienes el historial del documento.'
+                )
+            return self.instance.archivo_actual
+
         return validate_uploaded_file(
             archivo,
             allowed_extensions=ALLOWED_DOCUMENT_EXTENSIONS,
@@ -153,6 +184,23 @@ class VersionDocumentoForm(forms.Form):
         widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Ej: Se agrego firma del cliente y se corrigio la fecha'}),
     )
 
+    def __init__(self, *args, **kwargs):
+        self.documento = kwargs.pop('documento', None)
+        super().__init__(*args, **kwargs)
+
+    def clean_numero_version(self):
+        numero_version = self.cleaned_data['numero_version'].strip()
+        if not self.documento:
+            return numero_version
+
+        if numero_version == self.documento.version_actual:
+            raise forms.ValidationError('Esa version ya es la version actual del documento.')
+
+        if self.documento.versiones.filter(numero_version=numero_version).exists():
+            raise forms.ValidationError('Ya existe una version registrada con ese numero.')
+
+        return numero_version
+
     def clean_archivo(self):
         archivo = self.cleaned_data['archivo']
         return validate_uploaded_file(
@@ -173,11 +221,16 @@ class CargaPresupuestoForm(forms.Form):
         self.fields['nombre'].widget.attrs.update({
             'class': 'form-control',
             'placeholder': 'Ej: Carga marzo 2026',
+            'autocomplete': 'off',
         })
         self.fields['archivo'].widget.attrs.update({
             'class': 'form-control',
             'accept': '.xls,.xlsx',
         })
+        self.fields['archivo'].error_messages['required'] = 'Selecciona la planilla Excel que quieres importar.'
+
+    def clean_nombre(self):
+        return clean_optional_text(self.cleaned_data.get('nombre'))
 
     def clean_archivo(self):
         archivo = self.cleaned_data['archivo']
@@ -242,14 +295,19 @@ class RegistroPresupuestoForm(forms.ModelForm):
         self.fields['tipo_trabajo'].widget.attrs.update({'class': 'form-select'})
         self.fields['ubicacion_obra'].widget.attrs.update({'placeholder': 'Ej: Obra edificio Vista Norte, piso 3'})
         self.fields['solicitante'].widget.attrs.update({'placeholder': 'Ej: VSPT / Cristian Martinez'})
-        self.fields['monto'].widget.attrs.update({'placeholder': 'Ej: 2572978'})
+        self.fields['monto'].widget.attrs.update({'placeholder': 'Ej: 2572978', 'inputmode': 'decimal', 'min': '0'})
+        self.fields['fecha_texto'].widget.attrs.update({'inputmode': 'numeric', 'autocomplete': 'off'})
         self.fields['nota_pedido'].widget.attrs.update({'placeholder': 'Ej: 4503257316'})
         self.fields['observacion_oc'].widget.attrs.update({'rows': 3, 'placeholder': 'Comentarios de aprobacion, restricciones o contexto'})
         self.fields['recepcion'].widget.attrs.update({'rows': 3, 'placeholder': 'Detalle de visita tecnica, recepcion, pruebas o hitos asociados'})
         self.fields['estado_recepcion'].widget.attrs.update({'placeholder': 'Ej: Recibido parcialmente'})
         self.fields['guia_despacho'].widget.attrs.update({'placeholder': 'Ej: GD-55'})
         self.fields['factura'].widget.attrs.update({'placeholder': 'Ej: N° 780'})
+        self.fields['fecha_facturacion_texto'].widget.attrs.update({'inputmode': 'numeric', 'autocomplete': 'off'})
+        self.fields['fecha_pago_texto'].widget.attrs.update({'inputmode': 'numeric', 'autocomplete': 'off'})
         self.fields['observaciones'].widget.attrs.update({'rows': 4, 'placeholder': 'Notas internas para seguimiento del registro'})
+        self.fields['presupuesto'].error_messages['required'] = 'Ingresa el codigo o nombre del presupuesto.'
+        self.fields['monto'].error_messages['invalid'] = 'Ingresa un monto valido sin letras ni simbolos extra.'
         if self.instance.pk:
             self.fields['documentos_relacionados'].initial = self.instance.documentos.all()
             self.fields['estado_oc'].initial = normalizar_estado_oc(self.instance.estado_oc)
@@ -308,6 +366,12 @@ class RegistroPresupuestoForm(forms.ModelForm):
     def clean_estado_oc(self):
         return normalizar_estado_oc(self.cleaned_data.get('estado_oc', ''))
 
+    def clean_monto(self):
+        monto = self.cleaned_data.get('monto')
+        if monto is not None and monto < 0:
+            raise forms.ValidationError('El monto no puede ser negativo.')
+        return monto
+
     def clean_fecha_facturacion_texto(self):
         texto = self.cleaned_data.get('fecha_facturacion_texto', '')
         fecha, texto_normalizado = parsear_fecha_texto(texto)
@@ -332,6 +396,24 @@ class RegistroPresupuestoForm(forms.ModelForm):
 
 
 class ClienteForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['nombre'].help_text = 'Nombre comercial o razon social del cliente.'
+        self.fields['rut'].help_text = 'Opcional. Si aun no lo tienes, dejalo vacio.'
+        self.fields['contacto'].help_text = 'Persona de contacto principal para seguimiento comercial.'
+        self.fields['email'].help_text = 'Correo principal para coordinacion o cobranza.'
+        self.fields['telefono'].help_text = 'Telefono directo o celular de referencia.'
+        self.fields['direccion'].help_text = 'Direccion comercial, sucursal o referencia de despacho.'
+        self.fields['activo'].help_text = 'Puedes desactivar el cliente sin perder su historial.'
+        self.fields['nombre'].error_messages['required'] = 'Ingresa el nombre del cliente.'
+        self.fields['email'].error_messages['invalid'] = 'Ingresa un correo valido, por ejemplo contacto@empresa.cl.'
+        self.fields['nombre'].widget.attrs.update({'placeholder': 'Ej: Constructora Norte'})
+        self.fields['rut'].widget.attrs.update({'placeholder': 'Ej: 76.123.456-7', 'autocomplete': 'off'})
+        self.fields['contacto'].widget.attrs.update({'placeholder': 'Ej: Maria Perez'})
+        self.fields['email'].widget.attrs.update({'placeholder': 'Ej: contacto@empresa.cl', 'autocomplete': 'email'})
+        self.fields['telefono'].widget.attrs.update({'placeholder': 'Ej: +56 9 1234 5678', 'type': 'tel', 'inputmode': 'tel', 'autocomplete': 'tel'})
+        self.fields['direccion'].widget.attrs.update({'placeholder': 'Ej: Av. Apoquindo 1234, Las Condes'})
+
     class Meta:
         model = Cliente
         fields = ['nombre', 'rut', 'contacto', 'email', 'telefono', 'direccion', 'activo']
@@ -344,6 +426,25 @@ class ClienteForm(forms.ModelForm):
             'direccion': forms.TextInput(attrs={'class': 'form-control'}),
             'activo': forms.Select(choices=[(True, 'Activo'), (False, 'Inactivo')], attrs={'class': 'form-select'}),
         }
+
+    def clean_nombre(self):
+        nombre = clean_optional_text(self.cleaned_data.get('nombre'))
+        if not nombre:
+            raise forms.ValidationError('Ingresa el nombre del cliente.')
+        return nombre
+
+    def clean_rut(self):
+        rut = clean_optional_text(self.cleaned_data.get('rut'), empty_to_none=True)
+        return rut.upper() if rut else None
+
+    def clean_contacto(self):
+        return clean_optional_text(self.cleaned_data.get('contacto'))
+
+    def clean_telefono(self):
+        return clean_optional_text(self.cleaned_data.get('telefono'))
+
+    def clean_direccion(self):
+        return clean_optional_text(self.cleaned_data.get('direccion'))
 
 
 class PersonalTrabajoForm(forms.ModelForm):
@@ -391,6 +492,12 @@ class PersonalTrabajoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['nombre'].error_messages['required'] = 'Ingresa el nombre del trabajador.'
+        self.fields['cargo'].error_messages['required'] = 'Ingresa el cargo o especialidad principal.'
+        self.fields['email'].error_messages['invalid'] = 'Ingresa un correo valido, por ejemplo persona@empresa.cl.'
+        self.fields['nombre'].widget.attrs.update({'autocomplete': 'name'})
+        self.fields['email'].widget.attrs.update({'autocomplete': 'email'})
+        self.fields['telefono'].widget.attrs.update({'type': 'tel', 'inputmode': 'tel', 'autocomplete': 'tel'})
         self.fields['nombre'].help_text = 'Nombre completo del trabajador o trabajadora.'
         self.fields['cargo'].help_text = 'Cargo o especialidad principal dentro de la empresa.'
         self.fields['area'].help_text = 'Area interna, por ejemplo Operaciones, Terreno o Administracion.'
@@ -398,12 +505,91 @@ class PersonalTrabajoForm(forms.ModelForm):
         self.fields['email'].help_text = 'Opcional, pero ayuda para coordinacion y comunicacion interna.'
         self.fields['telefono'].help_text = 'Usa telefono o celular de contacto directo.'
         self.fields['fecha_ingreso'].help_text = 'Fecha de ingreso a la empresa o al registro interno.'
-        self.fields['certificado_fonasa'].help_text = 'Formato sugerido: PDF o imagen legible. Respaldo previsional vigente.'
-        self.fields['certificado_pago_afp'].help_text = 'Formato sugerido: PDF o imagen. Adjunta respaldo o certificado AFP.'
-        self.fields['examen_altura_espacio_confinado'].help_text = 'Opcional segun faena. Util para trabajos electricos en altura o espacios confinados.'
-        self.fields['afiliacion_mutualidad'].help_text = 'Formato sugerido: PDF o imagen. Respaldo de cobertura en mutualidad.'
-        self.fields['curriculum'].help_text = 'Puedes subir CV en PDF, DOC o DOCX.'
-        self.fields['certificado_antecedentes'].help_text = 'Formato sugerido: PDF o imagen vigente.'
+        self.fields['certificado_fonasa'].help_text = 'PDF o imagen legible. Maximo 10 MB.'
+        self.fields['certificado_pago_afp'].help_text = 'PDF o imagen legible. Maximo 10 MB.'
+        self.fields['examen_altura_espacio_confinado'].help_text = 'Opcional segun faena. Acepta PDF o imagen hasta 10 MB.'
+        self.fields['afiliacion_mutualidad'].help_text = 'PDF o imagen legible. Maximo 10 MB.'
+        self.fields['curriculum'].help_text = 'Acepta PDF, DOC o DOCX. Maximo 10 MB.'
+        self.fields['certificado_antecedentes'].help_text = 'PDF o imagen vigente. Maximo 10 MB.'
+
+    def clean_nombre(self):
+        nombre = clean_optional_text(self.cleaned_data.get('nombre'))
+        if not nombre:
+            raise forms.ValidationError('Ingresa el nombre del trabajador.')
+        return nombre
+
+    def clean_cargo(self):
+        cargo = clean_optional_text(self.cleaned_data.get('cargo'))
+        if not cargo:
+            raise forms.ValidationError('Ingresa el cargo o especialidad principal.')
+        return cargo
+
+    def clean_area(self):
+        return clean_optional_text(self.cleaned_data.get('area'))
+
+    def clean_telefono(self):
+        return clean_optional_text(self.cleaned_data.get('telefono'))
+
+    def _clean_personal_respaldo(self, field_name, *, label, allowed_extensions, allowed_content_types):
+        archivo = self.cleaned_data.get(field_name)
+        if not archivo or not self.files.get(field_name):
+            return archivo
+
+        return validate_uploaded_file(
+            archivo,
+            allowed_extensions=allowed_extensions,
+            allowed_content_types=allowed_content_types,
+            max_size=MAX_PERSONAL_UPLOAD_SIZE,
+            label=label,
+        )
+
+    def clean_certificado_fonasa(self):
+        return self._clean_personal_respaldo(
+            'certificado_fonasa',
+            label='certificado Fonasa',
+            allowed_extensions=ALLOWED_PERSONAL_CERTIFICATE_EXTENSIONS,
+            allowed_content_types=ALLOWED_PERSONAL_CERTIFICATE_CONTENT_TYPES,
+        )
+
+    def clean_certificado_pago_afp(self):
+        return self._clean_personal_respaldo(
+            'certificado_pago_afp',
+            label='certificado AFP',
+            allowed_extensions=ALLOWED_PERSONAL_CERTIFICATE_EXTENSIONS,
+            allowed_content_types=ALLOWED_PERSONAL_CERTIFICATE_CONTENT_TYPES,
+        )
+
+    def clean_examen_altura_espacio_confinado(self):
+        return self._clean_personal_respaldo(
+            'examen_altura_espacio_confinado',
+            label='examen de altura y espacio confinado',
+            allowed_extensions=ALLOWED_PERSONAL_CERTIFICATE_EXTENSIONS,
+            allowed_content_types=ALLOWED_PERSONAL_CERTIFICATE_CONTENT_TYPES,
+        )
+
+    def clean_afiliacion_mutualidad(self):
+        return self._clean_personal_respaldo(
+            'afiliacion_mutualidad',
+            label='afiliacion a mutualidad',
+            allowed_extensions=ALLOWED_PERSONAL_CERTIFICATE_EXTENSIONS,
+            allowed_content_types=ALLOWED_PERSONAL_CERTIFICATE_CONTENT_TYPES,
+        )
+
+    def clean_curriculum(self):
+        return self._clean_personal_respaldo(
+            'curriculum',
+            label='curriculum',
+            allowed_extensions=ALLOWED_CURRICULUM_EXTENSIONS,
+            allowed_content_types=ALLOWED_CURRICULUM_CONTENT_TYPES,
+        )
+
+    def clean_certificado_antecedentes(self):
+        return self._clean_personal_respaldo(
+            'certificado_antecedentes',
+            label='certificado de antecedentes',
+            allowed_extensions=ALLOWED_PERSONAL_CERTIFICATE_EXTENSIONS,
+            allowed_content_types=ALLOWED_PERSONAL_CERTIFICATE_CONTENT_TYPES,
+        )
 
 
 class AsignacionTrabajoForm(forms.ModelForm):

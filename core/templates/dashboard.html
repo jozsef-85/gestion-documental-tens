@@ -47,19 +47,19 @@
         }
 
         .status-espera {
-            background: #97a5b2;
+            background: #6f8190;
         }
 
         .status-curso {
-            background: #c6922b;
+            background: #9a690f;
         }
 
         .status-realizado {
-            background: #2f6ea7;
+            background: #1f5d92;
         }
 
         .status-pagado {
-            background: #2d7d55;
+            background: #246545;
         }
 
         .status-badge {
@@ -116,7 +116,7 @@
             display: inline-flex;
             align-items: center;
             margin-top: 0.8rem;
-            color: var(--brand-blue);
+            color: #154d73;
             font-weight: 700;
             text-decoration: none;
         }
@@ -139,7 +139,7 @@
                             Vista inicial para revisar rapidamente trabajos aceptados, avance del servicio y estado de cobro.
                         </p>
                         <div class="d-flex flex-column flex-sm-row gap-3">
-                            <a href="{% url 'listar_presupuestos' %}" class="btn btn-light rounded-pill px-4">Ver seguimiento</a>
+                            <a href="{% url 'listar_presupuestos' %}?estado=en_proceso" class="btn btn-light rounded-pill px-4">Ver seguimiento</a>
                         {% if perms.core.add_cargapresupuesto %}
                             <a href="{% url 'subir_presupuesto' %}" class="btn btn-outline-light rounded-pill px-4">Actualizar planilla</a>
                         {% endif %}
@@ -230,7 +230,7 @@
                         <div>
                             <p class="section-kicker mb-2">Seguimiento</p>
                             <h2 class="section-title">Seguimiento principal</h2>
-                            <div class="footer-note mt-1">Solo incluye presupuestos actualmente en curso.</div>
+                            <div class="footer-note mt-1" id="dashboard-seguimiento-ayuda" aria-live="polite">Solo incluye presupuestos actualmente en curso.</div>
                         </div>
                         <div class="status-badge">
                             <span class="status-dot status-curso"></span>
@@ -239,7 +239,8 @@
                     </div>
 
                     <div class="table-responsive">
-                        <table class="table table-clean align-middle mb-0">
+                        <table class="table table-clean align-middle mb-0" aria-describedby="dashboard-seguimiento-ayuda">
+                            <caption class="visually-hidden">Presupuestos en curso con nota de pedido, estado, facturación y monto por cobrar.</caption>
                             <thead>
                                 <tr>
                                     <th scope="col">N° de presupuesto</th>
@@ -283,7 +284,9 @@
                                     </tr>
                                 {% empty %}
                                     <tr>
-                                        <td colspan="5" class="text-center muted-label py-4">No hay presupuestos en curso para mostrar.</td>
+                                        <td colspan="5" class="text-center muted-label py-4">
+                                            <div role="status" aria-live="polite">No hay presupuestos en curso para mostrar en este momento.</div>
+                                        </td>
                                     </tr>
                                 {% endfor %}
                             </tbody>
@@ -323,7 +326,7 @@
                                     <div class="footer-note">{{ registro.carga.fecha_carga|date:"d/m/Y H:i" }}</div>
                                 </div>
                             {% empty %}
-                                <div class="footer-note">No hay registros recientes para mostrar.</div>
+                                <div class="footer-note" role="status" aria-live="polite">No hay registros recientes para mostrar.</div>
                             {% endfor %}
                         </div>
                     </div>

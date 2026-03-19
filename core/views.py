@@ -11,6 +11,7 @@ from .views_documentos import (
 from .views_maestros import (
     crear_cliente,
     crear_personal,
+    descargar_documento_personal,
     editar_cliente,
     editar_personal,
     eliminar_cliente,
@@ -36,6 +37,7 @@ __all__ = [
     'crear_personal',
     'crear_presupuesto',
     'descargar_documento',
+    'descargar_documento_personal',
     'descargar_version_documento',
     'dashboard',
     'descargar_consolidado_cobranzas',

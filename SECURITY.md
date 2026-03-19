@@ -21,7 +21,7 @@ Escala usada:
 | Control de acceso | Parcial | Vistas de lectura y edición protegidas con autenticación y permisos por modelo en `core/views_*.py` | Revisar y formalizar la matriz completa de roles, grupos y accesos por operación. |
 | CSRF y protección XSS por defecto | Cumple | Middleware estándar de Django y plantillas con autoescape | Mantener sin `csrf_exempt` salvo necesidad documentada. |
 | Inyección SQL | Cumple | Uso de ORM de Django | Evitar consultas SQL raw sin parametrización. |
-| Autenticación resistente a abuso | Parcial | Login con rate limiting por IP/usuario en la vista de acceso | Evaluar bloqueo más avanzado, observabilidad y posible MFA según criticidad. |
+| Autenticación resistente a abuso | Parcial | Login con rate limiting por IP/usuario, cierre de sesión al cerrar navegador y expiración por inactividad configurable | Evaluar bloqueo más avanzado, observabilidad y posible MFA según criticidad. |
 | Subida segura de archivos | Parcial | `core/forms.py` valida extensión, tamaño y tipo informado para documentos y planillas | Falta validación más profunda de contenido y política final de formatos permitidos por negocio. |
 | Logging y auditoría | Parcial | Auditoría de negocio con degradación segura, logger `security`, alerta crítica ante falla sostenida y registro de bloqueos, permisos denegados y rechazos de archivos | Conectar `security.log` a monitoreo externo y revisar eventos sin persistencia. |
 | Manejo de errores de seguridad | Parcial | Respuesta 403 personalizada y vista de fallo CSRF con logging | Revisar experiencia final en producción y cobertura adicional para otros errores sensibles. |
@@ -35,6 +35,13 @@ python manage.py check
 DJANGO_ENV=production python manage.py check --deploy
 python manage.py test
 ```
+
+## Política mínima de sesión
+
+- Expirar la sesión al cerrar el navegador.
+- Expirar la sesión por inactividad después de 30 minutos como base operativa.
+- Renovar la vigencia en cada request autenticado mientras el usuario siga activo.
+- Ajustar el umbral por entorno mediante `DJANGO_SESSION_IDLE_TIMEOUT` si la política corporativa exige una ventana distinta.
 
 ## Prioridades inmediatas
 

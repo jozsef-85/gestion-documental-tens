@@ -102,51 +102,51 @@
     }
 
     .record-pill.status-pendiente {
-        color: #7f5c16;
-        background: #fff4dc;
-        border-color: #f1ddb0;
+        color: #6b4d0f;
+        background: #fff1d4;
+        border-color: #e8cf94;
     }
 
     .record-pill.status-curso {
-        color: #8c5c0c;
-        background: #fff1d8;
-        border-color: #efdaa9;
+        color: #744d07;
+        background: #ffefd1;
+        border-color: #e6cb89;
     }
 
     .record-pill.status-realizado {
-        color: #165a92;
-        background: #e7f1fb;
-        border-color: #cde1f2;
+        color: #124a77;
+        background: #e4f0fb;
+        border-color: #bcd7ec;
     }
 
     .record-pill.status-pagado {
-        color: #1f6a43;
-        background: #e7f5ec;
-        border-color: #cae5d5;
+        color: #1b5638;
+        background: #e5f4ea;
+        border-color: #bdddc8;
     }
 
     .record-pill.oc-neutral {
-        color: #7d3340;
-        background: #fcebee;
-        border-color: #f3cfd6;
+        color: #6f2431;
+        background: #fae5e9;
+        border-color: #eab6c0;
     }
 
     .record-pill.oc-aprobado {
-        color: #205f3f;
-        background: #e8f6ec;
-        border-color: #cce7d5;
+        color: #1d5638;
+        background: #e5f4ea;
+        border-color: #bdddc8;
     }
 
     .record-pill.oc-curso {
-        color: #8b610f;
-        background: #fff2de;
-        border-color: #f1dfbb;
+        color: #734f0e;
+        background: #fff0d6;
+        border-color: #e9d19f;
     }
 
     .record-pill.oc-terminado {
-        color: #1b5e8b;
-        background: #e9f4fb;
-        border-color: #d2e6f4;
+        color: #154d73;
+        background: #e4f0fb;
+        border-color: #bfd8eb;
     }
 
     .record-detail-label {
@@ -307,9 +307,9 @@
         <div>
             <p class="section-title mb-1">Trabajos en seguimiento</p>
             {% if consulta_activa %}
-                <div class="footer-note">{{ total_filtrados }} resultado(s). {% if selected_carga %}Carga seleccionada: {{ selected_carga.nombre }}.{% endif %}</div>
+                <div class="footer-note" id="seguimiento-listado-ayuda" aria-live="polite">{{ total_filtrados }} resultado(s). {% if selected_carga %}Carga seleccionada: {{ selected_carga.nombre }}.{% endif %}</div>
             {% else %}
-                <div class="footer-note">Usa esta pantalla para revisar trabajos ya aceptados, en ejecución, facturados o pagados.</div>
+                <div class="footer-note" id="seguimiento-listado-ayuda" aria-live="polite">Usa esta pantalla para revisar trabajos ya aceptados, en ejecución, facturados o pagados.</div>
             {% endif %}
         </div>
     </div>
@@ -317,15 +317,16 @@
     {% if consulta_activa %}
     <div class="records-table-wrap">
     <div class="table-responsive">
-        <table class="table records-table align-middle">
+        <table class="table records-table align-middle" aria-describedby="seguimiento-listado-ayuda">
+            <caption class="visually-hidden">Listado de seguimiento operativo de presupuestos con gestión, estado, cobro, monto y acciones disponibles.</caption>
             <thead>
                 <tr>
-                    <th>Registro</th>
-                    <th>Gestion</th>
-                    <th>Estado</th>
-                    <th>Cobro</th>
-                    <th>Monto</th>
-                    <th class="text-end">Acciones</th>
+                    <th scope="col">Registro</th>
+                    <th scope="col">Gestion</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col">Cobro</th>
+                    <th scope="col">Monto</th>
+                    <th scope="col" class="text-end">Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -333,7 +334,7 @@
                     <tr>
                         <td class="record-budget">
                             <span class="record-detail-label">Presupuesto</span>
-                            <a href="{% url 'historial_presupuesto' registro.id %}">
+                            <a href="{% url 'historial_presupuesto' registro.id %}" aria-label="Ver historial del presupuesto {{ registro.presupuesto }}">
                                 <span class="record-code">{{ registro.presupuesto }}</span>
                             </a>
                             <div class="record-description">{{ registro.descripcion|default:"Sin descripcion registrada." }}</div>
@@ -361,7 +362,7 @@
                                     {{ registro.nota_pedido|default:"Sin nota de pedido" }}
                                 </div>
                                 <div>
-                                    <span class="record-detail-label">Personal asignado</span>
+                                    <span class="record-detail-label">Equipo asignado</span>
                                     {{ registro.total_personal_asignado }}
                                 </div>
                             </div>
@@ -402,19 +403,21 @@
                         <td><span class="record-amount">{{ registro.monto|clp }}</span></td>
                         <td>
                             <div class="record-actions">
-                            <a href="{% url 'historial_presupuesto' registro.id %}" class="btn btn-soft btn-sm rounded-pill">Historial</a>
+                            <a href="{% url 'historial_presupuesto' registro.id %}" class="btn btn-soft btn-sm rounded-pill" aria-label="Ver historial del presupuesto {{ registro.presupuesto }}">Historial</a>
                             {% if perms.core.change_registropresupuesto %}
-                                <a href="{% url 'editar_presupuesto' registro.id %}" class="btn btn-soft btn-sm rounded-pill">Editar</a>
+                                <a href="{% url 'editar_presupuesto' registro.id %}" class="btn btn-soft btn-sm rounded-pill" aria-label="Editar presupuesto {{ registro.presupuesto }}">Editar</a>
                             {% endif %}
                             {% if perms.core.delete_registropresupuesto %}
-                                <a href="{% url 'eliminar_presupuesto' registro.id %}" class="btn btn-outline-danger btn-sm rounded-pill">Eliminar</a>
+                                <a href="{% url 'eliminar_presupuesto' registro.id %}" class="btn btn-outline-danger btn-sm rounded-pill" aria-label="Eliminar presupuesto {{ registro.presupuesto }}">Eliminar</a>
                             {% endif %}
                             </div>
                         </td>
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="7" class="text-center muted-label py-4">No hay registros para mostrar.</td>
+                        <td colspan="7" class="text-center muted-label py-4">
+                            <div role="status" aria-live="polite">No hay registros para mostrar con los filtros actuales. Ajusta la búsqueda o limpia filtros para continuar.</div>
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -422,7 +425,7 @@
     </div>
     </div>
     {% else %}
-    <div class="document-card p-4 text-center muted-label">
+    <div class="document-card p-4 text-center muted-label" role="status" aria-live="polite">
         Aún no hay una consulta aplicada. Filtra por cliente, tipo de trabajo, ubicación, estado o carga para ver resultados.
     </div>
     {% endif %}

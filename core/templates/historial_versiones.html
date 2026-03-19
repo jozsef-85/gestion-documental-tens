@@ -77,8 +77,8 @@
             </div>
         {% empty %}
             <div class="col-12">
-                <div class="document-card p-4 text-center muted-label">
-                    No hay versiones registradas todavía para este documento.
+                <div class="document-card p-4 text-center muted-label" role="status" aria-live="polite">
+                    No hay versiones registradas todavía para este documento. Cuando subas una nueva versión aparecerá aquí con fecha y comentario.
                 </div>
             </div>
         {% endfor %}

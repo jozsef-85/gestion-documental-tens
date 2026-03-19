@@ -10,6 +10,7 @@ fi
 
 NAME="$1"
 APP_LABEL="${2:-core}"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 case "$NAME" in
     *[!a-z0-9_]*)
@@ -18,4 +19,4 @@ case "$NAME" in
         ;;
 esac
 
-python manage.py makemigrations "$APP_LABEL" --name "$NAME"
+"$ROOT_DIR/scripts/manage.sh" makemigrations "$APP_LABEL" --name "$NAME"

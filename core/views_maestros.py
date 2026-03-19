@@ -1,6 +1,9 @@
+import os
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Count, Q
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import ClienteForm, PersonalTrabajoForm
@@ -9,13 +12,25 @@ from .services.access import model_access_required
 from .services.audit import registrar_auditoria
 
 
+PERSONAL_DOCUMENT_FIELD_LABELS = {
+    'certificado_fonasa': 'certificado-fonasa',
+    'certificado_pago_afp': 'certificado-pago-afp',
+    'examen_altura_espacio_confinado': 'examen-altura-espacio-confinado',
+    'afiliacion_mutualidad': 'afiliacion-mutualidad',
+    'curriculum': 'curriculum',
+    'certificado_antecedentes': 'certificado-antecedentes',
+}
+
+
 @login_required
 @model_access_required('core', 'cliente')
 def listar_clientes(request):
-    clientes = Cliente.objects.order_by('nombre')
+    clientes = Cliente.objects.all()
     q = request.GET.get('q', '').strip()
     estado = request.GET.get('estado', '').strip()
+    filtros_enviados = any(campo in request.GET for campo in ['q', 'estado'])
     consulta_activa = any([q, estado])
+    mostrando_inicial = not filtros_enviados
 
     if consulta_activa:
         if q:
@@ -30,12 +45,17 @@ def listar_clientes(request):
             clientes = clientes.filter(activo=True)
         elif estado == 'inactivos':
             clientes = clientes.filter(activo=False)
+        clientes = clientes.order_by('nombre')
+    elif filtros_enviados:
+        clientes = clientes.order_by('nombre')
     else:
-        clientes = Cliente.objects.none()
+        clientes = clientes.order_by('-fecha_creacion', '-id')[:10]
 
     return render(request, 'listar_clientes.html', {
         'clientes': clientes,
         'consulta_activa': consulta_activa,
+        'filtros_enviados': filtros_enviados,
+        'mostrando_inicial': mostrando_inicial,
         'total_clientes': Cliente.objects.count(),
         'total_activos': Cliente.objects.filter(activo=True).count(),
     })
@@ -90,19 +110,19 @@ def eliminar_cliente(request, cliente_id):
     cliente = get_object_or_404(Cliente, id=cliente_id)
 
     if request.method == 'POST':
-        nombre = cliente.nombre
-        cliente.delete()
-        registrar_auditoria(request, 'Eliminacion de cliente', 'Cliente', cliente_id, f'Cliente eliminado: {nombre}')
-        messages.success(request, 'El cliente fue eliminado.')
+        cliente.activo = False
+        cliente.save(update_fields=['activo'])
+        registrar_auditoria(request, 'Desactivacion de cliente', 'Cliente', cliente_id, f'Cliente desactivado: {cliente.nombre}')
+        messages.success(request, 'El cliente fue desactivado y su historial se mantuvo intacto.')
         return redirect('listar_clientes')
 
     return render(request, 'confirmar_eliminacion.html', {
         'objeto': cliente,
-        'titulo': 'Eliminar cliente',
-        'descripcion': 'Se eliminara este cliente del maestro comercial del sistema.',
+        'titulo': 'Desactivar cliente',
+        'descripcion': 'El cliente dejara de aparecer como activo, pero se conservara su historial comercial y sus presupuestos relacionados.',
         'etiqueta_principal': cliente.nombre,
         'etiqueta_secundaria': cliente.rut or 'Sin RUT registrado',
-        'confirmar_texto': 'Eliminar cliente',
+        'confirmar_texto': 'Desactivar cliente',
         'cancelar_url': 'listar_clientes',
     })
 
@@ -112,10 +132,12 @@ def eliminar_cliente(request, cliente_id):
 def listar_personal(request):
     personal = PersonalTrabajo.objects.annotate(
         total_trabajos_activos=Count('asignaciones', filter=Q(asignaciones__estado='activo'), distinct=True)
-    ).order_by('nombre')
+    )
     q = request.GET.get('q', '').strip()
     estado = request.GET.get('estado', '').strip()
+    filtros_enviados = any(campo in request.GET for campo in ['q', 'estado'])
     consulta_activa = any([q, estado])
+    mostrando_inicial = not filtros_enviados
 
     if consulta_activa:
         if q:
@@ -130,16 +152,44 @@ def listar_personal(request):
             personal = personal.filter(activo=True)
         elif estado == 'inactivos':
             personal = personal.filter(activo=False)
+        personal = personal.order_by('nombre')
+    elif filtros_enviados:
+        personal = personal.order_by('nombre')
     else:
-        personal = PersonalTrabajo.objects.none()
+        personal = personal.order_by('-fecha_creacion', '-id')[:10]
 
     return render(request, 'listar_personal.html', {
         'personal': personal,
         'consulta_activa': consulta_activa,
+        'filtros_enviados': filtros_enviados,
+        'mostrando_inicial': mostrando_inicial,
         'total_personal': PersonalTrabajo.objects.count(),
         'total_activos': PersonalTrabajo.objects.filter(activo=True).count(),
         'total_con_trabajos_activos': PersonalTrabajo.objects.filter(asignaciones__estado='activo').distinct().count(),
     })
+
+
+@login_required
+@model_access_required('core', 'personaltrabajo')
+def descargar_documento_personal(request, personal_id, campo):
+    personal = get_object_or_404(PersonalTrabajo, id=personal_id)
+
+    if campo not in PERSONAL_DOCUMENT_FIELD_LABELS:
+        raise Http404('El respaldo solicitado no existe.')
+
+    archivo = getattr(personal, campo, None)
+    if not archivo:
+        raise Http404('El trabajador no tiene un archivo disponible para este respaldo.')
+
+    registrar_auditoria(
+        request,
+        accion='Descarga de respaldo de personal',
+        entidad='PersonalTrabajo',
+        entidad_id=personal.id,
+        detalle=f'Se descargó el respaldo {campo} del trabajador {personal.nombre}',
+    )
+    nombre_archivo = os.path.basename(archivo.name) or f'{PERSONAL_DOCUMENT_FIELD_LABELS[campo]}-{personal.id}'
+    return FileResponse(archivo.open('rb'), as_attachment=True, filename=nombre_archivo)
 
 
 @login_required
@@ -152,7 +202,7 @@ def crear_personal(request):
             personal.creado_por = request.user
             personal.save()
             registrar_auditoria(request, 'Creacion de personal', 'PersonalTrabajo', personal.id, f'Personal creado: {personal.nombre}')
-            messages.success(request, 'El personal fue creado correctamente.')
+            messages.success(request, 'La ficha del trabajador se creó correctamente.')
             return redirect('listar_personal')
     else:
         form = PersonalTrabajoForm()
@@ -173,7 +223,7 @@ def editar_personal(request, personal_id):
         if form.is_valid():
             personal = form.save()
             registrar_auditoria(request, 'Edicion de personal', 'PersonalTrabajo', personal.id, f'Personal actualizado: {personal.nombre}')
-            messages.success(request, 'El registro de personal fue actualizado correctamente.')
+            messages.success(request, 'La ficha del trabajador se actualizó correctamente.')
             return redirect('listar_personal')
     else:
         form = PersonalTrabajoForm(instance=personal)
@@ -191,18 +241,18 @@ def eliminar_personal(request, personal_id):
     personal = get_object_or_404(PersonalTrabajo, id=personal_id)
 
     if request.method == 'POST':
-        nombre = personal.nombre
-        personal.delete()
-        registrar_auditoria(request, 'Eliminacion de personal', 'PersonalTrabajo', personal_id, f'Personal eliminado: {nombre}')
-        messages.success(request, 'El registro de personal fue eliminado.')
+        personal.activo = False
+        personal.save(update_fields=['activo'])
+        registrar_auditoria(request, 'Desactivacion de personal', 'PersonalTrabajo', personal_id, f'Personal desactivado: {personal.nombre}')
+        messages.success(request, 'El registro de personal fue desactivado y se conservaron sus asignaciones historicas.')
         return redirect('listar_personal')
 
     return render(request, 'confirmar_eliminacion.html', {
         'objeto': personal,
-        'titulo': 'Eliminar personal',
-        'descripcion': 'Se eliminara este registro del maestro de personal de la empresa.',
+        'titulo': 'Desactivar personal',
+        'descripcion': 'La persona dejara de figurar como activa, pero se conservara su historial documental y sus asignaciones previas.',
         'etiqueta_principal': personal.nombre,
         'etiqueta_secundaria': f'{personal.cargo} · {personal.area or "Sin area"}',
-        'confirmar_texto': 'Eliminar personal',
+        'confirmar_texto': 'Desactivar personal',
         'cancelar_url': 'listar_personal',
     })

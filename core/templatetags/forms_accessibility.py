@@ -1,22 +1,8 @@
-from decimal import Decimal, InvalidOperation
-
 from django import template
 from django.utils.safestring import mark_safe
 
 
 register = template.Library()
-
-
-@register.filter
-def clp(valor):
-    if valor in (None, ''):
-        return 'Sin valor'
-    try:
-        numero = Decimal(str(valor))
-    except (InvalidOperation, ValueError):
-        return valor
-    entero = int(numero)
-    return '$ ' + f'{entero:,}'.replace(',', '.')
 
 
 def _field_base_id(bound_field):
