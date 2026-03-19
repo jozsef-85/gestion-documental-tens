@@ -7,7 +7,7 @@
 <section class="surface-card p-4 p-lg-5 mx-auto" style="max-width: 880px;">
     <span class="eyebrow mb-3">{% if modo_creacion %}Alta{% else %}Edición{% endif %}</span>
     <h1 class="page-title mb-2">{% if modo_creacion %}Nueva ficha de trabajador{% else %}Ficha de trabajador{% endif %}</h1>
-    <p class="muted-label mb-4">Registra los datos base del trabajador y completa sus respaldos laborales cuando los tengas disponibles.</p>
+    <p class="muted-label mb-4">Registra los datos base del trabajador, incluyendo su RUN cuando ya esté disponible, y completa sus respaldos laborales cuando los tengas disponibles.</p>
 
     <form method="post" enctype="multipart/form-data" novalidate>
         {% csrf_token %}
@@ -25,6 +25,18 @@
                 {% if form.nombre.errors %}
                     <div class="text-danger small mt-1" id="{{ form.nombre|field_error_id }}" role="alert">
                         {% for error in form.nombre.errors %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label" for="{{ form.run.id_for_label }}">{{ form.run.label }}</label>
+                {{ form.run|render_field_a11y }}
+                <div class="footer-note mt-1" id="{{ form.run|field_help_id }}">{{ form.run.help_text }}</div>
+                {% if form.run.errors %}
+                    <div class="text-danger small mt-1" id="{{ form.run|field_error_id }}" role="alert">
+                        {% for error in form.run.errors %}
                             <div>{{ error }}</div>
                         {% endfor %}
                     </div>

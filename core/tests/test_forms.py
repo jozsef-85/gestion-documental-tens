@@ -156,8 +156,66 @@ class ClienteFormTests(TestCase):
         self.assertTrue(form.is_valid(), form.errors)
         self.assertIsNone(form.cleaned_data['rut'])
 
+    def test_normaliza_rut_valido_con_formato_chileno(self):
+        form = ClienteForm(data={
+            'nombre': 'Cliente demo',
+            'rut': '76086428-5',
+            'contacto': 'Maria',
+            'email': 'maria@example.com',
+            'telefono': '+56 9 1111 2222',
+            'direccion': 'Av. Siempre Viva 123',
+            'activo': 'True',
+        })
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data['rut'], '76.086.428-5')
+
+    def test_rechaza_rut_con_digito_verificador_invalido(self):
+        form = ClienteForm(data={
+            'nombre': 'Cliente demo',
+            'rut': '76.123.456-8',
+            'contacto': 'Maria',
+            'email': 'maria@example.com',
+            'telefono': '+56 9 1111 2222',
+            'direccion': 'Av. Siempre Viva 123',
+            'activo': 'True',
+        })
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('no es válido', form.errors['rut'][0])
+
 
 class PersonalTrabajoFormTests(TestCase):
+    def test_normaliza_run_valido_con_formato_chileno(self):
+        form = PersonalTrabajoForm(data={
+            'nombre': 'Luis Toro',
+            'run': '12345678-5',
+            'cargo': 'Electricista',
+            'area': 'Operaciones',
+            'email': '',
+            'telefono': '',
+            'fecha_ingreso': '',
+            'activo': 'True',
+        })
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data['run'], '12.345.678-5')
+
+    def test_rechaza_run_con_digito_verificador_invalido(self):
+        form = PersonalTrabajoForm(data={
+            'nombre': 'Luis Toro',
+            'run': '12.345.678-9',
+            'cargo': 'Electricista',
+            'area': 'Operaciones',
+            'email': '',
+            'telefono': '',
+            'fecha_ingreso': '',
+            'activo': 'True',
+        })
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('no es válido', form.errors['run'][0])
+
     def test_rechaza_respaldo_personal_con_extension_no_permitida(self):
         archivo = SimpleUploadedFile(
             'fonasa.exe',

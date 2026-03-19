@@ -143,6 +143,7 @@ def listar_personal(request):
         if q:
             personal = personal.filter(
                 Q(nombre__icontains=q)
+                | Q(run__icontains=q)
                 | Q(cargo__icontains=q)
                 | Q(area__icontains=q)
                 | Q(email__icontains=q)
@@ -252,7 +253,7 @@ def eliminar_personal(request, personal_id):
         'titulo': 'Desactivar personal',
         'descripcion': 'La persona dejara de figurar como activa, pero se conservara su historial documental y sus asignaciones previas.',
         'etiqueta_principal': personal.nombre,
-        'etiqueta_secundaria': f'{personal.cargo} · {personal.area or "Sin area"}',
+        'etiqueta_secundaria': f'{personal.run or "Sin RUN"} · {personal.cargo} · {personal.area or "Sin area"}',
         'confirmar_texto': 'Desactivar personal',
         'cancelar_url': 'listar_personal',
     })

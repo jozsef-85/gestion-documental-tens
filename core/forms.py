@@ -14,6 +14,8 @@ from .forms_shared import (
     MAX_PERSONAL_UPLOAD_SIZE,
     MAX_SPREADSHEET_UPLOAD_SIZE,
     clean_optional_text,
+    format_chilean_document_number,
+    validate_chilean_document_number,
     validate_uploaded_file,
 )
 
@@ -36,6 +38,8 @@ __all__ = [
     'MAX_SPREADSHEET_UPLOAD_SIZE',
     'PersonalTrabajoForm',
     'RegistroPresupuestoForm',
+    'format_chilean_document_number',
+    'validate_chilean_document_number',
     'validate_uploaded_file',
     'VersionDocumentoForm',
 ]

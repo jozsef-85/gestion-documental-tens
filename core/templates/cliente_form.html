@@ -7,7 +7,7 @@
 <section class="surface-card p-4 p-lg-5 mx-auto" style="max-width: 880px;">
     <span class="eyebrow mb-3">{% if modo_creacion %}Alta{% else %}Edición{% endif %}</span>
     <h1 class="page-title mb-2">{% if modo_creacion %}Nuevo cliente{% else %}Editar cliente{% endif %}</h1>
-    <p class="muted-label mb-4">Completa los datos comerciales y de contacto del cliente.</p>
+    <p class="muted-label mb-4">Completa los datos comerciales y de contacto del cliente, incluyendo su RUT cuando ya esté disponible.</p>
 
     <form method="post" novalidate>
         {% csrf_token %}

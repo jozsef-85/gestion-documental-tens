@@ -64,6 +64,42 @@ def clean_optional_text(value, *, empty_to_none=False):
     return normalized_text
 
 
+def _calcular_digito_verificador(numero):
+    reversed_digits = map(int, reversed(numero))
+    factores = (2, 3, 4, 5, 6, 7)
+    acumulado = sum(digito * factor for digito, factor in zip(reversed_digits, factores * 10))
+    resto = 11 - (acumulado % 11)
+    if resto == 11:
+        return '0'
+    if resto == 10:
+        return 'K'
+    return str(resto)
+
+
+def format_chilean_document_number(numero, digito_verificador):
+    cuerpo = f'{int(numero):,}'.replace(',', '.')
+    return f'{cuerpo}-{digito_verificador}'
+
+
+def validate_chilean_document_number(value, *, label):
+    normalized_value = clean_optional_text(value, empty_to_none=True)
+    if normalized_value is None:
+        return None
+
+    compact_value = ''.join(caracter for caracter in normalized_value.upper() if caracter.isalnum())
+    if len(compact_value) < 2:
+        raise forms.ValidationError(f'Ingresa un {label} válido.')
+
+    numero, digito_verificador = compact_value[:-1], compact_value[-1]
+    if not numero.isdigit() or digito_verificador not in '0123456789K':
+        raise forms.ValidationError(f'Ingresa un {label} válido, por ejemplo 12.345.678-5.')
+
+    if _calcular_digito_verificador(numero) != digito_verificador:
+        raise forms.ValidationError(f'El {label} no es válido. Revisa el dígito verificador.')
+
+    return format_chilean_document_number(numero, digito_verificador)
+
+
 def validate_uploaded_file(uploaded_file, *, allowed_extensions, allowed_content_types, max_size, label):
     filename = uploaded_file.name.lower()
 

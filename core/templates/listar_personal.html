@@ -33,7 +33,7 @@
             <form method="get" class="row g-3 align-items-end">
                 <div class="col-12 col-md-7">
                     <label class="form-label" for="q">Buscar</label>
-                    <input class="form-control" id="q" type="text" name="q" value="{{ request.GET.q }}" placeholder="Nombre, cargo, área o email">
+                    <input class="form-control" id="q" type="text" name="q" value="{{ request.GET.q }}" placeholder="Nombre, RUN, cargo, área o email">
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label" for="estado">Estado</label>
@@ -75,10 +75,11 @@
 
     <div class="table-responsive">
         <table class="table align-middle mb-0" aria-describedby="personal-listado-ayuda">
-            <caption class="visually-hidden">Listado de personal con cargo, área, respaldos y estado actual.</caption>
+            <caption class="visually-hidden">Listado de personal con RUN, cargo, área, respaldos y estado actual.</caption>
             <thead>
                 <tr>
                     <th scope="col">Nombre</th>
+                    <th scope="col">RUN</th>
                     <th scope="col">Cargo</th>
                     <th scope="col">Área</th>
                     <th scope="col">Trabajos activos</th>
@@ -92,6 +93,7 @@
                 {% for item in personal %}
                     <tr>
                         <th scope="row" class="fw-semibold">{{ item.nombre }}</th>
+                        <td>{{ item.run|default:"Sin RUN" }}</td>
                         <td>{{ item.cargo }}</td>
                         <td>{{ item.area|default:"Sin área" }}</td>
                         <td>{{ item.total_trabajos_activos }}</td>
@@ -124,7 +126,7 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="8" class="text-center muted-label py-4">
+                        <td colspan="9" class="text-center muted-label py-4">
                             <div role="status" aria-live="polite">
                                 {% if consulta_activa %}
                                     No hay registros de personal para mostrar con los filtros actuales. Ajusta la búsqueda o limpia los filtros para continuar.

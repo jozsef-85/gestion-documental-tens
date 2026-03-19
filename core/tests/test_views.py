@@ -679,6 +679,20 @@ class FormAccessibilityViewTests(TestCase):
         self.assertContains(response, 'Persona filtro 00')
         self.assertContains(response, 'Persona filtro 11')
 
+    def test_listar_personal_permite_buscar_por_run(self):
+        usuario = User.objects.create_user(username='lector_personal_run', password='secreta123')
+        permiso = Permission.objects.get(codename='view_personaltrabajo')
+        usuario.user_permissions.add(permiso)
+        PersonalTrabajo.objects.create(nombre='Persona RUN', run='12.345.678-5', cargo='Tecnico')
+        PersonalTrabajo.objects.create(nombre='Persona Sin Match', run='11.111.111-1', cargo='Tecnico')
+        self.client.force_login(usuario)
+
+        response = self.client.get(reverse('listar_personal'), {'q': '12.345.678-5'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Persona RUN')
+        self.assertNotContains(response, 'Persona Sin Match')
+
 
 class PersonalDocumentosViewTests(TestCase):
     def setUp(self):
@@ -700,6 +714,7 @@ class PersonalDocumentosViewTests(TestCase):
             reverse('crear_personal'),
             {
                 'nombre': 'Luis Toro',
+                'run': '12.345.678-5',
                 'cargo': 'Electricista',
                 'area': 'Operaciones',
                 'email': 'luis@example.com',
@@ -713,6 +728,7 @@ class PersonalDocumentosViewTests(TestCase):
 
         self.assertRedirects(response, reverse('listar_personal'))
         trabajador = PersonalTrabajo.objects.get(nombre='Luis Toro')
+        self.assertEqual(trabajador.run, '12.345.678-5')
         self.assertTrue(bool(trabajador.certificado_fonasa))
         self.assertTrue(bool(trabajador.certificado_pago_afp))
         self.assertEqual(trabajador.total_documentos_personal, 2)

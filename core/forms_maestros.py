@@ -7,6 +7,7 @@ from .forms_shared import (
     ALLOWED_PERSONAL_CERTIFICATE_EXTENSIONS,
     MAX_PERSONAL_UPLOAD_SIZE,
     clean_optional_text,
+    validate_chilean_document_number,
     validate_uploaded_file,
 )
 from .models import Cliente, PersonalTrabajo
@@ -15,8 +16,9 @@ from .models import Cliente, PersonalTrabajo
 class ClienteForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['rut'].label = 'RUT'
         self.fields['nombre'].help_text = 'Nombre comercial o razon social del cliente.'
-        self.fields['rut'].help_text = 'Opcional. Si aun no lo tienes, dejalo vacio.'
+        self.fields['rut'].help_text = 'Opcional. Puedes ingresarlo con o sin puntos y guion.'
         self.fields['contacto'].help_text = 'Persona de contacto principal para seguimiento comercial.'
         self.fields['email'].help_text = 'Correo principal para coordinacion o cobranza.'
         self.fields['telefono'].help_text = 'Telefono directo o celular de referencia.'
@@ -25,7 +27,7 @@ class ClienteForm(forms.ModelForm):
         self.fields['nombre'].error_messages['required'] = 'Ingresa el nombre del cliente.'
         self.fields['email'].error_messages['invalid'] = 'Ingresa un correo valido, por ejemplo contacto@empresa.cl.'
         self.fields['nombre'].widget.attrs.update({'placeholder': 'Ej: Constructora Norte'})
-        self.fields['rut'].widget.attrs.update({'placeholder': 'Ej: 76.123.456-7', 'autocomplete': 'off'})
+        self.fields['rut'].widget.attrs.update({'placeholder': 'Ej: 76.123.456-7', 'autocomplete': 'off', 'inputmode': 'text'})
         self.fields['contacto'].widget.attrs.update({'placeholder': 'Ej: Maria Perez'})
         self.fields['email'].widget.attrs.update({'placeholder': 'Ej: contacto@empresa.cl', 'autocomplete': 'email'})
         self.fields['telefono'].widget.attrs.update({'placeholder': 'Ej: +56 9 1234 5678', 'type': 'tel', 'inputmode': 'tel', 'autocomplete': 'tel'})
@@ -51,8 +53,7 @@ class ClienteForm(forms.ModelForm):
         return nombre
 
     def clean_rut(self):
-        rut = clean_optional_text(self.cleaned_data.get('rut'), empty_to_none=True)
-        return rut.upper() if rut else None
+        return validate_chilean_document_number(self.cleaned_data.get('rut'), label='RUT')
 
     def clean_contacto(self):
         return clean_optional_text(self.cleaned_data.get('contacto'))
@@ -69,6 +70,7 @@ class PersonalTrabajoForm(forms.ModelForm):
         model = PersonalTrabajo
         fields = [
             'nombre',
+            'run',
             'cargo',
             'area',
             'activo',
@@ -84,6 +86,7 @@ class PersonalTrabajoForm(forms.ModelForm):
         ]
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Juan Perez Soto'}),
+            'run': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 12.345.678-5', 'autocomplete': 'off'}),
             'cargo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Electricista, Supervisor, Ayudante'}),
             'area': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Operaciones, Terreno, Administracion'}),
             'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'correo@empresa.cl'}),
@@ -109,12 +112,15 @@ class PersonalTrabajoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['nombre'].error_messages['required'] = 'Ingresa el nombre del trabajador.'
+        self.fields['run'].label = 'RUN'
         self.fields['cargo'].error_messages['required'] = 'Ingresa el cargo o especialidad principal.'
         self.fields['email'].error_messages['invalid'] = 'Ingresa un correo valido, por ejemplo persona@empresa.cl.'
         self.fields['nombre'].widget.attrs.update({'autocomplete': 'name'})
+        self.fields['run'].widget.attrs.update({'inputmode': 'text'})
         self.fields['email'].widget.attrs.update({'autocomplete': 'email'})
         self.fields['telefono'].widget.attrs.update({'type': 'tel', 'inputmode': 'tel', 'autocomplete': 'tel'})
         self.fields['nombre'].help_text = 'Nombre completo del trabajador o trabajadora.'
+        self.fields['run'].help_text = 'Opcional. Puedes ingresarlo con o sin puntos y guion.'
         self.fields['cargo'].help_text = 'Cargo o especialidad principal dentro de la empresa.'
         self.fields['area'].help_text = 'Area interna, por ejemplo Operaciones, Terreno o Administracion.'
         self.fields['activo'].help_text = 'Puedes dejar el trabajador activo o inactivo sin afectar su documentacion.'
@@ -139,6 +145,9 @@ class PersonalTrabajoForm(forms.ModelForm):
         if not cargo:
             raise forms.ValidationError('Ingresa el cargo o especialidad principal.')
         return cargo
+
+    def clean_run(self):
+        return validate_chilean_document_number(self.cleaned_data.get('run'), label='RUN')
 
     def clean_area(self):
         return clean_optional_text(self.cleaned_data.get('area'))

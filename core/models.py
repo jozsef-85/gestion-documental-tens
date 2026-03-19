@@ -40,6 +40,7 @@ class Cliente(models.Model):
 
 class PersonalTrabajo(models.Model):
     nombre = models.CharField(max_length=200)
+    run = models.CharField(max_length=20, blank=True, null=True, unique=True)
     cargo = models.CharField(max_length=150)
     area = models.CharField(max_length=150, blank=True)
     email = models.EmailField(blank=True)
