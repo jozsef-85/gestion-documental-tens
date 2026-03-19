@@ -261,7 +261,7 @@
                                         <td>{{ registro.nota_pedido|default:"Sin nota de pedido" }}</td>
                                         <td>
                                             <span class="status-badge">
-                                                <span class="status-dot {% if registro.estado_seguimiento == 'Aceptado / En curso' %}status-curso{% elif registro.estado_seguimiento == 'Pagado' %}status-pagado{% elif registro.estado_seguimiento == 'Realizado' %}status-realizado{% else %}status-espera{% endif %}"></span>
+                                                <span class="status-dot {% if registro.estado_seguimiento_codigo == 'en_proceso' %}status-curso{% elif registro.estado_seguimiento_codigo == 'pagado' %}status-pagado{% elif registro.estado_seguimiento_codigo == 'facturado' %}status-realizado{% else %}status-espera{% endif %}"></span>
                                                 {{ registro.estado_seguimiento }}
                                             </span>
                                         </td>
@@ -275,7 +275,7 @@
                                             {% endif %}
                                         </td>
                                         <td>
-                                            {% if registro.estado_seguimiento != 'Pagado' and registro.estado_seguimiento != 'Pendiente de aprobación' %}
+                                            {% if registro.estado_seguimiento_codigo != 'pagado' and registro.estado_seguimiento_codigo != 'pendiente' %}
                                                 {{ registro.monto|clp }}
                                             {% else %}
                                                 <span class="muted-label">No aplica</span>

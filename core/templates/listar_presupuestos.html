@@ -368,11 +368,11 @@
                             </div>
                         </td>
                         <td>
-                            {% if registro.estado_seguimiento == 'Pagado' %}
+                            {% if registro.estado_seguimiento_codigo == 'pagado' %}
                                 <span class="record-pill status-pagado">{{ registro.estado_seguimiento }}</span>
-                            {% elif registro.estado_seguimiento == 'Realizado' %}
+                            {% elif registro.estado_seguimiento_codigo == 'facturado' %}
                                 <span class="record-pill status-realizado">{{ registro.estado_seguimiento }}</span>
-                            {% elif registro.estado_seguimiento == 'Aceptado / En curso' %}
+                            {% elif registro.estado_seguimiento_codigo == 'en_proceso' %}
                                 <span class="record-pill status-curso">{{ registro.estado_seguimiento }}</span>
                             {% else %}
                                 <span class="record-pill status-pendiente">{{ registro.estado_seguimiento }}</span>

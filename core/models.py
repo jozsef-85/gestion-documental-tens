@@ -1,6 +1,8 @@
 from django.contrib.auth.models import User
 from django.db import models
 
+from .domain.presupuestos_status import estado_choices, estado_codigo_desde_registro, estado_label
+
 
 class Departamento(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
@@ -165,13 +167,7 @@ class RegistroPresupuesto(models.Model):
         ('otro', 'Otro'),
     ]
 
-    ESTADOS_MANUALES = [
-        ('', 'Automático según flujo'),
-        ('pendiente', 'Pendiente de aprobación'),
-        ('en_proceso', 'Aceptado / En curso'),
-        ('facturado', 'Realizado'),
-        ('pagado', 'Pagado'),
-    ]
+    ESTADOS_MANUALES = [('', 'Automático según flujo'), *estado_choices()]
 
     carga = models.ForeignKey(CargaPresupuesto, on_delete=models.CASCADE, related_name='registros')
     cliente = models.ForeignKey(
@@ -245,15 +241,11 @@ class RegistroPresupuesto(models.Model):
 
     @property
     def estado_seguimiento(self):
-        if self.estado_manual:
-            return self.get_estado_manual_display()
-        if self.fecha_pago or self.fecha_pago_texto:
-            return 'Pagado'
-        if self.factura or self.fecha_facturacion or self.fecha_facturacion_texto:
-            return 'Realizado'
-        if self.nota_pedido:
-            return 'Aceptado / En curso'
-        return 'Pendiente de aprobación'
+        return estado_label(self.estado_seguimiento_codigo)
+
+    @property
+    def estado_seguimiento_codigo(self):
+        return estado_codigo_desde_registro(self)
 
     @property
     def tiene_estado_manual(self):

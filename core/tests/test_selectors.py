@@ -37,6 +37,7 @@ class PresupuestoSelectorsTests(TestCase):
 
         queryset = inventario_presupuestos_queryset().filter(q_estado_presupuesto('en_proceso'))
 
+        self.assertEqual(en_proceso.estado_seguimiento_codigo, 'en_proceso')
         self.assertEqual(en_proceso.estado_seguimiento, 'Aceptado / En curso')
         self.assertEqual(queryset.count(), 1)
         self.assertEqual(queryset.first().id, en_proceso.id)

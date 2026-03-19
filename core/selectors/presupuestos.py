@@ -1,51 +1,21 @@
 from django.db.models import Count, F, OuterRef, Q, Subquery, Sum
 
+from ..domain.presupuestos_status import (
+    EN_PROCESO,
+    FACTURADO,
+    PAGADO,
+    PENDIENTE,
+    estado_resumen_label,
+    q_aceptado,
+    q_aceptado_efectivo,
+    q_en_proceso,
+    q_estado_presupuesto,
+    q_estado_manual_vacio,
+    q_facturado,
+    q_pagado,
+    q_pendiente_por_cobrar,
+)
 from ..models import RegistroPresupuesto
-
-
-def q_pagado():
-    return Q(fecha_pago__isnull=False) | Q(fecha_pago_texto__gt='')
-
-
-def q_facturado():
-    return Q(fecha_facturacion__isnull=False) | Q(fecha_facturacion_texto__gt='') | Q(factura__gt='')
-
-
-def q_aceptado():
-    return Q(nota_pedido__gt='')
-
-
-def q_en_proceso():
-    return q_aceptado() & ~q_facturado() & ~q_pagado()
-
-
-def q_estado_manual_vacio():
-    return Q(estado_manual='') | Q(estado_manual__isnull=True)
-
-
-def q_estado_presupuesto(estado):
-    automatico = q_estado_manual_vacio()
-    if estado == 'pagado':
-        return Q(estado_manual='pagado') | (automatico & q_pagado())
-    if estado == 'facturado':
-        return Q(estado_manual='facturado') | (automatico & q_facturado() & ~q_pagado())
-    if estado == 'en_proceso':
-        return Q(estado_manual='en_proceso') | (automatico & q_en_proceso())
-    if estado == 'pendiente':
-        return Q(estado_manual='pendiente') | (automatico & ~q_aceptado() & ~q_facturado() & ~q_pagado())
-    return Q()
-
-
-def q_aceptado_efectivo():
-    return (
-        q_estado_presupuesto('en_proceso')
-        | q_estado_presupuesto('facturado')
-        | q_estado_presupuesto('pagado')
-    )
-
-
-def q_pendiente_por_cobrar():
-    return q_estado_presupuesto('en_proceso') | q_estado_presupuesto('facturado')
 
 
 def inventario_presupuestos_queryset():
@@ -61,18 +31,18 @@ def inventario_presupuestos_queryset():
 def filtrar_por_estado(queryset, estado):
     if estado == 'por_cobrar':
         return queryset.filter(q_pendiente_por_cobrar())
-    if estado in {'pagado', 'facturado', 'en_proceso', 'pendiente'}:
+    if estado in {PAGADO, FACTURADO, EN_PROCESO, PENDIENTE}:
         return queryset.filter(q_estado_presupuesto(estado))
     return queryset
 
 
 def resumir_flujo(queryset):
     etapas = [
-        ('Pendientes de aprobación', q_estado_presupuesto('pendiente')),
-        ('Aceptados / En curso', q_estado_presupuesto('en_proceso')),
+        (estado_resumen_label(PENDIENTE), q_estado_presupuesto(PENDIENTE)),
+        (estado_resumen_label(EN_PROCESO), q_estado_presupuesto(EN_PROCESO)),
         ('Con guía de despacho', Q(guia_despacho__gt='')),
-        ('Realizados', q_estado_presupuesto('facturado') | q_estado_presupuesto('pagado')),
-        ('Pagados', q_estado_presupuesto('pagado')),
+        (estado_resumen_label(FACTURADO), q_estado_presupuesto(FACTURADO) | q_estado_presupuesto(PAGADO)),
+        (estado_resumen_label(PAGADO), q_estado_presupuesto(PAGADO)),
     ]
     resumen = []
     for etiqueta, condicion in etapas:
@@ -88,13 +58,13 @@ def resumir_flujo(queryset):
 def aggregate_presupuesto_metrics(queryset):
     return queryset.aggregate(
         total_items=Count('id'),
-        total_pendientes_aprobacion=Count('id', filter=q_estado_presupuesto('pendiente')),
+        total_pendientes_aprobacion=Count('id', filter=q_estado_presupuesto(PENDIENTE)),
         total_aceptados=Count('id', filter=q_aceptado_efectivo()),
         total_pendientes_por_cobrar=Count('id', filter=q_pendiente_por_cobrar()),
-        total_en_proceso=Count('id', filter=q_estado_presupuesto('en_proceso')),
-        total_facturados=Count('id', filter=q_estado_presupuesto('facturado')),
-        total_pagados=Count('id', filter=q_estado_presupuesto('pagado')),
-        total_activo=Count('id', filter=~q_estado_presupuesto('pagado')),
+        total_en_proceso=Count('id', filter=q_estado_presupuesto(EN_PROCESO)),
+        total_facturados=Count('id', filter=q_estado_presupuesto(FACTURADO)),
+        total_pagados=Count('id', filter=q_estado_presupuesto(PAGADO)),
+        total_activo=Count('id', filter=~q_estado_presupuesto(PAGADO)),
         monto_por_cobrar=Sum('monto', filter=q_pendiente_por_cobrar()),
     )
 

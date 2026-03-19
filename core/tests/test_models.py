@@ -13,6 +13,7 @@ class RegistroPresupuestoModelTests(SimpleTestCase):
             factura='FAC-9',
         )
 
+        self.assertEqual(registro.estado_seguimiento_codigo, 'facturado')
         self.assertEqual(registro.estado_seguimiento, 'Realizado')
         self.assertEqual(registro.avance_flujo, 60)
 
@@ -23,6 +24,7 @@ class RegistroPresupuestoModelTests(SimpleTestCase):
             guia_despacho='GD-55',
         )
 
+        self.assertEqual(registro.estado_seguimiento_codigo, 'pendiente')
         self.assertEqual(registro.estado_seguimiento, 'Pendiente de aprobación')
 
     def test_estado_manual_tiene_prioridad(self):
@@ -32,6 +34,7 @@ class RegistroPresupuestoModelTests(SimpleTestCase):
             estado_manual='pendiente',
         )
 
+        self.assertEqual(registro.estado_seguimiento_codigo, 'pendiente')
         self.assertEqual(registro.estado_seguimiento, 'Pendiente de aprobación')
 
 
