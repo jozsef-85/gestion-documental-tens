@@ -10,6 +10,7 @@ urlpatterns = [
     path('clientes/editar/<int:cliente_id>/', views.editar_cliente, name='editar_cliente'),
     path('clientes/eliminar/<int:cliente_id>/', views.eliminar_cliente, name='eliminar_cliente'),
     path('documentos/', views.listar_documentos, name='listar_documentos'),
+    path('documentos/nuevo/', views.crear_documento, name='crear_documento'),
     path('documentos/descargar/<int:documento_id>/', views.descargar_documento, name='descargar_documento'),
     path('documentos/versiones/descargar/<int:version_id>/', views.descargar_version_documento, name='descargar_version_documento'),
     path('documentos/editar/<int:documento_id>/', views.editar_documento, name='editar_documento'),

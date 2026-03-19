@@ -293,6 +293,12 @@ class AsignacionTrabajo(models.Model):
 
     class Meta:
         ordering = ['-fecha_asignacion', 'trabajador__nombre']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['trabajo', 'trabajador'],
+                name='asigtrab_trabajo_trabajador_unique',
+            ),
+        ]
         indexes = [
             models.Index(fields=['estado'], name='asigtrab_estado_idx'),
         ]

@@ -4,6 +4,7 @@ from unittest.mock import patch
 from django.contrib.auth.models import Permission, User
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import IntegrityError
 from django.http import HttpResponse
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -150,6 +151,19 @@ class SubirVersionViewTests(TestCase):
         self.assertContains(response, 'Ya existe una version registrada con ese numero')
         self.assertEqual(self.documento.versiones.count(), 1)
 
+    @patch('core.views_documentos.VersionDocumento.objects.create', side_effect=IntegrityError)
+    def test_subir_version_maneja_colision_concurrente_sin_error_500(self, _mocked_create):
+        archivo = SimpleUploadedFile('version-2.pdf', b'pdf-content', content_type='application/pdf')
+
+        response = self.client.post(reverse('subir_version', args=[self.documento.id]), {
+            'numero_version': '2.0',
+            'archivo': archivo,
+            'comentario': 'Intento concurrente',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Ya existe una versión registrada con ese número.')
+
 
 class SubirDocumentoViewTests(TestCase):
     def setUp(self):
@@ -188,13 +202,20 @@ class SubirDocumentoViewTests(TestCase):
         response = self.client.get(reverse('subir_documento'), {'registro_id': self.registro.id})
 
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, f"{reverse('listar_documentos')}?presupuesto=OBRA-001")
+        self.assertEqual(response.url, f"{reverse('crear_documento')}?registro_id={self.registro.id}")
 
     def test_ruta_legacy_subir_documento_permanece_operativa(self):
         response = self.client.get(reverse('subir_documento_legacy'))
 
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse('listar_documentos'))
+        self.assertEqual(response.url, reverse('crear_documento'))
+
+    def test_crear_documento_permanece_dentro_del_modulo_documentos(self):
+        response = self.client.get(reverse('crear_documento'), {'registro_id': self.registro.id})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Nuevo documento')
+        self.assertContains(response, 'OBRA-001')
 
 
 class EditarDocumentoViewTests(TestCase):
@@ -475,6 +496,17 @@ class ListadoClientesAccessTests(TestCase):
     def test_listar_documentos_acepta_permiso_view(self):
         usuario = User.objects.create_user(username='lector_documentos', password='secreta123')
         permiso = Permission.objects.get(codename='view_documento')
+        usuario.user_permissions.add(permiso)
+        self.client.force_login(usuario)
+
+        response = self.client.get(reverse('listar_documentos'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context['consulta_activa'])
+
+    def test_listar_documentos_acepta_permiso_add_para_ingresar_al_modulo(self):
+        usuario = User.objects.create_user(username='cargador_documentos', password='secreta123')
+        permiso = Permission.objects.get(codename='add_documento')
         usuario.user_permissions.add(permiso)
         self.client.force_login(usuario)
 
@@ -863,14 +895,9 @@ class ControlPresupuestosViewTests(TestCase):
                 accion='Edicion de control',
             ).exists()
         )
-        self.assertIsNotNone(self.registro_pendiente.trabajo)
-        self.assertEqual(self.registro_pendiente.trabajo.presupuesto, 'PRES-PEND')
+        self.assertIsNone(self.registro_pendiente.trabajo_id)
 
     def test_historial_presupuesto_permite_vincular_trabajador(self):
-        trabajo = TrabajoPresupuesto.objects.create(presupuesto=self.registro_en_proceso.presupuesto)
-        self.registro_en_proceso.trabajo = trabajo
-        self.registro_en_proceso.save(update_fields=['trabajo'])
-
         response = self.client.post(
             reverse('historial_presupuesto', args=[self.registro_en_proceso.id]),
             {
@@ -887,6 +914,9 @@ class ControlPresupuestosViewTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('historial_presupuesto', args=[self.registro_en_proceso.id]))
+        self.registro_en_proceso.refresh_from_db()
+        trabajo = self.registro_en_proceso.trabajo
+        self.assertIsNotNone(trabajo)
         self.assertTrue(
             AsignacionTrabajo.objects.filter(
                 trabajo=trabajo,
@@ -914,8 +944,39 @@ class ControlPresupuestosViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.registro_en_proceso.refresh_from_db()
-        self.assertEqual(self.registro_en_proceso.trabajo_id, trabajo.id)
+        self.assertIsNone(self.registro_en_proceso.trabajo_id)
+        self.assertEqual(response.context['registros'][0].trabajo_id, trabajo.id)
         self.assertEqual(response.context['registros'][0].total_personal_asignado, 1)
+
+    def test_historial_presupuesto_actualiza_asignacion_existente_en_vez_de_duplicarla(self):
+        trabajo = TrabajoPresupuesto.objects.create(presupuesto=self.registro_en_proceso.presupuesto)
+        AsignacionTrabajo.objects.create(
+            trabajo=trabajo,
+            trabajador=self.trabajador,
+            rol='Apoyo inicial',
+            estado='pausado',
+            creado_por=self.usuario,
+        )
+
+        response = self.client.post(
+            reverse('historial_presupuesto', args=[self.registro_en_proceso.id]),
+            {
+                'trabajador': self.trabajador.id,
+                'rol': 'Supervisor en terreno',
+                'estado': 'activo',
+                'fecha_inicio': '2026-03-15',
+                'fecha_fin': '',
+                'horas_estimadas': '16',
+                'horas_reales': '8',
+                'observaciones': 'Se reactiva y lidera la ejecucion',
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(AsignacionTrabajo.objects.filter(trabajo=trabajo, trabajador=self.trabajador).count(), 1)
+        asignacion = AsignacionTrabajo.objects.get(trabajo=trabajo, trabajador=self.trabajador)
+        self.assertEqual(asignacion.rol, 'Supervisor en terreno')
+        self.assertEqual(asignacion.estado, 'activo')
 
     def test_historial_presupuesto_resume_trabajadores_asignados_en_el_encabezado(self):
         trabajo = TrabajoPresupuesto.objects.create(presupuesto='PRES-ACEP')
@@ -1260,7 +1321,7 @@ class TemplateSmokeTests(TestCase):
         self.assertContains(response, f'href="{reverse("listar_documentos")}"')
         self.assertContains(response, 'Operación')
         self.assertContains(response, '>Documentos<')
-        self.assertNotContains(response, 'Nuevo documento')
+        self.assertContains(response, 'Nuevo documento')
 
     def test_layout_muestra_importar_planilla_con_permiso_de_carga(self):
         self.client.logout()

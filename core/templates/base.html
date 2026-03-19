@@ -310,7 +310,7 @@
 <body class="{% block body_class %}{% endblock %}">
     <nav class="navbar navbar-expand-lg app-navbar sticky-top" data-bs-theme="dark">
         <div class="container py-2">
-            <a class="brand-lockup" href="{% if request.user.is_authenticated %}{% if perms.core.view_registropresupuesto %}{% url 'dashboard' %}{% elif perms.core.view_documento %}{% url 'listar_documentos' %}{% elif perms.core.view_cliente %}{% url 'listar_clientes' %}{% elif perms.core.view_personaltrabajo %}{% url 'listar_personal' %}{% elif perms.core.add_cargapresupuesto %}{% url 'subir_presupuesto' %}{% else %}{% url 'login' %}{% endif %}{% else %}{% url 'login' %}{% endif %}">
+            <a class="brand-lockup" href="{% if request.user.is_authenticated %}{% if perms.core.view_registropresupuesto %}{% url 'dashboard' %}{% elif perms.core.view_documento or perms.core.add_documento %}{% url 'listar_documentos' %}{% elif perms.core.view_cliente %}{% url 'listar_clientes' %}{% elif perms.core.view_personaltrabajo %}{% url 'listar_personal' %}{% elif perms.core.add_cargapresupuesto %}{% url 'subir_presupuesto' %}{% else %}{% url 'login' %}{% endif %}{% else %}{% url 'login' %}{% endif %}">
                 <span class="brand-mark">GD</span>
                 <span>
                     <span class="d-block fw-semibold">Gestión Documental</span>
@@ -340,9 +340,9 @@
                                 <a class="nav-link {% if request.resolver_match.url_name == 'listar_personal' or request.resolver_match.url_name == 'crear_personal' or request.resolver_match.url_name == 'editar_personal' or request.resolver_match.url_name == 'eliminar_personal' %}active{% endif %}" href="{% url 'listar_personal' %}">Personal</a>
                             </li>
                         {% endif %}
-                        {% if perms.core.view_registropresupuesto or perms.core.view_documento or perms.core.add_cargapresupuesto %}
+                        {% if perms.core.view_registropresupuesto or perms.core.view_documento or perms.core.add_documento or perms.core.add_cargapresupuesto %}
                         <li class="nav-item dropdown">
-                            <button class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'listar_presupuestos_gestion' or request.resolver_match.url_name == 'listar_presupuestos' or request.resolver_match.url_name == 'listar_cobranzas' or request.resolver_match.url_name == 'subir_presupuesto' or request.resolver_match.url_name == 'crear_presupuesto' or request.resolver_match.url_name == 'editar_presupuesto' or request.resolver_match.url_name == 'historial_presupuesto' or request.resolver_match.url_name == 'eliminar_presupuesto' or request.resolver_match.url_name == 'listar_documentos' or request.resolver_match.url_name == 'historial_versiones' or request.resolver_match.url_name == 'editar_documento' or request.resolver_match.url_name == 'eliminar_documento' or request.resolver_match.url_name == 'subir_documento' or request.resolver_match.url_name == 'subir_version' %}active{% endif %}" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <button class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'listar_presupuestos_gestion' or request.resolver_match.url_name == 'listar_presupuestos' or request.resolver_match.url_name == 'listar_cobranzas' or request.resolver_match.url_name == 'subir_presupuesto' or request.resolver_match.url_name == 'crear_presupuesto' or request.resolver_match.url_name == 'editar_presupuesto' or request.resolver_match.url_name == 'historial_presupuesto' or request.resolver_match.url_name == 'eliminar_presupuesto' or request.resolver_match.url_name == 'listar_documentos' or request.resolver_match.url_name == 'crear_documento' or request.resolver_match.url_name == 'historial_versiones' or request.resolver_match.url_name == 'editar_documento' or request.resolver_match.url_name == 'eliminar_documento' or request.resolver_match.url_name == 'subir_documento' or request.resolver_match.url_name == 'subir_version' %}active{% endif %}" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 Operación
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
@@ -374,9 +374,9 @@
                                         </a>
                                     </li>
                                 {% endif %}
-                                {% if perms.core.view_documento %}
+                                {% if perms.core.view_documento or perms.core.add_documento %}
                                     <li>
-                                        <a class="dropdown-item {% if request.resolver_match.url_name == 'listar_documentos' or request.resolver_match.url_name == 'historial_versiones' or request.resolver_match.url_name == 'editar_documento' or request.resolver_match.url_name == 'eliminar_documento' or request.resolver_match.url_name == 'subir_documento' or request.resolver_match.url_name == 'subir_version' %}active{% endif %}" href="{% url 'listar_documentos' %}">
+                                        <a class="dropdown-item {% if request.resolver_match.url_name == 'listar_documentos' or request.resolver_match.url_name == 'crear_documento' or request.resolver_match.url_name == 'historial_versiones' or request.resolver_match.url_name == 'editar_documento' or request.resolver_match.url_name == 'eliminar_documento' or request.resolver_match.url_name == 'subir_documento' or request.resolver_match.url_name == 'subir_version' %}active{% endif %}" href="{% url 'listar_documentos' %}">
                                             Documentos
                                             <span class="menu-note">Repositorio, versiones y descargas</span>
                                         </a>

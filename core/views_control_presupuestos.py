@@ -32,56 +32,51 @@ from .services.cobranzas import (
 )
 
 
-def asegurar_trabajos_presupuesto(presupuestos):
+def obtener_trabajos_presupuesto(presupuestos):
     codigos = sorted({(presupuesto or '').strip() for presupuesto in presupuestos if (presupuesto or '').strip()})
     if not codigos:
         return {}
 
-    existentes = {
+    return {
         trabajo.presupuesto: trabajo
-        for trabajo in TrabajoPresupuesto.objects.filter(presupuesto__in=codigos)
+        for trabajo in TrabajoPresupuesto.objects.filter(presupuesto__in=codigos).prefetch_related(
+            'asignaciones',
+            'asignaciones__trabajador',
+        )
     }
-    faltantes = [
-        TrabajoPresupuesto(presupuesto=presupuesto)
-        for presupuesto in codigos
-        if presupuesto not in existentes
-    ]
-    if faltantes:
-        TrabajoPresupuesto.objects.bulk_create(faltantes, ignore_conflicts=True)
-        existentes = {
-            trabajo.presupuesto: trabajo
-            for trabajo in TrabajoPresupuesto.objects.filter(presupuesto__in=codigos)
-        }
-    return existentes
 
 
-def asegurar_trabajo_en_registro(registro):
-    trabajo = asegurar_trabajos_presupuesto([registro.presupuesto]).get((registro.presupuesto or '').strip())
+def vincular_trabajo_existente_en_registro(registro):
+    trabajo = obtener_trabajos_presupuesto([registro.presupuesto]).get((registro.presupuesto or '').strip())
     registro.trabajo = trabajo
     return trabajo
 
 
-def asegurar_trabajos_en_registros(registros):
+def vincular_trabajos_existentes_en_registros(registros):
     registros = list(registros)
-    faltantes = [
-        registro
-        for registro in registros
-        if not registro.trabajo_id and (registro.presupuesto or '').strip()
-    ]
-    if not faltantes:
+    pendientes = [registro for registro in registros if not registro.trabajo_id and (registro.presupuesto or '').strip()]
+    if not pendientes:
         return registros
 
-    trabajos = asegurar_trabajos_presupuesto([registro.presupuesto for registro in faltantes])
-    actualizables = []
-    for registro in faltantes:
+    trabajos = obtener_trabajos_presupuesto([registro.presupuesto for registro in pendientes])
+    for registro in pendientes:
         trabajo = trabajos.get((registro.presupuesto or '').strip())
         if trabajo:
             registro.trabajo = trabajo
-            actualizables.append(registro)
-
-    if actualizables:
-        RegistroPresupuesto.objects.bulk_update(actualizables, ['trabajo'])
     return registros
+
+
+def materializar_trabajo_en_registro(registro):
+    codigo = (registro.presupuesto or '').strip()
+    if not codigo:
+        registro.trabajo = None
+        return None
+
+    trabajo, _ = TrabajoPresupuesto.objects.get_or_create(presupuesto=codigo)
+    registro.trabajo = trabajo
+    if registro.pk and not RegistroPresupuesto.objects.filter(pk=registro.pk, trabajo=trabajo).exists():
+        RegistroPresupuesto.objects.filter(pk=registro.pk).update(trabajo=trabajo)
+    return trabajo
 
 
 def filtrar_cobranzas_queryset(params, queryset=None):
@@ -261,7 +256,7 @@ def listar_presupuestos_gestion(request):
 
     registros = registros.order_by('-carga__fecha_carga', 'presupuesto')
     total_filtrados = registros.count()
-    registros = asegurar_trabajos_en_registros(registros[:60])
+    registros = vincular_trabajos_existentes_en_registros(registros[:60])
 
     return render(request, 'listar_presupuestos_gestion.html', {
         'registros': registros,
@@ -386,7 +381,7 @@ def listar_presupuestos(request):
     total_filtrados = registros.count()
     paginator = Paginator(registros, 20)
     page_obj = paginator.get_page(request.GET.get('page'))
-    page_obj.object_list = asegurar_trabajos_en_registros(page_obj.object_list)
+    page_obj.object_list = vincular_trabajos_existentes_en_registros(page_obj.object_list)
 
     return render(request, 'listar_presupuestos.html', {
         'registros': page_obj.object_list,
@@ -417,7 +412,7 @@ def crear_presupuesto(request):
         if form.is_valid():
             with transaction.atomic():
                 registro = form.save(commit=False)
-                asegurar_trabajo_en_registro(registro)
+                vincular_trabajo_existente_en_registro(registro)
                 registro.carga = CargaPresupuesto.objects.create(
                     nombre=f"Registro manual - {form.cleaned_data['presupuesto']}",
                     hoja='Manual',
@@ -466,15 +461,15 @@ def subir_presupuesto(request):
             else:
                 nombre = form.cleaned_data['nombre'].strip() if form.cleaned_data['nombre'] else archivo.name
                 archivo.seek(0)
-                trabajos = asegurar_trabajos_presupuesto([registro.presupuesto for registro in resultado.registros])
+                trabajos = obtener_trabajos_presupuesto([registro.presupuesto for registro in resultado.registros])
 
                 with transaction.atomic():
                     carga = CargaPresupuesto.objects.create(
                         nombre=nombre,
-                        archivo=archivo,
-                        hoja=resultado.hoja,
-                        total_registros=len(resultado.registros),
-                        creado_por=request.user,
+                            archivo=archivo,
+                            hoja=resultado.hoja,
+                            total_registros=len(resultado.registros),
+                            creado_por=request.user,
                     )
 
                     RegistroPresupuesto.objects.bulk_create([
@@ -532,15 +527,15 @@ def historial_presupuesto(request, registro_id):
         id=registro_id,
     )
     if not registro.trabajo_id:
-        asegurar_trabajo_en_registro(registro)
-        registro.save(update_fields=['trabajo'])
+        vincular_trabajo_existente_en_registro(registro)
 
     historial = RegistroPresupuesto.objects.select_related('carga', 'carga__creado_por', 'cliente').prefetch_related('documentos').filter(
         presupuesto=registro.presupuesto
     ).order_by('-carga__fecha_carga', '-id')
 
+    trabajo = registro.trabajo
     asignaciones = AsignacionTrabajo.objects.select_related('trabajador', 'creado_por').filter(
-        trabajo=registro.trabajo
+        trabajo=trabajo
     )
 
     if request.method == 'POST':
@@ -548,18 +543,38 @@ def historial_presupuesto(request, registro_id):
             raise PermissionDenied
         asignacion_form = AsignacionTrabajoForm(request.POST)
         if asignacion_form.is_valid():
-            asignacion = asignacion_form.save(commit=False)
-            asignacion.trabajo = registro.trabajo
-            asignacion.creado_por = request.user
-            asignacion.save()
+            trabajo = materializar_trabajo_en_registro(registro)
+            asignacion, creada = AsignacionTrabajo.objects.update_or_create(
+                trabajo=trabajo,
+                trabajador=asignacion_form.cleaned_data['trabajador'],
+                defaults={
+                    'rol': asignacion_form.cleaned_data['rol'],
+                    'estado': asignacion_form.cleaned_data['estado'],
+                    'fecha_inicio': asignacion_form.cleaned_data['fecha_inicio'],
+                    'fecha_fin': asignacion_form.cleaned_data['fecha_fin'],
+                    'horas_estimadas': asignacion_form.cleaned_data['horas_estimadas'],
+                    'horas_reales': asignacion_form.cleaned_data['horas_reales'],
+                    'observaciones': asignacion_form.cleaned_data['observaciones'],
+                    'creado_por': request.user,
+                },
+            )
             registrar_auditoria(
                 request,
-                accion='Asignacion de personal',
+                accion='Asignacion de personal' if creada else 'Actualizacion de asignacion de personal',
                 entidad='TrabajoPresupuesto',
-                entidad_id=registro.trabajo.id,
-                detalle=f'Se asigno {asignacion.trabajador.nombre} al trabajo {registro.presupuesto}',
+                entidad_id=trabajo.id,
+                detalle=(
+                    f'Se asigno {asignacion.trabajador.nombre} al trabajo {registro.presupuesto}'
+                    if creada
+                    else f'Se actualizo la asignacion de {asignacion.trabajador.nombre} en el trabajo {registro.presupuesto}'
+                ),
             )
-            messages.success(request, 'El trabajador fue vinculado correctamente a este trabajo.')
+            messages.success(
+                request,
+                'El trabajador fue vinculado correctamente a este trabajo.'
+                if creada
+                else 'La asignacion existente del trabajador fue actualizada correctamente.',
+            )
             return redirect('historial_presupuesto', registro_id=registro.id)
     else:
         asignacion_form = AsignacionTrabajoForm()
@@ -585,7 +600,7 @@ def editar_presupuesto(request, registro_id):
         form = RegistroPresupuestoForm(request.POST, instance=registro)
         if form.is_valid():
             registro = form.save(commit=False)
-            asegurar_trabajo_en_registro(registro)
+            vincular_trabajo_existente_en_registro(registro)
             registro.actualizado_por = request.user
             registro.fecha_actualizacion = now()
             registro.save()

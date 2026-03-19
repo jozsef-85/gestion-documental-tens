@@ -2,7 +2,7 @@ import os
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
@@ -11,6 +11,7 @@ from django.urls import reverse
 from .forms import DocumentoForm, VersionDocumentoForm
 from .models import Departamento, Documento, RegistroPresupuesto, TipoDocumento, VersionDocumento
 from .services.access import (
+    any_permission_required,
     filtrar_documentos_por_confidencialidad,
     model_access_required,
     validar_acceso_documento,
@@ -25,11 +26,31 @@ def _url_documentos_contextual(registro_relacionado=None):
     return destino
 
 
+def _url_crear_documento_contextual(registro_relacionado=None):
+    destino = reverse('crear_documento')
+    if registro_relacionado:
+        return f'{destino}?registro_id={registro_relacionado.id}'
+    return destino
+
+
 @login_required
-@model_access_required('core', 'documento')
+@any_permission_required(
+    'core.view_documento',
+    'core.add_documento',
+    'core.change_documento',
+    'core.delete_documento',
+    'core.add_versiondocumento',
+)
 def listar_documentos(request):
+    puede_ver_documentos = (
+        request.user.is_superuser
+        or request.user.has_perm('core.view_documento')
+        or request.user.has_perm('core.change_documento')
+        or request.user.has_perm('core.delete_documento')
+        or request.user.has_perm('core.add_versiondocumento')
+    )
     docs = Documento.objects.exclude(estado='eliminado').prefetch_related('presupuestos')
-    docs = filtrar_documentos_por_confidencialidad(docs, request.user)
+    docs = filtrar_documentos_por_confidencialidad(docs, request.user) if puede_ver_documentos else Documento.objects.none()
 
     q = request.GET.get('q', '').strip()
     tipo = request.GET.get('tipo', '').strip()
@@ -78,6 +99,48 @@ def listar_documentos(request):
 
 @login_required
 @permission_required('core.add_documento', raise_exception=True)
+def crear_documento(request):
+    registro_id = request.GET.get('registro_id', '').strip()
+    registro_relacionado = None
+    if registro_id.isdigit():
+        registro_relacionado = RegistroPresupuesto.objects.select_related('cliente').filter(id=int(registro_id)).first()
+
+    if request.method == 'POST':
+        form = DocumentoForm(request.POST, request.FILES)
+        if form.is_valid():
+            documento = form.save(commit=False)
+            documento.creado_por = request.user
+            documento.save()
+            form.save_m2m()
+            if registro_relacionado and not documento.presupuestos.exists():
+                documento.presupuestos.add(registro_relacionado)
+            registrar_auditoria(
+                request,
+                accion='Creacion de documento',
+                entidad='Documento',
+                entidad_id=documento.id,
+                detalle=f'Documento creado: {documento.titulo}',
+            )
+            messages.success(request, 'El documento fue creado correctamente.')
+            return redirect(_url_documentos_contextual(registro_relacionado))
+    else:
+        form = DocumentoForm(
+            initial={
+                'presupuestos': [registro_relacionado.id] if registro_relacionado else [],
+            },
+        )
+
+    return render(request, 'subir_documento.html', {
+        'form': form,
+        'registro_relacionado': registro_relacionado,
+        'es_edicion': False,
+        'cancelar_url': 'listar_documentos',
+        'cancelar_label': 'Volver al repositorio',
+    })
+
+
+@login_required
+@permission_required('core.add_documento', raise_exception=True)
 def subir_documento(request):
     registro_id = request.GET.get('registro_id', '').strip()
     registro_relacionado = None
@@ -86,9 +149,9 @@ def subir_documento(request):
 
     messages.info(
         request,
-        'La carga directa de documentos se gestiona ahora desde el módulo Documentos.'
+        'La carga de documentos se gestiona ahora dentro del módulo Documentos.'
     )
-    return redirect(_url_documentos_contextual(registro_relacionado))
+    return redirect(_url_crear_documento_contextual(registro_relacionado))
 
 
 @login_required
@@ -170,29 +233,32 @@ def subir_version(request, documento_id):
     if request.method == 'POST':
         form = VersionDocumentoForm(request.POST, request.FILES, documento=documento)
         if form.is_valid():
-            with transaction.atomic():
-                version = VersionDocumento.objects.create(
-                    documento=documento,
-                    numero_version=form.cleaned_data['numero_version'],
-                    archivo=form.cleaned_data['archivo'],
-                    comentario=form.cleaned_data['comentario'],
-                    subido_por=request.user,
+            try:
+                with transaction.atomic():
+                    version = VersionDocumento.objects.create(
+                        documento=documento,
+                        numero_version=form.cleaned_data['numero_version'],
+                        archivo=form.cleaned_data['archivo'],
+                        comentario=form.cleaned_data['comentario'],
+                        subido_por=request.user,
+                    )
+
+                    documento.archivo_actual = version.archivo
+                    documento.version_actual = version.numero_version
+                    documento.save(update_fields=['archivo_actual', 'version_actual'])
+            except IntegrityError:
+                form.add_error('numero_version', 'Ya existe una versión registrada con ese número.')
+            else:
+                registrar_auditoria(
+                    request,
+                    accion='Nueva versión',
+                    entidad='Documento',
+                    entidad_id=documento.id,
+                    detalle=f'Nueva versión {form.cleaned_data["numero_version"]} del documento {documento.titulo}',
                 )
 
-                documento.archivo_actual = version.archivo
-                documento.version_actual = version.numero_version
-                documento.save(update_fields=['archivo_actual', 'version_actual'])
-
-            registrar_auditoria(
-                request,
-                accion='Nueva versión',
-                entidad='Documento',
-                entidad_id=documento.id,
-                detalle=f'Nueva versión {form.cleaned_data["numero_version"]} del documento {documento.titulo}',
-            )
-
-            messages.success(request, 'La nueva versión fue registrada correctamente.')
-            return redirect('listar_documentos')
+                messages.success(request, 'La nueva versión fue registrada correctamente.')
+                return redirect('listar_documentos')
     else:
         form = VersionDocumentoForm()
 

@@ -82,6 +82,9 @@
                 <div class="footer-note" id="documentos-listado-ayuda" aria-live="polite">Esta pantalla funciona como consulta. Usa los filtros para cargar resultados y continuar la gestión documental desde aquí.</div>
             {% endif %}
         </div>
+        {% if perms.core.add_documento %}
+            <a href="{% url 'crear_documento' %}" class="btn btn-brand rounded-pill px-4">Nuevo documento</a>
+        {% endif %}
     </div>
 
     {% if consulta_activa %}
