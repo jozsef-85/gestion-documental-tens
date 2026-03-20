@@ -82,5 +82,20 @@ Este manual está pensado para usuarios finales que trabajan con clientes, perso
 ## 6. Roles
 
 - `Administrador`: acceso total y administración general.
-- `Editor`: operación diaria con permisos de trabajo.
+- `Editor`: operación diaria con permisos de trabajo. Puede consultar clientes, personal, seguimiento y documentos, además de actualizar seguimiento y asignar trabajadores a presupuestos aceptados.
 - `Lector`: consulta de información sin edición operativa.
+
+## 7. Versión rápida para presentación
+
+Si necesitas explicar la aplicación en pocos minutos, usa este orden:
+
+1. `Clientes`
+2. `Personal`
+3. `Operación > Presupuestos`
+4. `Operación > Seguimiento`
+5. `Historial del presupuesto`
+6. `Documentos`
+
+Caso sugerido para demo:
+
+- `PRES-2026-002`: presupuesto aceptado, con trabajo activo y personal asignado.

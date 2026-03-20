@@ -4,6 +4,32 @@
 
 {% block extra_head %}
 <style>
+    @media print {
+        .app-navbar,
+        .help-actions,
+        .footer-note.print-hide {
+            display: none !important;
+        }
+
+        body {
+            background: #fff;
+        }
+
+        main.container {
+            max-width: 100%;
+            padding: 0;
+        }
+
+        .hero-panel,
+        .surface-card,
+        .help-card,
+        .document-card {
+            box-shadow: none !important;
+            border: 1px solid #d9e3eb !important;
+            break-inside: avoid;
+        }
+    }
+
     .help-grid {
         display: grid;
         gap: 1.5rem;
@@ -62,6 +88,19 @@
 </section>
 
 <section class="help-grid">
+    <div class="surface-card p-4 help-actions">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <div class="fw-semibold">Versión lista para imprimir</div>
+                <div class="footer-note print-hide">Puedes usar esta misma pantalla como manual rápido durante capacitación o presentación.</div>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <button type="button" class="btn btn-brand rounded-pill px-4" onclick="window.print()">Imprimir manual</button>
+                <a href="{% url 'dashboard' %}" class="btn btn-soft rounded-pill px-4">Volver al inicio</a>
+            </div>
+        </div>
+    </div>
+
     <div class="surface-card p-4 p-lg-5">
         <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
             <div>
@@ -176,6 +215,31 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="surface-card p-4 p-lg-5">
+        <h2 class="section-title mb-4">Qué puede hacer el perfil Editor</h2>
+        <div class="row g-3">
+            <div class="col-12 col-md-6 col-xl-4">
+                <div class="document-card p-4 h-100">
+                    <div class="fw-semibold mb-2">Consultar módulos clave</div>
+                    <div class="footer-note">Puede ver clientes, personal, seguimiento y documentos para trabajar la operación diaria.</div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-xl-4">
+                <div class="document-card p-4 h-100">
+                    <div class="fw-semibold mb-2">Gestionar presupuestos aceptados</div>
+                    <div class="footer-note">Puede entrar a seguimiento, revisar historial y actualizar el trabajo en curso.</div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-xl-4">
+                <div class="document-card p-4 h-100">
+                    <div class="fw-semibold mb-2">Asignar trabajadores</div>
+                    <div class="footer-note">Puede vincular personal al presupuesto aceptado cuando el trabajo pasa a etapa operativa.</div>
+                </div>
+            </div>
+        </div>
+        <div class="footer-note mt-4">El perfil Editor no reemplaza al administrador: opera el día a día, pero no tiene control total del sistema ni acceso administrativo global.</div>
     </div>
 </section>
 {% endblock %}
