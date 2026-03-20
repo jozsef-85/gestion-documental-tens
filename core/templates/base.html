@@ -115,6 +115,16 @@
             color: var(--brand-muted);
         }
 
+        .app-navbar-account {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .app-navbar-meta {
+            min-width: 0;
+        }
+
         .surface-card {
             background: rgba(255, 255, 255, 0.94);
             border: 1px solid rgba(215, 226, 234, 0.9);
@@ -296,8 +306,69 @@
         }
 
         @media (max-width: 991.98px) {
+            .app-navbar .container {
+                row-gap: 0.75rem;
+            }
+
+            .brand-lockup {
+                max-width: calc(100% - 4rem);
+            }
+
+            .brand-lockup > span:last-child {
+                min-width: 0;
+            }
+
+            .brand-lockup .fw-semibold,
+            .brand-lockup .small {
+                overflow-wrap: anywhere;
+                word-break: break-word;
+            }
+
             .app-navbar .navbar-collapse {
                 padding-top: 1rem;
+                width: 100%;
+            }
+
+            .app-navbar .nav {
+                width: 100%;
+                gap: 0.55rem !important;
+            }
+
+            .app-navbar .nav-item,
+            .app-navbar .nav-link,
+            .app-navbar .dropdown {
+                width: 100%;
+            }
+
+            .nav-pills .nav-link {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
+                padding: 0.85rem 1rem;
+                text-align: left;
+            }
+
+            .nav-pills .dropdown-menu {
+                position: static !important;
+                width: 100%;
+                min-width: 0;
+                margin-top: 0.5rem;
+            }
+
+            .app-navbar-account {
+                width: 100%;
+                padding-top: 1rem;
+                border-top: 1px solid rgba(255, 255, 255, 0.12);
+            }
+
+            .app-navbar-meta {
+                width: 100%;
+            }
+
+            .app-navbar-account .btn {
+                width: 100%;
+                justify-content: center;
             }
 
             .hero-panel,
@@ -391,13 +462,13 @@
                         </li>
                     </ul>
 
-	                    <div class="d-flex flex-column flex-lg-row align-items-lg-center gap-3 mt-3 mt-lg-0">
+                    <div class="app-navbar-account flex-column flex-lg-row align-items-lg-center gap-3 mt-3 mt-lg-0">
 	                        {% if request.user.is_superuser %}
 	                            <a href="/admin/" class="btn btn-soft rounded-pill px-3 {% if request.path|slice:':7' == '/admin/' %}active{% endif %}">
 	                                Administración
 	                            </a>
 	                        {% endif %}
-                        <div class="text-white-50 small">
+                        <div class="app-navbar-meta text-white-50 small">
                             <div class="fw-semibold text-white">{{ request.user.username }}</div>
                             <div>{{ request.user|role_label }}</div>
                         </div>

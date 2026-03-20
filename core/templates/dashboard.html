@@ -93,6 +93,10 @@
             text-align: right;
         }
 
+        .dashboard-table .dashboard-mobile-label {
+            display: none;
+        }
+
         .table-ref {
             font-weight: 700;
             color: var(--brand-text);
@@ -124,6 +128,88 @@
         .alert-link:hover,
         .alert-link:focus {
             color: var(--brand-navy);
+        }
+
+        @media (max-width: 991.98px) {
+            .executive-shell {
+                gap: 1rem;
+            }
+
+            .hero-panel .page-title {
+                font-size: clamp(1.65rem, 7vw, 2.1rem);
+            }
+
+            .hero-panel .fs-5 {
+                font-size: 1rem !important;
+            }
+
+            .hero-panel .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .status-badge {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+                text-align: center;
+            }
+
+            .executive-card .row > .col-4 .fw-semibold {
+                overflow-wrap: anywhere;
+                word-break: break-word;
+            }
+
+            .dashboard-table {
+                min-width: 0;
+            }
+
+            .dashboard-table thead {
+                display: none;
+            }
+
+            .dashboard-table,
+            .dashboard-table tbody,
+            .dashboard-table tr,
+            .dashboard-table td,
+            .dashboard-table th {
+                display: block;
+                width: 100%;
+            }
+
+            .dashboard-table tbody tr {
+                padding: 1rem;
+                border: 1px solid #e2ebf1;
+                border-radius: 1rem;
+                background: linear-gradient(180deg, #ffffff, #f8fbfd);
+            }
+
+            .dashboard-table tbody tr + tr {
+                margin-top: 0.9rem;
+            }
+
+            .dashboard-table td,
+            .dashboard-table th {
+                padding: 0.4rem 0;
+                border-bottom: 0;
+                text-align: left !important;
+            }
+
+            .dashboard-table .dashboard-mobile-label {
+                display: block;
+                margin-bottom: 0.2rem;
+                color: var(--brand-muted);
+                font-size: 0.75rem;
+                font-weight: 700;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+            }
+
+            .alert-item .d-flex,
+            .mini-list .d-flex {
+                flex-direction: column;
+                align-items: flex-start !important;
+            }
         }
     </style>
 {% endblock %}
@@ -239,7 +325,7 @@
                     </div>
 
                     <div class="table-responsive">
-                        <table class="table table-clean align-middle mb-0" aria-describedby="dashboard-seguimiento-ayuda">
+                        <table class="table table-clean dashboard-table align-middle mb-0" aria-describedby="dashboard-seguimiento-ayuda">
                             <caption class="visually-hidden">Presupuestos en curso con nota de pedido, estado, facturación y monto por cobrar.</caption>
                             <thead>
                                 <tr>
@@ -254,18 +340,24 @@
                                 {% for registro in dashboard_registros %}
                                     <tr>
                                         <td>
+                                            <span class="dashboard-mobile-label">N° de presupuesto</span>
                                             <a href="{% url 'historial_presupuesto' registro.id %}" class="table-ref">
                                                 {{ registro.presupuesto }}
                                             </a>
                                         </td>
-                                        <td>{{ registro.nota_pedido|default:"Sin nota de pedido" }}</td>
                                         <td>
+                                            <span class="dashboard-mobile-label">Nota de pedido</span>
+                                            {{ registro.nota_pedido|default:"Sin nota de pedido" }}
+                                        </td>
+                                        <td>
+                                            <span class="dashboard-mobile-label">Estado del trabajo</span>
                                             <span class="status-badge">
                                                 <span class="status-dot {% if registro.estado_seguimiento_codigo == 'en_proceso' %}status-curso{% elif registro.estado_seguimiento_codigo == 'pagado' %}status-pagado{% elif registro.estado_seguimiento_codigo == 'facturado' %}status-realizado{% else %}status-espera{% endif %}"></span>
                                                 {{ registro.estado_seguimiento }}
                                             </span>
                                         </td>
                                         <td>
+                                            <span class="dashboard-mobile-label">Fecha de facturación</span>
                                             {% if registro.fecha_facturacion_texto %}
                                                 {{ registro.fecha_facturacion_texto }}
                                             {% elif registro.fecha_facturacion %}
@@ -275,6 +367,7 @@
                                             {% endif %}
                                         </td>
                                         <td>
+                                            <span class="dashboard-mobile-label">Por cobrar</span>
                                             {% if registro.estado_seguimiento_codigo != 'pagado' and registro.estado_seguimiento_codigo != 'pendiente' %}
                                                 {{ registro.monto|clp }}
                                             {% else %}
