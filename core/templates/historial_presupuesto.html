@@ -69,6 +69,9 @@
         {% if perms.core.change_registropresupuesto %}
             <a href="{% url 'editar_presupuesto' registro.id %}" class="btn btn-brand rounded-pill px-4">Editar</a>
         {% endif %}
+        {% if perms.core.add_asignaciontrabajo %}
+            <a href="#vincular-trabajador" class="btn btn-soft rounded-pill px-4">Agregar trabajador</a>
+        {% endif %}
         {% if perms.core.view_documento %}
             <a href="{% url 'listar_documentos' %}?presupuesto={{ registro.presupuesto|urlencode }}" class="btn btn-soft rounded-pill px-4">Documentos del trabajo</a>
         {% endif %}
@@ -143,7 +146,7 @@
     </div>
 
     <div class="col-12 col-xl-5">
-        <div class="surface-card p-4 p-lg-5 h-100">
+        <div class="surface-card p-4 p-lg-5 h-100" id="vincular-trabajador">
             <h2 class="section-title mb-2">Vincular trabajador</h2>
             <p class="footer-note mb-4">Usa este formulario cuando una persona participe en una obra, visita tecnica, mantencion o montaje asociado a este presupuesto.</p>
 

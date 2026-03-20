@@ -1,3 +1,4 @@
+{% load user_roles %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -393,10 +394,10 @@
 	                                Administración
 	                            </a>
 	                        {% endif %}
-	                        <div class="text-white-50 small">
-	                            <div class="fw-semibold text-white">{{ request.user.username }}</div>
-	                            <div>Sesión activa</div>
-	                        </div>
+                        <div class="text-white-50 small">
+                            <div class="fw-semibold text-white">{{ request.user.username }}</div>
+                            <div>{{ request.user|role_label }}</div>
+                        </div>
                         <form action="{% url 'logout' %}" method="post" class="mb-0">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-outline-light rounded-pill px-3">Salir</button>

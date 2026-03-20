@@ -116,17 +116,17 @@ def eliminar_cliente(request, cliente_id):
         # presupuestos, cobranzas o historial comercial ya registrado.
         cliente.activo = False
         cliente.save(update_fields=['activo'])
-        registrar_auditoria(request, 'Desactivacion de cliente', 'Cliente', cliente_id, f'Cliente desactivado: {cliente.nombre}')
-        messages.success(request, 'El cliente fue desactivado y su historial se mantuvo intacto.')
+        registrar_auditoria(request, 'Eliminacion logica de cliente', 'Cliente', cliente_id, f'Cliente marcado como eliminado: {cliente.nombre}')
+        messages.success(request, 'El cliente fue eliminado del listado activo y su historial se mantuvo intacto.')
         return redirect('listar_clientes')
 
     return render(request, 'confirmar_eliminacion.html', {
         'objeto': cliente,
-        'titulo': 'Desactivar cliente',
-        'descripcion': 'El cliente dejara de aparecer como activo, pero se conservara su historial comercial y sus presupuestos relacionados.',
+        'titulo': 'Eliminar cliente',
+        'descripcion': 'El cliente no se borrara de la base de datos. Solo dejara de aparecer como activo y conservara su historial comercial y sus presupuestos relacionados.',
         'etiqueta_principal': cliente.nombre,
         'etiqueta_secundaria': cliente.rut or 'Sin RUT registrado',
-        'confirmar_texto': 'Desactivar cliente',
+        'confirmar_texto': 'Eliminar cliente',
         'cancelar_url': 'listar_clientes',
     })
 
@@ -254,16 +254,16 @@ def eliminar_personal(request, personal_id):
         # trazabilidad de asignaciones previas en trabajos ya ejecutados.
         personal.activo = False
         personal.save(update_fields=['activo'])
-        registrar_auditoria(request, 'Desactivacion de personal', 'PersonalTrabajo', personal_id, f'Personal desactivado: {personal.nombre}')
-        messages.success(request, 'El registro de personal fue desactivado y se conservaron sus asignaciones historicas.')
+        registrar_auditoria(request, 'Eliminacion logica de personal', 'PersonalTrabajo', personal_id, f'Personal marcado como eliminado: {personal.nombre}')
+        messages.success(request, 'El registro de personal fue eliminado del listado activo y se conservaron sus asignaciones historicas.')
         return redirect('listar_personal')
 
     return render(request, 'confirmar_eliminacion.html', {
         'objeto': personal,
-        'titulo': 'Desactivar personal',
-        'descripcion': 'La persona dejara de figurar como activa, pero se conservara su historial documental y sus asignaciones previas.',
+        'titulo': 'Eliminar personal',
+        'descripcion': 'La persona no se borrara de la base de datos. Solo dejara de figurar como activa y se conservara su historial documental y sus asignaciones previas.',
         'etiqueta_principal': personal.nombre,
         'etiqueta_secundaria': f'{personal.run or "Sin RUN"} · {personal.cargo} · {personal.area or "Sin area"}',
-        'confirmar_texto': 'Desactivar personal',
+        'confirmar_texto': 'Eliminar personal',
         'cancelar_url': 'listar_personal',
     })

@@ -404,6 +404,9 @@
                         <td>
                             <div class="record-actions">
                             <a href="{% url 'historial_presupuesto' registro.id %}" class="btn btn-soft btn-sm rounded-pill" aria-label="Ver historial del presupuesto {{ registro.presupuesto }}">Historial</a>
+                            {% if perms.core.add_asignaciontrabajo %}
+                                <a href="{% url 'historial_presupuesto' registro.id %}#vincular-trabajador" class="btn btn-brand btn-sm rounded-pill" aria-label="Agregar trabajador al presupuesto {{ registro.presupuesto }}">Agregar trabajador</a>
+                            {% endif %}
                             {% if perms.core.change_registropresupuesto %}
                                 <a href="{% url 'editar_presupuesto' registro.id %}" class="btn btn-soft btn-sm rounded-pill" aria-label="Editar presupuesto {{ registro.presupuesto }}">Editar</a>
                             {% endif %}

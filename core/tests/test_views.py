@@ -1,7 +1,7 @@
 import tempfile
 from unittest.mock import patch
 
-from django.contrib.auth.models import Permission, User
+from django.contrib.auth.models import Group, Permission, User
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError
@@ -964,6 +964,16 @@ class ControlPresupuestosViewTests(TestCase):
         self.assertEqual(response.context['registros'][0].trabajo_id, trabajo.id)
         self.assertEqual(response.context['registros'][0].total_personal_asignado, 1)
 
+    def test_listar_presupuestos_muestra_atajo_para_agregar_trabajador(self):
+        response = self.client.get(reverse('listar_presupuestos'), {'q': 'PRES-ACEP'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Agregar trabajador')
+        self.assertContains(
+            response,
+            f'{reverse("historial_presupuesto", args=[self.registro_en_proceso.id])}#vincular-trabajador',
+        )
+
     def test_historial_presupuesto_actualiza_asignacion_existente_en_vez_de_duplicarla(self):
         trabajo = TrabajoPresupuesto.objects.create(presupuesto=self.registro_en_proceso.presupuesto)
         AsignacionTrabajo.objects.create(
@@ -1220,6 +1230,15 @@ class MaestrosSoftDeleteTests(TestCase):
         self.assertFalse(cliente.activo)
         self.assertEqual(registro.cliente_id, cliente.id)
 
+    def test_confirmacion_eliminar_cliente_explica_borrado_logico(self):
+        cliente = Cliente.objects.create(nombre='Cliente visible', activo=True)
+
+        response = self.client.get(reverse('eliminar_cliente', args=[cliente.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Eliminar cliente')
+        self.assertContains(response, 'no se borrara de la base de datos')
+
     def test_eliminar_personal_lo_desactiva_y_preserva_asignaciones(self):
         personal = PersonalTrabajo.objects.create(nombre='Luis Perez', cargo='Tecnico', activo=True)
         trabajo = TrabajoPresupuesto.objects.create(presupuesto='PRES-OPER')
@@ -1238,6 +1257,15 @@ class MaestrosSoftDeleteTests(TestCase):
         asignacion.refresh_from_db()
         self.assertFalse(personal.activo)
         self.assertEqual(asignacion.trabajador_id, personal.id)
+
+    def test_confirmacion_eliminar_personal_explica_borrado_logico(self):
+        personal = PersonalTrabajo.objects.create(nombre='Luis Perez', cargo='Tecnico', activo=True)
+
+        response = self.client.get(reverse('eliminar_personal', args=[personal.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Eliminar personal')
+        self.assertContains(response, 'no se borrara de la base de datos')
 
 
 class TemplateSmokeTests(TestCase):
@@ -1318,6 +1346,21 @@ class TemplateSmokeTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'href="/documentos/"')
         self.assertContains(response, 'Documentos')
+
+    def test_layout_muestra_rol_del_usuario_en_lugar_de_sesion_activa(self):
+        self.client.logout()
+        usuario = User.objects.create_user(username='editor_layout', password='secreta123')
+        grupo = Group.objects.create(name='Editores')
+        usuario.groups.add(grupo)
+        permiso = Permission.objects.get(codename='view_documento')
+        usuario.user_permissions.add(permiso)
+        self.client.force_login(usuario)
+
+        response = self.client.get(reverse('listar_documentos'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Editor')
+        self.assertNotContains(response, 'Sesión activa')
         self.assertNotContains(response, '>Inicio<')
         self.assertNotContains(response, '>Clientes<')
         self.assertNotContains(response, '>Personal<')
