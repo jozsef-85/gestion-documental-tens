@@ -42,6 +42,8 @@ def _url_crear_documento_contextual(registro_relacionado=None):
     'core.add_versiondocumento',
 )
 def listar_documentos(request):
+    # El repositorio documental esta pensado como una consulta dirigida. Por eso
+    # no precarga todo el universo documental al entrar sin filtros.
     puede_ver_documentos = (
         request.user.is_superuser
         or request.user.has_perm('core.view_documento')
@@ -112,6 +114,8 @@ def crear_documento(request):
             documento.creado_por = request.user
             documento.save()
             form.save_m2m()
+            # Si el alta nace desde un presupuesto puntual, se fuerza ese vinculo
+            # para que el respaldo quede encontrable desde ambos modulos.
             if registro_relacionado and not documento.presupuestos.exists():
                 documento.presupuestos.add(registro_relacionado)
             registrar_auditoria(
@@ -142,6 +146,8 @@ def crear_documento(request):
 @login_required
 @permission_required('core.add_documento', raise_exception=True)
 def subir_documento(request):
+    # Se mantiene la ruta legacy para no romper enlaces previos, pero la gestion
+    # real ahora ocurre siempre dentro del modulo Documentos.
     registro_id = request.GET.get('registro_id', '').strip()
     registro_relacionado = None
     if registro_id.isdigit():
@@ -198,6 +204,8 @@ def eliminar_documento(request, documento_id):
     validar_acceso_documento(request, documento)
 
     if request.method == 'POST':
+        # La eliminacion es logica: se retira del repositorio principal pero se
+        # conserva rastro historico para auditoria y reconstruccion posterior.
         documento.estado = 'eliminado'
         documento.save(update_fields=['estado'])
         registrar_auditoria(
@@ -235,6 +243,8 @@ def subir_version(request, documento_id):
         if form.is_valid():
             try:
                 with transaction.atomic():
+                    # La version nueva actualiza el archivo visible en operacion,
+                    # pero conserva el historial completo en la tabla de versiones.
                     version = VersionDocumento.objects.create(
                         documento=documento,
                         numero_version=form.cleaned_data['numero_version'],
@@ -293,6 +303,8 @@ def descargar_documento(request, documento_id):
     if not documento.archivo_actual:
         raise Http404('El documento no tiene un archivo disponible.')
 
+    # La descarga nunca expone la ruta de media directamente; siempre pasa por
+    # control de permisos, confidencialidad y auditoria.
     registrar_auditoria(
         request,
         accion='Descarga de documento',
@@ -316,6 +328,8 @@ def descargar_version_documento(request, version_id):
     if not version.archivo:
         raise Http404('La versión no tiene un archivo disponible.')
 
+    # Las versiones historicas siguen protegidas con la misma regla de acceso
+    # que el documento actual para no abrir una via paralela de exposicion.
     registrar_auditoria(
         request,
         accion='Descarga de versión',

@@ -19,6 +19,8 @@ from ..models import RegistroPresupuesto
 
 
 def inventario_presupuestos_queryset():
+    # Una misma referencia de presupuesto puede aparecer en varias cargas historicas
+    # del Excel. Para operar el dia a dia se toma solo el ultimo registro vigente.
     ultimo_registro = RegistroPresupuesto.objects.filter(
         presupuesto=OuterRef('presupuesto')
     ).order_by('-carga__fecha_carga', '-id')
@@ -37,6 +39,8 @@ def filtrar_por_estado(queryset, estado):
 
 
 def resumir_flujo(queryset):
+    # Este resumen alimenta dashboard e indicadores con un lenguaje cercano al negocio,
+    # no al detalle tecnico de cada campo almacenado.
     etapas = [
         (estado_resumen_label(PENDIENTE), q_estado_presupuesto(PENDIENTE)),
         (estado_resumen_label(EN_PROCESO), q_estado_presupuesto(EN_PROCESO)),
@@ -56,6 +60,8 @@ def resumir_flujo(queryset):
 
 
 def aggregate_presupuesto_metrics(queryset):
+    # Estas metricas concentran la lectura ejecutiva del control: aceptados,
+    # ejecucion, facturados, pagados y monto aun por cobrar.
     return queryset.aggregate(
         total_items=Count('id'),
         total_pendientes_aprobacion=Count('id', filter=q_estado_presupuesto(PENDIENTE)),
@@ -70,6 +76,8 @@ def aggregate_presupuesto_metrics(queryset):
 
 
 def actualizar_total_carga(carga):
+    # Si al borrar registros una carga queda vacia, deja de tener valor operativo
+    # y se elimina para no mostrar importaciones "fantasma" en la interfaz.
     total = carga.registros.count()
     if total == 0:
         carga.delete()

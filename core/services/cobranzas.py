@@ -11,6 +11,8 @@ from ..selectors.presupuestos import inventario_presupuestos_queryset, q_estado_
 
 
 def obtener_facturas_pendientes_queryset():
+    # Cobranzas trabaja sobre el inventario vigente, no sobre cargas historicas.
+    # Solo entran trabajos facturados que todavia no registran pago.
     return (
         inventario_presupuestos_queryset()
         .select_related('cliente')
@@ -27,6 +29,8 @@ def _dias_desde_facturacion(registro):
 
 
 def construir_resumen_cobranzas(registros):
+    # El resumen sirve tanto para la vista web como para correos y exportaciones.
+    # Por eso se concentra aqui la misma lectura operativa de la deuda.
     items = []
     total_monto = Decimal('0')
     total_con_email = 0
@@ -59,6 +63,8 @@ def construir_resumen_cobranzas(registros):
 
 
 def agrupar_registros_por_cliente(registros):
+    # Se agrupa por email para mandar un solo recordatorio por cliente y evitar
+    # bombardearlo con un correo por cada factura pendiente.
     agrupados = defaultdict(list)
     for registro in registros:
         email = (getattr(registro.cliente, 'email', '') or '').strip().lower()
@@ -69,6 +75,8 @@ def agrupar_registros_por_cliente(registros):
 
 
 def enviar_resumen_operador(registros, destinatarios=None, dry_run=False):
+    # Este correo es interno: ayuda al equipo a revisar la cartera antes de
+    # contactar clientes o descargar consolidado.
     destinatarios = list(destinatarios or settings.COBRANZA_OPERATOR_EMAILS)
     if not destinatarios:
         return {'enviado': False, 'motivo': 'sin_destinatarios', 'total_registros': 0}
@@ -106,6 +114,8 @@ def enviar_resumen_operador(registros, destinatarios=None, dry_run=False):
 
 
 def enviar_recordatorios_clientes(registros, dry_run=False):
+    # Los recordatorios externos salen ya agrupados por cliente para mantener
+    # una comunicacion mas ordenada y profesional.
     agrupados = agrupar_registros_por_cliente(registros)
     enviados = []
 

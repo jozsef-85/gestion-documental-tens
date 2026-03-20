@@ -21,6 +21,8 @@ ESTADOS_OC = [
     ('Terminado', 'Terminado'),
 ]
 
+# La importacion intenta respetar la realidad de una PYME: la planilla puede
+# venir con encabezados parecidos, no siempre identicos, y aun asi deberia leerse.
 HEADER_MAP = {
     'FECHA': 'fecha',
     'PRESUPUESTO': 'presupuesto',
@@ -61,6 +63,8 @@ EXCEL_EPOCH = date(1899, 12, 30)
 
 
 def normalizar_estado_oc(valor):
+    # Normaliza distintas variantes que suelen venir desde Excel para no romper
+    # reportes ni filtros por simples diferencias de escritura.
     texto = str(valor or '').strip()
     if not texto:
         return ''
@@ -156,6 +160,8 @@ def parsear_shared_strings(archivo_zip):
 
 
 def leer_primera_hoja(contenido):
+    # La operacion usa la primera hoja disponible como fuente oficial de carga.
+    # Eso simplifica el uso diario y evita pedir configuraciones extra al usuario.
     with ZipFile(BytesIO(contenido)) as archivo_zip:
         workbook = ET.fromstring(archivo_zip.read('xl/workbook.xml'))
         relaciones = ET.fromstring(archivo_zip.read('xl/_rels/workbook.xml.rels'))
@@ -217,6 +223,8 @@ def serial_excel_a_fecha(valor):
 
 
 def parsear_fecha_texto(valor):
+    # Acepta formatos manuales frecuentes y tambien seriales de Excel para poder
+    # absorber planillas heterogeneas sin exigir limpieza previa.
     texto = str(valor or '').strip()
     if not texto:
         return None, ''
@@ -264,6 +272,8 @@ def parsear_fecha_texto(valor):
 
 
 def parsear_planilla_presupuestos(archivo):
+    # Esta funcion traduce la planilla de control externa al modelo interno del sistema.
+    # Desde aqui nacen el seguimiento operativo, el dashboard y la cobranza.
     archivo.seek(0)
     contenido = archivo.read()
     archivo.seek(0)
@@ -292,6 +302,8 @@ def parsear_planilla_presupuestos(archivo):
         if not any(datos.values()):
             continue
 
+        # Se conserva tanto la fecha parseada como su texto normalizado para no
+        # perder informacion cuando el origen viene inconsistente o incompleto.
         fecha, fecha_texto = parsear_fecha_texto(datos.get('fecha', ''))
         fecha_facturacion, fecha_facturacion_texto = parsear_fecha_texto(datos.get('fecha_facturacion', ''))
         fecha_pago, fecha_pago_texto = parsear_fecha_texto(datos.get('fecha_pago', ''))

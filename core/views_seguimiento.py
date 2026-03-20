@@ -23,6 +23,8 @@ from .services.audit import registrar_auditoria
 
 
 def obtener_trabajos_presupuesto(presupuestos):
+    # "Trabajo" es la entidad operativa persistente que agrupa personal asignado
+    # aunque el mismo presupuesto reaparezca en distintas cargas historicas.
     budget_codes = sorted({(presupuesto or '').strip() for presupuesto in presupuestos if (presupuesto or '').strip()})
     if not budget_codes:
         return {}
@@ -57,6 +59,8 @@ def vincular_trabajos_existentes_en_registros(registros):
 
 
 def materializar_trabajo_en_registro(registro):
+    # Se crea el trabajo solo cuando realmente se necesita gestion operativa,
+    # por ejemplo para asignar personal o consolidar historial del mismo presupuesto.
     budget_code = (registro.presupuesto or '').strip()
     if not budget_code:
         registro.trabajo = None
@@ -135,6 +139,8 @@ def construir_contexto_listado(inventario_actual, *, selected_carga=None, consul
 @login_required
 @model_access_required('core', 'registropresupuesto')
 def listar_presupuestos_gestion(request):
+    # Esta vista representa la etapa comercial: presupuestos aun no cerrados
+    # administrativamente o recien aceptados, antes del seguimiento detallado.
     registros = inventario_presupuestos_queryset().select_related('cliente').prefetch_related('documentos', 'trabajo__asignaciones')
     registros = registros.filter(
         q_estado_presupuesto('pendiente') | q_estado_presupuesto('en_proceso')
@@ -172,6 +178,8 @@ def listar_presupuestos_gestion(request):
 @login_required
 @model_access_required('core', 'registropresupuesto')
 def listar_presupuestos(request):
+    # Esta vista ya es plenamente operativa: ejecucion, respaldo documental,
+    # facturacion, pago y personal asociado al trabajo.
     base_queryset = inventario_presupuestos_queryset().select_related('cliente').prefetch_related(
         'documentos',
         'trabajo__asignaciones',

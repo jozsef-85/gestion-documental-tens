@@ -40,6 +40,8 @@ def estado_resumen_label(codigo):
 
 
 def estado_codigo_desde_registro(registro):
+    # El flujo operativo se deduce desde hitos administrativos reales del trabajo.
+    # Si negocio fuerza un estado manual, ese criterio manda sobre el calculado.
     if registro.estado_manual:
         return registro.estado_manual
     if registro.fecha_pago or registro.fecha_pago_texto:
@@ -72,6 +74,8 @@ def q_estado_manual_vacio():
 
 
 def q_estado_presupuesto(estado):
+    # Todas las vistas del sistema usan la misma regla: primero revisar si hubo
+    # correccion manual; si no, derivar el estado desde nota de pedido, factura y pago.
     automatico = q_estado_manual_vacio()
     if estado == PAGADO:
         return Q(estado_manual=PAGADO) | (automatico & q_pagado())
@@ -85,8 +89,10 @@ def q_estado_presupuesto(estado):
 
 
 def q_aceptado_efectivo():
+    # Para negocio, "aceptado" incluye lo que ya esta en curso, facturado o pagado.
     return q_estado_presupuesto(EN_PROCESO) | q_estado_presupuesto(FACTURADO) | q_estado_presupuesto(PAGADO)
 
 
 def q_pendiente_por_cobrar():
+    # Sigue pendiente de cobro tanto lo que esta en ejecucion como lo ya facturado.
     return q_estado_presupuesto(EN_PROCESO) | q_estado_presupuesto(FACTURADO)

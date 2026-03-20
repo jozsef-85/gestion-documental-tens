@@ -25,6 +25,8 @@ PERSONAL_DOCUMENT_FIELD_LABELS = {
 @login_required
 @model_access_required('core', 'cliente')
 def listar_clientes(request):
+    # Al entrar sin filtros se muestran pocos registros recientes para mantener
+    # la pantalla util como acceso rapido y no como listado masivo por defecto.
     clientes = Cliente.objects.all()
     q = request.GET.get('q', '').strip()
     estado = request.GET.get('estado', '').strip()
@@ -110,6 +112,8 @@ def eliminar_cliente(request, cliente_id):
     cliente = get_object_or_404(Cliente, id=cliente_id)
 
     if request.method == 'POST':
+        # El cliente no se borra fisicamente porque puede seguir referenciado por
+        # presupuestos, cobranzas o historial comercial ya registrado.
         cliente.activo = False
         cliente.save(update_fields=['activo'])
         registrar_auditoria(request, 'Desactivacion de cliente', 'Cliente', cliente_id, f'Cliente desactivado: {cliente.nombre}')
@@ -130,6 +134,8 @@ def eliminar_cliente(request, cliente_id):
 @login_required
 @model_access_required('core', 'personaltrabajo')
 def listar_personal(request):
+    # El maestro de personal muestra tambien cuantas asignaciones activas tiene
+    # cada persona para vincular ficha, disponibilidad y operacion diaria.
     personal = PersonalTrabajo.objects.annotate(
         total_trabajos_activos=Count('asignaciones', filter=Q(asignaciones__estado='activo'), distinct=True)
     )
@@ -182,6 +188,8 @@ def descargar_documento_personal(request, personal_id, campo):
     if not archivo:
         raise Http404('El trabajador no tiene un archivo disponible para este respaldo.')
 
+    # Igual que en documentos, los respaldos de personal se descargan por vista
+    # protegida para evitar acceso directo a archivos sensibles del equipo.
     registrar_auditoria(
         request,
         accion='Descarga de respaldo de personal',
@@ -242,6 +250,8 @@ def eliminar_personal(request, personal_id):
     personal = get_object_or_404(PersonalTrabajo, id=personal_id)
 
     if request.method == 'POST':
+        # Se desactiva en vez de eliminar para conservar historial documental y
+        # trazabilidad de asignaciones previas en trabajos ya ejecutados.
         personal.activo = False
         personal.save(update_fields=['activo'])
         registrar_auditoria(request, 'Desactivacion de personal', 'PersonalTrabajo', personal_id, f'Personal desactivado: {personal.nombre}')

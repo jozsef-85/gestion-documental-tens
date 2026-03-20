@@ -36,6 +36,8 @@ def model_access_required(app_label, model_name):
 
 
 def usuario_confidencialidad_alta(user):
+    # "Confidencialidad alta" se reserva a perfiles con capacidad real de
+    # administracion documental, no solo a usuarios autenticados.
     if not getattr(user, 'is_authenticated', False):
         return False
     return (
@@ -46,6 +48,8 @@ def usuario_confidencialidad_alta(user):
 
 
 def filtrar_documentos_por_confidencialidad(queryset, user):
+    # Un usuario comun puede ver documentos de baja/media y los que el mismo creo.
+    # Con eso se protege informacion sensible sin bloquear el trabajo cotidiano.
     if usuario_confidencialidad_alta(user):
         return queryset
     return queryset.filter(
@@ -55,6 +59,8 @@ def filtrar_documentos_por_confidencialidad(queryset, user):
 
 
 def validar_acceso_documento(request, documento):
+    # La descarga pasa por una validacion explicita para no exponer archivos de
+    # alta confidencialidad solo por conocer una URL o un identificador.
     if documento.nivel_confidencialidad != 'alta':
         return
     if usuario_confidencialidad_alta(request.user):

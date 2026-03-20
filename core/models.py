@@ -83,6 +83,9 @@ class PersonalTrabajo(models.Model):
 
 
 class TrabajoPresupuesto(models.Model):
+    # Representa la "obra" o trabajo operativo persistente asociado a un
+    # presupuesto. Existe para poder consolidar equipo e historial aunque el
+    # mismo presupuesto reaparezca en multiples cargas del control.
     presupuesto = models.CharField(max_length=200, unique=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
@@ -111,6 +114,8 @@ class Documento(models.Model):
     descripcion = models.TextField(blank=True, null=True)
     tipo_documento = models.ForeignKey(TipoDocumento, on_delete=models.PROTECT)
     departamento = models.ForeignKey(Departamento, on_delete=models.PROTECT)
+    # Guarda la version vigente visible para la operacion diaria. El historial
+    # completo vive en VersionDocumento para no perder trazabilidad.
     archivo_actual = models.FileField(upload_to='documentos/')
     presupuestos = models.ManyToManyField('RegistroPresupuesto', blank=True, related_name='documentos')
     version_actual = models.CharField(max_length=20, default='1.0')
@@ -124,6 +129,8 @@ class Documento(models.Model):
 
 
 class VersionDocumento(models.Model):
+    # Cada nueva entrega documental queda registrada como version independiente
+    # para evitar reemplazos silenciosos y conservar respaldo historico.
     documento = models.ForeignKey(Documento, on_delete=models.CASCADE, related_name='versiones')
     numero_version = models.CharField(max_length=20)
     archivo = models.FileField(upload_to='versiones/')
@@ -144,6 +151,8 @@ class VersionDocumento(models.Model):
 
 
 class CargaPresupuesto(models.Model):
+    # Cada carga representa una importacion historica desde planilla. No es solo
+    # un archivo subido: sirve para saber cuando y desde donde se actualizo el control.
     nombre = models.CharField(max_length=200)
     archivo = models.FileField(upload_to='presupuestos/', blank=True, null=True)
     hoja = models.CharField(max_length=120, blank=True)
@@ -170,6 +179,8 @@ class RegistroPresupuesto(models.Model):
 
     ESTADOS_MANUALES = [('', 'Automático según flujo'), *estado_choices()]
 
+    # Este es el registro central del negocio. Puede venir de una carga Excel o
+    # de una creacion manual y concentra el seguimiento comercial, operativo y de cobro.
     carga = models.ForeignKey(CargaPresupuesto, on_delete=models.CASCADE, related_name='registros')
     cliente = models.ForeignKey(
         Cliente,
@@ -224,6 +235,8 @@ class RegistroPresupuesto(models.Model):
 
     @property
     def hitos_flujo(self):
+        # Estos hitos representan la lectura operativa del avance del trabajo,
+        # independiente de como se haya cargado originalmente la informacion.
         return [
             ('Nota de pedido', bool(self.nota_pedido)),
             ('Recepción', bool(self.recepcion)),
@@ -234,6 +247,8 @@ class RegistroPresupuesto(models.Model):
 
     @property
     def avance_flujo(self):
+        # Sirve para mostrar un porcentaje simple de avance administrativo del
+        # trabajo sin depender de una planificacion formal de proyecto.
         total_hitos = len(self.hitos_flujo)
         completos = sum(1 for _, completo in self.hitos_flujo if completo)
         if total_hitos == 0:
@@ -246,6 +261,7 @@ class RegistroPresupuesto(models.Model):
 
     @property
     def estado_seguimiento_codigo(self):
+        # El estado visible en interfaz se deriva desde la regla central del dominio.
         return estado_codigo_desde_registro(self)
 
     @property
@@ -254,6 +270,8 @@ class RegistroPresupuesto(models.Model):
 
     @property
     def total_personal_asignado(self):
+        # El personal se cuenta desde TrabajoPresupuesto porque la asignacion es
+        # propia del trabajo operativo, no de una carga puntual del Excel.
         if not self.trabajo_id:
             return 0
         cache = getattr(self.trabajo, '_prefetched_objects_cache', {})
@@ -272,6 +290,8 @@ class AsignacionTrabajo(models.Model):
         ('finalizado', 'Finalizado'),
     ]
 
+    # Vincula personas reales al trabajo y permite separar disponibilidad,
+    # participacion historica y control de horas del simple presupuesto comercial.
     trabajo = models.ForeignKey(TrabajoPresupuesto, on_delete=models.CASCADE, related_name='asignaciones')
     trabajador = models.ForeignKey(PersonalTrabajo, on_delete=models.CASCADE, related_name='asignaciones')
     rol = models.CharField(max_length=120, blank=True)
@@ -301,6 +321,8 @@ class AsignacionTrabajo(models.Model):
 
 
 class Auditoria(models.Model):
+    # Guarda trazabilidad funcional del sistema para poder reconstruir acciones
+    # relevantes sin depender solo de logs tecnicos.
     usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     accion = models.CharField(max_length=100)
     entidad = models.CharField(max_length=100)
