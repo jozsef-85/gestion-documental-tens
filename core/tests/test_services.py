@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group, User
 from django.core.cache import cache
 from django.core.management import call_command
 from django.test import RequestFactory, SimpleTestCase, TestCase
@@ -8,6 +8,7 @@ from django.test import RequestFactory, SimpleTestCase, TestCase
 from core.models import Auditoria
 from core.services.audit import registrar_auditoria
 from core.services.indicators import DEFAULT_INDICADORES, obtener_indicadores, refrescar_indicadores
+from core.services.roles import sync_role_groups_permissions
 
 
 class IndicadoresServiceTests(SimpleTestCase):
@@ -168,3 +169,24 @@ class AuditoriaServiceTests(TestCase):
 
         mensajes_criticos = [line for line in captured.output if 'La auditoría está fallando' in line]
         self.assertEqual(len(mensajes_criticos), 1)
+
+
+class RolesServiceTests(TestCase):
+    def test_sync_role_groups_permissions_configura_editores_y_lectores(self):
+        grupos = sync_role_groups_permissions()
+
+        self.assertSetEqual(set(grupos.keys()), {'Administradores', 'Editores', 'Lectores'})
+
+        editores = Group.objects.get(name='Editores')
+        lectores = Group.objects.get(name='Lectores')
+        admins = Group.objects.get(name='Administradores')
+
+        self.assertTrue(editores.permissions.filter(codename='view_registropresupuesto').exists())
+        self.assertTrue(editores.permissions.filter(codename='change_registropresupuesto').exists())
+        self.assertTrue(editores.permissions.filter(codename='add_asignaciontrabajo').exists())
+        self.assertFalse(editores.permissions.filter(codename='delete_cliente').exists())
+
+        self.assertTrue(lectores.permissions.filter(codename='view_documento').exists())
+        self.assertFalse(lectores.permissions.filter(codename='change_registropresupuesto').exists())
+
+        self.assertGreater(admins.permissions.count(), editores.permissions.count())
