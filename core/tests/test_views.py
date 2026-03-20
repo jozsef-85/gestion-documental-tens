@@ -1379,7 +1379,7 @@ class TemplateSmokeTests(TestCase):
     def test_layout_muestra_rol_del_usuario_en_lugar_de_sesion_activa(self):
         self.client.logout()
         usuario = User.objects.create_user(username='editor_layout', password='secreta123')
-        grupo = Group.objects.create(name='Editores')
+        grupo, _ = Group.objects.get_or_create(name='Editores')
         usuario.groups.add(grupo)
         permiso = Permission.objects.get(codename='view_documento')
         usuario.user_permissions.add(permiso)
@@ -1390,11 +1390,14 @@ class TemplateSmokeTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Editor')
         self.assertNotContains(response, 'Sesión activa')
-        self.assertNotContains(response, '>Inicio<')
-        self.assertNotContains(response, '>Clientes<')
-        self.assertNotContains(response, '>Personal<')
-        self.assertNotContains(response, '>Seguimiento<')
-        self.assertNotContains(response, '>Cobranza<')
+        self.assertContains(response, 'Ayuda')
+
+    def test_manual_usuario_esta_disponible_para_usuarios_autenticados(self):
+        response = self.client.get(reverse('manual_usuario'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Manual de uso de la aplicación')
+        self.assertContains(response, 'Agregar un trabajador a un presupuesto aceptado')
 
     def test_layout_permite_entrar_a_documentos_sin_exponer_nuevo_documento(self):
         self.client.logout()

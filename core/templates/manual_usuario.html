@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Ayuda y Manual de Uso | Gestión Documental{% endblock %}
+
+{% block extra_head %}
+<style>
+    .help-grid {
+        display: grid;
+        gap: 1.5rem;
+    }
+
+    .help-card {
+        border-radius: 1.35rem;
+        border: 1px solid #dce6ee;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 250, 252, 0.96));
+        box-shadow: 0 1.1rem 2.2rem rgba(18, 52, 77, 0.07);
+    }
+
+    .help-step {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.9rem;
+        align-items: start;
+    }
+
+    .help-step-number {
+        width: 2.1rem;
+        height: 2.1rem;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: #fff;
+        background: linear-gradient(135deg, var(--brand-navy), var(--brand-blue));
+    }
+
+    .help-chip-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+    }
+
+    .help-chip {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 0.45rem 0.85rem;
+        background: #edf4f8;
+        color: var(--brand-blue);
+        border: 1px solid #d6e5ef;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="hero-panel p-4 p-lg-5 mb-4">
+    <span class="eyebrow mb-3">Ayuda</span>
+    <h1 class="page-title mb-2">Manual de uso de la aplicación</h1>
+    <p class="mb-0 text-white-50">Guía rápida para trabajar con clientes, personal, presupuestos, seguimiento y documentos sin perder el orden operativo.</p>
+</section>
+
+<section class="help-grid">
+    <div class="surface-card p-4 p-lg-5">
+        <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+            <div>
+                <p class="section-title mb-2">Ruta recomendada para empezar</p>
+                <div class="footer-note">Si es tu primera vez, sigue este orden para entender el flujo completo del sistema.</div>
+            </div>
+            <div class="help-chip-list">
+                <span class="help-chip">1. Clientes</span>
+                <span class="help-chip">2. Personal</span>
+                <span class="help-chip">3. Presupuestos</span>
+                <span class="help-chip">4. Seguimiento</span>
+                <span class="help-chip">5. Documentos</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-12 col-xl-6">
+            <div class="help-card p-4 p-lg-5 h-100">
+                <h2 class="section-title mb-4">Cómo usar cada módulo</h2>
+                <div class="help-step mb-4">
+                    <span class="help-step-number">1</span>
+                    <div>
+                        <div class="fw-semibold mb-1">Clientes</div>
+                        <div class="footer-note">Registra y consulta el padrón comercial. Aquí puedes crear, editar o eliminar del listado activo sin borrar historial.</div>
+                    </div>
+                </div>
+                <div class="help-step mb-4">
+                    <span class="help-step-number">2</span>
+                    <div>
+                        <div class="fw-semibold mb-1">Personal</div>
+                        <div class="footer-note">Mantén fichas del equipo, respaldos y disponibilidad para trabajos activos.</div>
+                    </div>
+                </div>
+                <div class="help-step mb-4">
+                    <span class="help-step-number">3</span>
+                    <div>
+                        <div class="fw-semibold mb-1">Presupuestos</div>
+                        <div class="footer-note">Usa la vista comercial para revisar cotizaciones, aceptación del cliente y monto antes de pasar a operación.</div>
+                    </div>
+                </div>
+                <div class="help-step">
+                    <span class="help-step-number">4</span>
+                    <div>
+                        <div class="fw-semibold mb-1">Seguimiento y documentos</div>
+                        <div class="footer-note">Cuando el presupuesto ya fue aceptado, gestiona el trabajo, asigna personal, revisa facturación, pago y respalda documentos.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-6">
+            <div class="help-card p-4 p-lg-5 h-100">
+                <h2 class="section-title mb-4">Tareas frecuentes</h2>
+                <div class="help-step mb-4">
+                    <span class="help-step-number">A</span>
+                    <div>
+                        <div class="fw-semibold mb-1">Agregar un trabajador a un presupuesto aceptado</div>
+                        <div class="footer-note">Ve a <strong>Operación &gt; Seguimiento</strong>, busca el presupuesto, entra en <strong>Agregar trabajador</strong> o <strong>Historial</strong> y usa el bloque <strong>Vincular trabajador</strong>.</div>
+                    </div>
+                </div>
+                <div class="help-step mb-4">
+                    <span class="help-step-number">B</span>
+                    <div>
+                        <div class="fw-semibold mb-1">Subir una planilla de presupuestos</div>
+                        <div class="footer-note">Desde <strong>Operación &gt; Importar planilla</strong> carga el archivo Excel. El sistema interpreta fecha, presupuesto, monto, nota de pedido, factura y pago.</div>
+                    </div>
+                </div>
+                <div class="help-step mb-4">
+                    <span class="help-step-number">C</span>
+                    <div>
+                        <div class="fw-semibold mb-1">Consultar documentos del trabajo</div>
+                        <div class="footer-note">Abre el historial del presupuesto o usa el módulo <strong>Documentos</strong> filtrando por código de presupuesto.</div>
+                    </div>
+                </div>
+                <div class="help-step">
+                    <span class="help-step-number">D</span>
+                    <div>
+                        <div class="fw-semibold mb-1">Eliminar sin perder historial</div>
+                        <div class="footer-note">En clientes y personal la eliminación es lógica: se quita del listado activo, pero se conserva el historial y las relaciones previas.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="surface-card p-4 p-lg-5">
+        <h2 class="section-title mb-3">Buenas prácticas de uso</h2>
+        <div class="row g-3">
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="document-card p-4 h-100">
+                    <div class="fw-semibold mb-2">Trabaja con filtros</div>
+                    <div class="footer-note">Usa búsqueda, estado, cliente y carga para encontrar resultados sin recorrer listados completos.</div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="document-card p-4 h-100">
+                    <div class="fw-semibold mb-2">Mantén respaldo documental</div>
+                    <div class="footer-note">Cada trabajo importante debería quedar vinculado a informes, checklists, fotos o certificados.</div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="document-card p-4 h-100">
+                    <div class="fw-semibold mb-2">Cuida el estado real</div>
+                    <div class="footer-note">El seguimiento cambia automáticamente según nota de pedido, factura y pago. Usa estado manual solo si necesitas corregir.</div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="document-card p-4 h-100">
+                    <div class="fw-semibold mb-2">Cierra sesión al terminar</div>
+                    <div class="footer-note">La plataforma guarda trazabilidad. Cerrar sesión ayuda a proteger la operación y el acceso a documentos.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -12,6 +12,7 @@ from .views_documentos import (
     subir_documento,
     subir_version,
 )
+from .views_help import manual_usuario
 from .views_maestros import (
     crear_cliente,
     crear_personal,
@@ -40,6 +41,7 @@ from .views_seguimiento import (
 
 urlpatterns = [
     path('', dashboard, name='dashboard'),
+    path('ayuda/', manual_usuario, name='manual_usuario'),
     path('clientes/', listar_clientes, name='listar_clientes'),
     path('clientes/nuevo/', crear_cliente, name='crear_cliente'),
     path('clientes/editar/<int:cliente_id>/', editar_cliente, name='editar_cliente'),
