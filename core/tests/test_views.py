@@ -1156,6 +1156,35 @@ class ControlPresupuestosViewTests(TestCase):
         self.assertFalse(response.context['consulta_activa'])
         self.assertEqual(len(response.context['registros']), 0)
 
+    def test_listar_presupuestos_con_formulario_vacio_muestra_todo_el_listado(self):
+        for indice in range(22):
+            RegistroPresupuesto.objects.create(
+                carga=self.carga,
+                fila_origen=10 + indice,
+                presupuesto=f'PRES-TODO-{indice:02d}',
+                descripcion='Seguimiento completo',
+                nota_pedido='OC-TODO',
+            )
+
+        response = self.client.get(reverse('listar_presupuestos'), {
+            'q': '',
+            'estado': '',
+            'carga': '',
+            'cliente': '',
+            'tipo_trabajo': '',
+            'ubicacion': '',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context['consulta_activa'])
+        self.assertTrue(response.context['filtros_enviados'])
+        self.assertContains(response, 'Mostrando todos los registros de seguimiento.')
+        self.assertContains(response, 'PRES-PEND')
+        self.assertContains(response, 'PRES-ACEP')
+        self.assertContains(response, 'PRES-TODO-21')
+        self.assertEqual(response.context['page_obj'].paginator.num_pages, 1)
+        self.assertEqual(len(response.context['registros']), response.context['total_filtrados'])
+
     def test_listar_presupuestos_filtra_por_cliente_tipo_y_ubicacion(self):
         self.registro_en_proceso.cliente = self.cliente
         self.registro_en_proceso.tipo_trabajo = 'instalacion'

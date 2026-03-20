@@ -307,14 +307,16 @@
         <div>
             <p class="section-title mb-1">Trabajos en seguimiento</p>
             {% if consulta_activa %}
-                <div class="footer-note" id="seguimiento-listado-ayuda" aria-live="polite">{{ total_filtrados }} resultado(s). {% if selected_carga %}Carga seleccionada: {{ selected_carga.nombre }}.{% endif %}</div>
+                <div class="footer-note" id="seguimiento-listado-ayuda" aria-live="polite">{{ total_filtrados }} resultado(s). Mostrando {{ page_obj.start_index }}-{{ page_obj.end_index }}. {% if selected_carga %}Carga seleccionada: {{ selected_carga.nombre }}.{% endif %}</div>
+            {% elif filtros_enviados %}
+                <div class="footer-note" id="seguimiento-listado-ayuda" aria-live="polite">Mostrando todos los registros de seguimiento. Total: {{ total_filtrados }}. {% if selected_carga %}Carga seleccionada: {{ selected_carga.nombre }}.{% endif %}</div>
             {% else %}
                 <div class="footer-note" id="seguimiento-listado-ayuda" aria-live="polite">Usa esta pantalla para revisar trabajos ya aceptados, en ejecución, facturados o pagados.</div>
             {% endif %}
         </div>
     </div>
 
-    {% if consulta_activa %}
+    {% if consulta_activa or filtros_enviados %}
     <div class="records-table-wrap">
     <div class="table-responsive">
         <table class="table records-table align-middle" aria-describedby="seguimiento-listado-ayuda">
@@ -427,6 +429,27 @@
         </table>
     </div>
     </div>
+    {% if page_obj.paginator.num_pages > 1 %}
+    <nav aria-label="Paginación de seguimiento" class="mt-4">
+        <ul class="pagination justify-content-center mb-0">
+            <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                <a class="page-link" href="{% if page_obj.has_previous %}?{% if pagination_query %}{{ pagination_query }}&{% endif %}page=1{% else %}#{% endif %}" aria-label="Primera página">Primera</a>
+            </li>
+            <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                <a class="page-link" href="{% if page_obj.has_previous %}?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.previous_page_number }}{% else %}#{% endif %}" aria-label="Página anterior">Anterior</a>
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+            </li>
+            <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{% if page_obj.has_next %}?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.next_page_number }}{% else %}#{% endif %}" aria-label="Página siguiente">Siguiente</a>
+            </li>
+            <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{% if page_obj.has_next %}?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.paginator.num_pages }}{% else %}#{% endif %}" aria-label="Última página">Última</a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
     {% else %}
     <div class="document-card p-4 text-center muted-label" role="status" aria-live="polite">
         Aún no hay una consulta aplicada. Filtra por cliente, tipo de trabajo, ubicación, estado o carga para ver resultados.

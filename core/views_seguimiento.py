@@ -193,11 +193,13 @@ def listar_presupuestos(request):
     cliente_id = request.GET.get('cliente', '').strip()
     tipo_trabajo = request.GET.get('tipo_trabajo', '').strip()
     ubicacion = request.GET.get('ubicacion', '').strip()
+    filtros_enviados = any(campo in request.GET for campo in ['q', 'estado', 'carga', 'cliente', 'tipo_trabajo', 'ubicacion'])
     consulta_activa = any([search_term, estado, carga_id, cliente_id, tipo_trabajo, ubicacion])
+    mostrar_todos_resultados = filtros_enviados and not consulta_activa
 
     inventario_actual = inventario_presupuestos_queryset()
 
-    if not consulta_activa:
+    if not consulta_activa and not filtros_enviados:
         page_obj = Paginator(RegistroPresupuesto.objects.none(), 20).get_page(request.GET.get('page'))
         contexto = construir_contexto_listado(
             inventario_actual,
@@ -205,6 +207,9 @@ def listar_presupuestos(request):
             consulta_activa=False,
             page_obj=page_obj,
         )
+        contexto['filtros_enviados'] = False
+        contexto['mostrar_todos_resultados'] = False
+        contexto['pagination_query'] = ''
         return render(request, 'listar_presupuestos.html', contexto)
 
     registros = base_queryset
@@ -239,17 +244,23 @@ def listar_presupuestos(request):
     registros = filtrar_por_estado(registros, estado)
     registros = registros.order_by('-carga__fecha_carga', 'fila_origen')
     total_filtrados = registros.count()
-    paginator = Paginator(registros, 20)
+    page_size = max(total_filtrados, 1) if mostrar_todos_resultados else 20
+    paginator = Paginator(registros, page_size)
     page_obj = paginator.get_page(request.GET.get('page'))
     page_obj.object_list = vincular_trabajos_existentes_en_registros(page_obj.object_list)
+    pagination_query = request.GET.copy()
+    pagination_query.pop('page', None)
 
     contexto = construir_contexto_listado(
         inventario_actual,
         selected_carga=selected_carga,
-        consulta_activa=True,
+        consulta_activa=consulta_activa,
         page_obj=page_obj,
         total_filtrados=total_filtrados,
     )
+    contexto['filtros_enviados'] = filtros_enviados
+    contexto['mostrar_todos_resultados'] = mostrar_todos_resultados
+    contexto['pagination_query'] = pagination_query.urlencode()
     return render(request, 'listar_presupuestos.html', contexto)
 
 
